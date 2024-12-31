@@ -1,0 +1,16 @@
+Eden is an AI assistant package for Emacs.
+
+It offers a simple interface for:
+
+1) OpenAI LLM models (like ~gpt-4o~ and ~o1~) and
+2) Perplexity AI powered answer engine.
+
+Get started in minutes:
+
+1) Add your API keys to ~~/.authinfo.gpg~ file (or ~~/.authinfo~),
+2) Call the command ~eden~ to switch to ~eden~ prompt buffer,
+3) Enter your prompt (i.e. ask something),
+4) Hit ~C-c C-c~ to send the request to the current API (OpenAI by
+   default with ~gpt-4o-mini~ model),
+5) Receive the response asynchronously in a dedicated buffer that pops
+   up upon receipt.
