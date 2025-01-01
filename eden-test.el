@@ -1687,7 +1687,7 @@ foo bar baz
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-org-property-date "AI_ASSISTANT_DATE")
+        (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "foo bar baz"
@@ -1703,7 +1703,7 @@ foo bar baz
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [2024-12-20 Fri]
+:EDEN_DATE: [2024-12-20 Fri]
 :AI_ASSISTANT_REQ: uuid
 :END:
 *** prompt
@@ -1725,7 +1725,7 @@ foo bar baz assistant response
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-org-property-date "AI_ASSISTANT_DATE")
+        (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
@@ -1742,7 +1742,7 @@ foo bar baz assistant response
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the request
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [2024-12-20 Fri]
+:EDEN_DATE: [2024-12-20 Fri]
 :AI_ASSISTANT_REQ: uuid
 :END:
 *** prompt
@@ -1780,7 +1780,7 @@ bar baz
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
-        (let ((eden-org-property-date "AI_ASSISTANT_DATE")
+        (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
@@ -1807,7 +1807,7 @@ bar baz
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [2024-12-20 Fri]
+:EDEN_DATE: [2024-12-20 Fri]
 :AI_ASSISTANT_REQ: uuid-baz
 :END:
 *** prompt
@@ -1867,7 +1867,7 @@ baz-assistant-content
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
-        (let ((eden-org-property-date "AI_ASSISTANT_DATE")
+        (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
@@ -1888,7 +1888,7 @@ baz-assistant-content
                                            :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
           (insert "** Title of the conversation
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [date]
+:EDEN_DATE: [date]
 :AI_ASSISTANT_REQ: uuid-bar
 :END:
 *** prompt
@@ -1928,7 +1928,7 @@ bar-assistant-content
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the conversation
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [date]
+:EDEN_DATE: [date]
 :AI_ASSISTANT_REQ: uuid-baz
 :END:
 *** prompt
@@ -1988,7 +1988,7 @@ baz-assistant-content
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let* ((eden-org-property-date "AI_ASSISTANT_DATE")
+        (let* ((eden-org-property-date "EDEN_DATE")
                (eden-org-property-req "AI_ASSISTANT_REQ")
                (eden-dir (concat (make-temp-file "eden-" t) "/"))
                (req (eden-request
@@ -2015,7 +2015,7 @@ baz-assistant-content
       (buffer-substring-no-properties (point-min) (point-max)))
     (concat "** Title of the conversation
 :PROPERTIES:
-:AI_ASSISTANT_DATE: [2024-12-20 Fri]
+:EDEN_DATE: [2024-12-20 Fri]
 :AI_ASSISTANT_REQ: uuid
 :END:
 *** prompt
