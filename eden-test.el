@@ -87,18 +87,18 @@
 (ert-deftest eden-request-dir-test ()
   ;; signal error when one of the keys `:ai-dir' or `:uuid'
   ;; is missing or is not a string
-  (should-error (eden-request-dir '(:ai-dir "/tmp/ai/")))
-  (should-error (eden-request-dir '(:ai-dir "/tmp/ai/" :uuid 1)))
+  (should-error (eden-request-dir '(:ai-dir "/tmp/eden/")))
+  (should-error (eden-request-dir '(:ai-dir "/tmp/eden/" :uuid 1)))
   (should-error (eden-request-dir '(:uuid "foo-uuid")))
   (should-error (eden-request-dir '(:uuid "foo-uuid" :ai-dir 1)))
   (should-error (eden-request-dir nil))
 
   (should
-   (string= (eden-request-dir '(:ai-dir "/tmp/ai/" :uuid "foo-uuid"))
-            "/tmp/ai/foo-uuid/"))
+   (string= (eden-request-dir '(:ai-dir "/tmp/eden/" :uuid "foo-uuid"))
+            "/tmp/eden/foo-uuid/"))
   (should
-   (string= (eden-request-dir '(:ai-dir "/tmp/ai" :uuid "foo-uuid"))
-            "/tmp/ai/foo-uuid/")))
+   (string= (eden-request-dir '(:ai-dir "/tmp/eden" :uuid "foo-uuid"))
+            "/tmp/eden/foo-uuid/")))
 
 (ert-deftest eden-request-assistant-content-test ()
   (let ((resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
@@ -2443,7 +2443,7 @@ baz-assistant-content
 (ert-deftest eden-conversation-last-req-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-title "conversation-id-bar")))
-  (let ((eden-dir "/tmp/ai/")
+  (let ((eden-dir "/tmp/eden/")
         (eden-conversations
          '(("conversation-id-foo" .
             (:title "foo title" :action start :last-req-uuid nil))
@@ -2455,11 +2455,11 @@ baz-assistant-content
     (should
      (equal
       (eden-conversation-last-req "conversation-id-bar")
-      `(:uuid "bar-req-uuid" :ai-dir "/tmp/ai/")))
+      `(:uuid "bar-req-uuid" :ai-dir "/tmp/eden/")))
     (should
      (equal
       (eden-conversation-last-req "conversation-id-baz")
-      `(:uuid "baz-req-uuid" :ai-dir "/tmp/ai/")))))
+      `(:uuid "baz-req-uuid" :ai-dir "/tmp/eden/")))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exchanges-test")))
 (ert-deftest eden-conversation-exchanges-test ()
