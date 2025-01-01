@@ -450,7 +450,7 @@ req must have the following keys as in this example
 
     (:api (:service \"openai-service\"
            :endpoint \"https://openai-endpoint\")
-     :ai-dir \"/tmp/ai-dir/\"
+     :ai-dir \"/tmp/eden/\"
      :uuid \"uuid-foo\")
 
 Also set AI api key (the first time) from `~/.authinfo.gpg'

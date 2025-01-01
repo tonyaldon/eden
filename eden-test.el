@@ -152,7 +152,7 @@
 
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
-    (let ((req '(:ai-dir "/tmp/ai-dir/" :uuid "uuid-foo")))
+    (let ((req '(:ai-dir "/tmp/eden/" :uuid "uuid-foo")))
       (eden-request-write 'timestamp req "")
       (sleep-for 0.1)
       (should
@@ -166,7 +166,7 @@
   ;; to return a constant number similar to the one it would normally return.
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
-    (let ((req '(:ai-dir "/tmp/ai-dir/" :uuid "uuid-foo")))
+    (let ((req '(:ai-dir "/tmp/eden/" :uuid "uuid-foo")))
       (eden-request-write 'timestamp req "")
       (sleep-for 0.1)
       (should
@@ -1262,7 +1262,7 @@ arr[0]
   (let* ((eden-api-key-someservice-name "secret-api-key")
          (req '(:api (:service "someservice-name"
                       :endpoint "https://someservice-endpoint")
-                :ai-dir "/tmp/ai-dir/"
+                :ai-dir "/tmp/eden/"
                 :uuid "uuid-foo"))
          (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
                               "-H 'Authorization: Bearer %s' "
