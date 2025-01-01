@@ -1307,8 +1307,8 @@ not `%S'" eden-system-prompts)))
     map)
   "Keymap for `eden-mode'.")
 
-(define-derived-mode eden-mode org-mode "Rich AI"
-  "Rich AI assitant mode."
+(define-derived-mode eden-mode org-mode "Eden"
+  "Eden AI assitant mode."
   (setq
    mode-line-format
    '(" "
@@ -1328,7 +1328,7 @@ not `%S'" eden-system-prompts)))
   (eden-history-requests-set)
   (eden-prompt-history-state-set))
 
-(defvar eden-prompt-buffer-name "*Rich AI*" "...")
+(defvar eden-prompt-buffer-name "*Eden*" "...")
 
 (defun eden (&optional arg)
   ""
