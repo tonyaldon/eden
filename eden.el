@@ -50,12 +50,12 @@
 
 (defun eden-request-dir (req)
   "..."
-  (let ((ai-dir (plist-get req :ai-dir))
+  (let ((dir (plist-get req :dir))
         (uuid (plist-get req :uuid)))
-    (when (or (not (stringp ai-dir)) (not (stringp uuid)))
-      (error "Request mal formed.  `req' must contain `:ai-dir' and `:uuid' keys and their value must be strings: %S"
+    (when (or (not (stringp dir)) (not (stringp uuid)))
+      (error "Request mal formed.  `req' must contain `:dir' and `:uuid' keys and their value must be strings: %S"
              req))
-    (concat (file-name-as-directory ai-dir) uuid "/")))
+    (concat (file-name-as-directory dir) uuid "/")))
 
 (defun eden-request-file (file req)
   "..."
@@ -160,11 +160,11 @@ Raise an error in the following cases:
       alist)))
 
 (defun eden-request-perplexity-citations (req)
-  (let ((ai-dir (plist-get req :ai-dir)))
+  (let ((dir (plist-get req :dir)))
     (seq-reduce
      (lambda (acc exchange)
        (let* ((uuid-exchange (plist-get exchange :uuid))
-              (req-exchange `(:ai-dir ,ai-dir :uuid ,uuid-exchange)))
+              (req-exchange `(:dir ,dir :uuid ,uuid-exchange)))
          (if (condition-case nil (eden-request-check req-exchange) (error nil))
              (let* ((resp (eden-request-read 'response req-exchange))
                     (citations (plist-get resp :citations)))
@@ -450,7 +450,7 @@ req must have the following keys as in this example
 
     (:api (:service \"openai-service\"
            :endpoint \"https://openai-endpoint\")
-     :ai-dir \"/tmp/eden/\"
+     :dir \"/tmp/eden/\"
      :uuid \"uuid-foo\")
 
 Also set AI api key (the first time) from `~/.authinfo.gpg'
@@ -597,13 +597,13 @@ is in our case `eden-api-key-openai-service'."
     (cond
      ((null current) nil)
      ((consp current) (plist-get current :prompt))
-     (t (eden-request-read 'prompt `(:ai-dir ,eden-dir :uuid ,current))))))
+     (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
 
 (defun eden-prompt-current-goto-req-dir ()
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req-dir (eden-request-dir
-                      `(:ai-dir ,eden-dir :uuid ,req-uuid))))
+                      `(:dir ,eden-dir :uuid ,req-uuid))))
       (progn
         (when (> (length (window-list)) 1)
           (delete-window))
@@ -619,7 +619,7 @@ is in our case `eden-api-key-openai-service'."
 (defun eden-prompt-discard-current-p ()
   (let ((current (aref eden-prompt-history-state 1)))
     (when (not (or (null current) (consp current)))
-      (let ((req `(:ai-dir ,eden-dir :uuid ,current)))
+      (let ((req `(:dir ,eden-dir :uuid ,current)))
         (if (not (condition-case nil (eden-request-read 'prompt req) (error nil)))
             t)))))
 
@@ -676,8 +676,8 @@ is in our case `eden-api-key-openai-service'."
        (org-export-string-as markdown-str 'md nil)))))
 
 (cl-defun eden-request (&key prompt system-prompt exchanges
-                                stream model temperature
-                                api ai-dir)
+                             stream model temperature
+                             api dir)
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request."))
   (let* ((-system-prompt
@@ -702,9 +702,9 @@ is in our case `eden-api-key-openai-service'."
       :prompt ,prompt
       :system-prompt ,-system-prompt
       :exchanges ,exchanges
-      :ai-dir ,(or ai-dir
-                   eden-dir
-                   (concat (temporary-file-directory) "eden/"))
+      :dir ,(or dir
+                eden-dir
+                (concat (temporary-file-directory) "eden/"))
       :uuid ,(eden-uuid))))
 
 (defun eden-org-demote (org-str level)
@@ -831,7 +831,7 @@ See variables `eden-conversations' and `eden-dir'."
     (error "When action is `start', `req-uuid' argument must be nil or omitted, not `%s'"
            req-uuid))
    ((seq-contains-p [start-from continue-from] action)
-    (let ((req `(:ai-dir ,eden-dir :uuid ,req-uuid)))
+    (let ((req `(:dir ,eden-dir :uuid ,req-uuid)))
       (when (null req-uuid)
         (error "When action is `%s', `req-uuid' argument is mandatory."
                action req-uuid))
@@ -858,7 +858,7 @@ See variables `eden-conversations' and `eden-dir'."
   "..."
   (when-let ((uuid (eden-get-in
                     eden-conversations `(,conversation-id :last-req-uuid))))
-    `(:uuid ,uuid :ai-dir ,eden-dir)))
+    `(:uuid ,uuid :dir ,eden-dir)))
 
 (defun eden-conversation-update (info req)
   "...
@@ -963,7 +963,7 @@ like this:
 (defun eden-show-current-conversation-in-req-history ()
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
-            (req `(:ai-dir ,eden-dir :uuid ,req-uuid)))
+            (req `(:dir ,eden-dir :uuid ,req-uuid)))
       (if (condition-case nil (eden-request-check req) (error nil))
           (let* ((title "Current conversation in history")
                  (buff-name (get-buffer-create (format "*ai <%s>*" title))))
@@ -993,7 +993,7 @@ like this:
         (erase-buffer)
         (org-mode)
         (dolist (req-uuid conversations)
-          (eden-insert-conversation `(:ai-dir ,eden-dir :uuid ,req-uuid)))))
+          (eden-insert-conversation `(:dir ,eden-dir :uuid ,req-uuid)))))
     (when (> (length (window-list)) 1)
       (delete-window))
     (select-window
@@ -1010,7 +1010,7 @@ like this:
         (org-mode)
         (dolist (req-uuid requests)
           (eden-insert-conversation
-           `(:ai-dir ,eden-dir :uuid ,req-uuid)
+           `(:dir ,eden-dir :uuid ,req-uuid)
            "Request" nil 'start-from))))
     (when (> (length (window-list)) 1)
       (delete-window))
@@ -1168,7 +1168,7 @@ not `%S'" eden-system-prompts)))
 (defun eden-req-at-point-uuid ()
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
             (req-dir (eden-request-dir
-                      `(:ai-dir ,eden-dir :uuid ,req-uuid))))
+                      `(:dir ,eden-dir :uuid ,req-uuid))))
       (if (file-exists-p req-dir)
           req-uuid
         (error "Request `%s' doesn't exist." req-dir))
@@ -1193,11 +1193,11 @@ not `%S'" eden-system-prompts)))
 (defun eden-req-at-point-show-requests ()
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
-              (req `(:ai-dir ,eden-dir :uuid ,req-uuid))
+              (req `(:dir ,eden-dir :uuid ,req-uuid))
               (requests
                (mapcar
                 (lambda (exchange)
-                  `(:ai-dir ,eden-dir :uuid ,(plist-get exchange :uuid)))
+                  `(:dir ,eden-dir :uuid ,(plist-get exchange :uuid)))
                 (eden-request-conversation req)))
               (buff (get-buffer-create "*ai Requests of conversation at point*")))
     (with-current-buffer buff
@@ -1212,7 +1212,7 @@ not `%S'" eden-system-prompts)))
 (defun eden-req-at-point-show-perplexity-citations ()
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
-              (req `(:ai-dir ,eden-dir :uuid ,req-uuid)))
+              (req `(:dir ,eden-dir :uuid ,req-uuid)))
     (if-let ((citations (eden-request-perplexity-citations req)))
         (let ((buff (get-buffer-create "*ai Perplexity citations*")))
           (with-current-buffer buff
@@ -1229,7 +1229,7 @@ not `%S'" eden-system-prompts)))
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid))
              (req-dir (eden-request-dir
-                       `(:ai-dir ,eden-dir :uuid ,req-uuid))))
+                       `(:dir ,eden-dir :uuid ,req-uuid))))
     (dired req-dir)))
 
 (transient-define-prefix eden-req-at-point-menu ()
@@ -1366,7 +1366,7 @@ not `%S'" eden-system-prompts)))
       (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
       (mapcar (lambda (r)
                 (when (< timestamp-start (cdr r))
-                  (let ((req `(:ai-dir ,eden-dir
+                  (let ((req `(:dir ,eden-dir
                                :uuid ,(car r))))
                     (eden-request-conversation-path req)))))
       (delq nil))))

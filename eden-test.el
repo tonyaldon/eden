@@ -85,19 +85,19 @@
       :system_fingerprint "fp_0705bf87c0"))))
 
 (ert-deftest eden-request-dir-test ()
-  ;; signal error when one of the keys `:ai-dir' or `:uuid'
+  ;; signal error when one of the keys `:dir' or `:uuid'
   ;; is missing or is not a string
-  (should-error (eden-request-dir '(:ai-dir "/tmp/eden/")))
-  (should-error (eden-request-dir '(:ai-dir "/tmp/eden/" :uuid 1)))
+  (should-error (eden-request-dir '(:dir "/tmp/eden/")))
+  (should-error (eden-request-dir '(:dir "/tmp/eden/" :uuid 1)))
   (should-error (eden-request-dir '(:uuid "foo-uuid")))
-  (should-error (eden-request-dir '(:uuid "foo-uuid" :ai-dir 1)))
+  (should-error (eden-request-dir '(:uuid "foo-uuid" :dir 1)))
   (should-error (eden-request-dir nil))
 
   (should
-   (string= (eden-request-dir '(:ai-dir "/tmp/eden/" :uuid "foo-uuid"))
+   (string= (eden-request-dir '(:dir "/tmp/eden/" :uuid "foo-uuid"))
             "/tmp/eden/foo-uuid/"))
   (should
-   (string= (eden-request-dir '(:ai-dir "/tmp/eden" :uuid "foo-uuid"))
+   (string= (eden-request-dir '(:dir "/tmp/eden" :uuid "foo-uuid"))
             "/tmp/eden/foo-uuid/")))
 
 (ert-deftest eden-request-assistant-content-test ()
@@ -152,7 +152,7 @@
 
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
-    (let ((req '(:ai-dir "/tmp/eden/" :uuid "uuid-foo")))
+    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
       (eden-request-write 'timestamp req "")
       (sleep-for 0.1)
       (should
@@ -166,7 +166,7 @@
   ;; to return a constant number similar to the one it would normally return.
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
-    (let ((req '(:ai-dir "/tmp/eden/" :uuid "uuid-foo")))
+    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
       (eden-request-write 'timestamp req "")
       (sleep-for 0.1)
       (should
@@ -178,7 +178,7 @@
                     :model "gpt-4o-mini"
                     :temperature 1
                     :messages [(:role "user" :content "user prompt\n")]))
-         (req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+         (req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (message "%s" (eden-request-dir req))
 
@@ -195,14 +195,14 @@
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-check-test")))
 (ert-deftest eden-request-check-test ()
-  ;; Signal error if the request doesn't exist in `:ai-dir'
+  ;; Signal error if the request doesn't exist in `:dir'
   (should-error
-   (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
      (eden-request-check req)))
 
   ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -221,13 +221,13 @@
   ;; - response.json
   ;; - response.org
   ;; - exchanges.json
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
     (should-error (eden-request-check req)))
 
   ;; everything ok
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -238,14 +238,14 @@
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-test")))
 (ert-deftest eden-request-conversation-test ()
-  ;; Signal error if the request doesn't exist in `:ai-dir'
+  ;; Signal error if the request doesn't exist in `:dir'
   (should-error
-   (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
      (eden-request-conversation req)))
 
   ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -264,7 +264,7 @@
   ;; - response.json
   ;; - response.org
   ;; - exchanges.json
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
     (should-error (eden-request-conversation req)))
@@ -277,9 +277,9 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (ai-dir (plist-get req :ai-dir))
+         (dir (plist-get req :dir))
          (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                  :object "chat.completion"
                  :created 1733030031
@@ -293,7 +293,7 @@
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-conversation `(:ai-dir ,ai-dir :uuid "uuid-foo"))
+      (eden-request-conversation `(:dir ,dir :uuid "uuid-foo"))
       [(:uuid "uuid-foo"
         :prompt "foo prompt\n"
         :user "foo user"
@@ -324,9 +324,9 @@
                              :user "bar user"
                              :assistant "bar assistant\n"
                              :response "bar assistant\n")]
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-baz"))
-         (ai-dir (plist-get req :ai-dir))
+         (dir (plist-get req :dir))
          (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                  :object "chat.completion"
                  :created 1733030031
@@ -340,7 +340,7 @@
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-conversation `(:ai-dir ,ai-dir :uuid "uuid-baz"))
+      (eden-request-conversation `(:dir ,dir :uuid "uuid-baz"))
       [(:uuid "uuid-foo"
         :prompt "foo prompt\n"
         :user "foo user"
@@ -359,14 +359,14 @@
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-path-test")))
 (ert-deftest eden-request-conversation-path-test ()
-  ;; nil if the request doesn't exist in `:ai-dir'
+  ;; nil if the request doesn't exist in `:dir'
   (should-not
-   (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
      (eden-request-conversation-path req)))
 
   ;; nil when an error.json file exists in req directory
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -385,7 +385,7 @@
   ;; - response.json
   ;; - response.org
   ;; - exchanges.json
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
     (should-not (eden-request-conversation-path req)))
@@ -399,9 +399,9 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (ai-dir (plist-get req :ai-dir))
+         (dir (plist-get req :dir))
          (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                  :object "chat.completion"
                  :created 1733030031
@@ -414,7 +414,7 @@
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-conversation-path `(:ai-dir ,ai-dir :uuid "uuid-foo"))
+      (eden-request-conversation-path `(:dir ,dir :uuid "uuid-foo"))
       ["uuid-foo"])))
 
   ;; conversation with previous messages
@@ -441,7 +441,7 @@
                              :user "bar user"
                              :assistant "bar assistant"
                              :response "bar response")]
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-baz"))
          (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                  :object "chat.completion"
@@ -451,12 +451,12 @@
                             :message (:role "assistant" :content "baz assistant" :refusal nil)
                             :logprobs nil :finish_reason "stop")]))
          (resp-str (eden-json-encode resp))
-         (ai-dir (plist-get req :ai-dir)))
+         (dir (plist-get req :dir)))
     (eden-write-request req)
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-conversation-path `(:ai-dir ,ai-dir :uuid "uuid-baz"))
+      (eden-request-conversation-path `(:dir ,dir :uuid "uuid-baz"))
       ["uuid-foo" "uuid-bar" "uuid-baz"]))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-path-alist-test")))
@@ -473,14 +473,14 @@
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-perplexity-citations-test")))
 (ert-deftest eden-request-perplexity-citations-test ()
-  ;; Signal error if the request doesn't exist in `:ai-dir'
+  ;; Signal error if the request doesn't exist in `:dir'
   (should-error
-   (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
      (eden-request-perplexity-citations req)))
 
   ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -499,7 +499,7 @@
   ;; - response.json
   ;; - response.org
   ;; - exchanges.json
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
     (should-error (eden-request-perplexity-citations req)))
@@ -512,9 +512,9 @@
                 :api (:service "perplexity"
                       :endpoint "https://api.perplexity.ai/chat/completions")
                 :prompt "foo prompt\n"
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (ai-dir (plist-get req :ai-dir))
+         (dir (plist-get req :dir))
          (resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                  :object "chat.completion"
                  :created 1735366499
@@ -532,12 +532,12 @@
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-perplexity-citations `(:ai-dir ,ai-dir :uuid "uuid-foo"))
+      (eden-request-perplexity-citations `(:dir ,dir :uuid "uuid-foo"))
       '("https://foo-1.com" "https://foo-2.com" "https://foo-3.com"))))
   ;; 1) `bar-req' request has no citations in its response
   ;; 2) `err-req' request has no response.json file, this can happen if
   ;;    it is removed inadvertently
-  (let* ((ai-dir (concat (make-temp-file "eden-" t) "/"))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (foo-req `(:req (:stream :false
                           :model "llama-3.1-sonar-small-128k-online"
                           :temperature 1
@@ -545,7 +545,7 @@
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
                     :prompt "foo prompt\n"
-                    :ai-dir ,ai-dir
+                    :dir ,dir
                     :uuid "uuid-foo"))
          (foo-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
@@ -573,7 +573,7 @@
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
                     :prompt "bar prompt\n"
-                    :ai-dir ,ai-dir
+                    :dir ,dir
                     :uuid "uuid-bar"))
          ;; bar response with no citations
          (bar-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
@@ -606,7 +606,7 @@
                                  :user "bar user"
                                  :assistant "bar assistant"
                                  :response "bar response")]
-                    :ai-dir ,ai-dir
+                    :dir ,dir
                     :uuid "uuid-err"))
          (baz-req `(:req (:stream :false
                           :model "llama-3.1-sonar-small-128k-online"
@@ -638,7 +638,7 @@
                                  :user "err user"
                                  :assistant "err assistant"
                                  :response "err response")]
-                    :ai-dir ,ai-dir
+                    :dir ,dir
                     :uuid "uuid-baz"))
          (baz-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
@@ -652,15 +652,15 @@
          (baz-resp-str (eden-json-encode baz-resp)))
     (message "%s" (eden-request-dir baz-req))
     (eden-write-request foo-req)
-    (eden-write-response foo-resp-str foo-resp `(:ai-dir ,ai-dir :uuid "uuid-foo"))
+    (eden-write-response foo-resp-str foo-resp `(:dir ,dir :uuid "uuid-foo"))
     (eden-write-request bar-req)
-    (eden-write-response bar-resp-str bar-resp `(:ai-dir ,ai-dir :uuid "uuid-bar"))
+    (eden-write-response bar-resp-str bar-resp `(:dir ,dir :uuid "uuid-bar"))
     (eden-write-request err-req) ;; we don't write any response for `err-req'
     (eden-write-request baz-req)
     (eden-write-response baz-resp-str baz-resp baz-req)
     (should
      (equal
-      (eden-request-perplexity-citations `(:ai-dir ,ai-dir :uuid "uuid-baz"))
+      (eden-request-perplexity-citations `(:dir ,dir :uuid "uuid-baz"))
       '("https://foo-1.com"
         "https://foo-2.com"
         "https://foo-3.com"
@@ -676,7 +676,7 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "user prompt\n"
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (message "%s" (eden-request-dir req))
     (eden-write-request req)
@@ -734,7 +734,7 @@
                              :user "baz user"
                              :assistant "baz assistant"
                              :response "baz response")]
-                :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (message "%s" (eden-request-dir req))
     (eden-write-request req)
@@ -829,7 +829,7 @@ arr[0]
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-write-response-test")))
 (ert-deftest eden-write-response-test ()
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
          (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                  :object "chat.completion"
@@ -843,7 +843,7 @@ arr[0]
     (should (equal (eden-request-read 'response req) resp))
     (should (equal (eden-request-read 'response-org req) "*** foo assistant\n")))
   ;; response from perplexity.ai with citations array
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
          (resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                  :object "chat.completion"
@@ -886,7 +886,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil) ;; we don't call it
          (-callback-error nil) ;; we don't call it
@@ -925,7 +925,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil)      ;; we don't call it
          (-callback-error nil) ;; we don't call it
@@ -961,7 +961,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          ;; we don't use that request
          (-callback nil)      ;; we don't call it
@@ -998,7 +998,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil)      ;; we don't call it
          (-callback-error nil) ;; we don't call it
@@ -1038,7 +1038,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil)      ;; we don't call it
          (-callback-error nil) ;; we don't call it
@@ -1089,7 +1089,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback 'callback-not-a-function)
          (-callback-error nil) ;; we don't call it
@@ -1125,7 +1125,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil)      ;; we don't call it
          ;; Wrong callback-error function
@@ -1160,7 +1160,7 @@ arr[0]
          (-req `(:req (:foo "bar") ;; we don't use that request
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (-callback nil)      ;; we don't call it
          in-callback-error
@@ -1227,7 +1227,7 @@ arr[0]
                        :messages [(:role "user" :content "foo bar baz")])
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
-                 :ai-dir ,(concat (make-temp-file "eden-" t) "/")
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
          (in-callback nil)
          (-callback (lambda (req resp info)
@@ -1262,7 +1262,7 @@ arr[0]
   (let* ((eden-api-key-someservice-name "secret-api-key")
          (req '(:api (:service "someservice-name"
                       :endpoint "https://someservice-endpoint")
-                :ai-dir "/tmp/eden/"
+                :dir "/tmp/eden/"
                 :uuid "uuid-foo"))
          (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
                               "-H 'Authorization: Bearer %s' "
@@ -1335,25 +1335,24 @@ foo bar baz
     (plist-get (eden-request :prompt "foo prompt")
                :uuid)))
 
-  ;; Test :ai-dir
+  ;; Test :dir
   (should
    (string=
     (let ((eden-dir nil))
       (plist-get (eden-request :prompt "foo prompt")
-                 :ai-dir))
+                 :dir))
     (concat (temporary-file-directory) "eden/")))
   (should
    (string=
     (plist-get
-     (eden-request :prompt "foo prompt"
-                      :ai-dir "/tmp/foo/")
-     :ai-dir)
+     (eden-request :prompt "foo prompt" :dir "/tmp/foo/")
+     :dir)
     "/tmp/foo/"))
   (should
    (string=
     (let ((eden-dir "/tmp/bar/"))
       (plist-get (eden-request :prompt "foo prompt")
-                 :ai-dir))
+                 :dir))
     "/tmp/bar/"))
 
   ;; Check :prompt, :system-prompt, :exchanges
@@ -1368,7 +1367,7 @@ foo bar baz
     (should (string= (plist-get req :system-prompt) ""))
     (should (equal req-messages [(:role "user" :content "foo prompt")])))
   (let* ((req (eden-request :prompt "foo prompt"
-                               :system-prompt "foo system"))
+                            :system-prompt "foo system"))
          (req-messages (plist-get (plist-get req :req) :messages)))
     (should (string= (plist-get req :system-prompt) "foo system"))
     (should (equal req-messages
@@ -1409,7 +1408,7 @@ foo bar baz
     (should (equal req-messages
                    [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
   (let* ((req (eden-request :prompt "* prompt h1\n** prompt h2"
-                               :system-prompt "* system h1\n** system h2"))
+                            :system-prompt "* system h1\n** system h2"))
          (req-messages (plist-get (plist-get req :req) :messages)))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
@@ -1449,7 +1448,7 @@ foo bar baz
            '("bar system prompt title" . "bar system prompt") ))
       (plist-get
        (eden-request :prompt "foo prompt"
-                        :system-prompt "foo system prompt")
+                     :system-prompt "foo system prompt")
        :system-prompt))
     "foo system prompt"))
   (should
@@ -1467,7 +1466,7 @@ foo bar baz
              (plist-get (plist-get req :req) :stream)
              :false)))
   (let ((req (eden-request :prompt "foo prompt"
-                              :stream t)))
+                           :stream t)))
     (should (equal
              (plist-get (plist-get req :req) :stream)
              t)))
@@ -1480,7 +1479,7 @@ foo bar baz
              "gpt-4o")))
   (let* ((eden-model "gpt-4o")
          (req (eden-request :prompt "foo prompt"
-                               :model "gpt-4o-mini")))
+                            :model "gpt-4o-mini")))
     (should (equal
              (plist-get (plist-get req :req) :model)
              "gpt-4o-mini")))
@@ -1492,17 +1491,17 @@ foo bar baz
                0)))
   (let* ((eden-temperature 0)
          (req (eden-request :prompt "foo prompt"
-                               :temperature 1.1)))
+                            :temperature 1.1)))
     (should (= (plist-get (plist-get req :req) :temperature)
                1.1)))
 
   ;; Test :api
   (let* ((eden-api '(:service "openai"
-                        :endpoint "https://api.openai.com/v1/chat/completions"))
+                     :endpoint "https://api.openai.com/v1/chat/completions"))
          (req (eden-request :prompt "foo prompt")))
     (should (equal (plist-get req :api) eden-api)))
   (let* ((eden-api '(:service "openai"
-                        :endpoint "https://api.openai.com/v1/chat/completions"))
+                     :endpoint "https://api.openai.com/v1/chat/completions"))
          (req (eden-request
                :prompt "foo prompt"
                :api '(:service "openai-service"
@@ -1644,14 +1643,14 @@ foo bar baz
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-insert-conversation-test")))
 (ert-deftest eden-insert-conversation-test ()
-  ;; Signal error if the request doesn't exist in `:ai-dir'
+  ;; Signal error if the request doesn't exist in `:dir'
   (should-error
-   (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
      (eden-insert-conversation req)))
 
   ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
@@ -1670,7 +1669,7 @@ foo bar baz
   ;; - response.json
   ;; - response.org
   ;; - exchanges.json
-  (let* ((req `(:ai-dir ,(concat (make-temp-file "eden-" t) "/")
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
     (should-error (eden-insert-conversation req)))
@@ -1692,7 +1691,7 @@ foo bar baz
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "foo bar baz"
-                    :ai-dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")))
               (resp '(:model "gpt-4o-mini-2024-07-18"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -1730,7 +1729,7 @@ foo bar baz assistant response
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
-                    :ai-dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")))
               (resp '(:model "o1-mini-2024-09-12"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -1785,7 +1784,7 @@ bar baz
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                    :ai-dir (concat (make-temp-file "eden-" t) "/")
+                    :dir (concat (make-temp-file "eden-" t) "/")
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                  :user "foo user"
@@ -1800,7 +1799,7 @@ bar baz
                       :choices [(:index 0
                                  :message (:role "assistant"
                                            :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
-          (message "%s" (plist-get req :ai-dir))
+          (message "%s" (plist-get req :dir))
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
@@ -1872,7 +1871,7 @@ baz-assistant-content
               (eden-org-property-req "AI_ASSISTANT_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                    :ai-dir (concat (make-temp-file "eden-" t) "/")
+                    :dir (concat (make-temp-file "eden-" t) "/")
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                  :user "foo user"
@@ -2128,7 +2127,7 @@ baz-assistant-content
          [("foo-uuid" "bar-uuid" "baz-uuid") (:prompt "scratch prompt") nil]))
     (should (string= (eden-prompt-current) "scratch prompt")))
   (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:ai-dir ,eden-dir :uuid "foo-uuid"))
+         (req `(:dir ,eden-dir :uuid "foo-uuid"))
          (eden-prompt-history-state [("bar-uuid" "baz-uuid") "foo-uuid" nil]))
     (message "%S" (eden-request-dir req))
     (eden-request-write 'prompt req "foo prompt\n")
@@ -2138,10 +2137,10 @@ baz-assistant-content
   ;; Values of :req and :proc keys are normally not string, but
   ;; as we don't use them `eden-pending-requests', it's ok.
   (let ((eden-pending-requests '((:conversation-id "conv-foo"
-                                     :req "req-foo"
-                                     :proc "proc-foo")
-                                    (:req "req-bar"
-                                     :proc "proc-bar"))))
+                                  :req "req-foo"
+                                  :proc "proc-foo")
+                                 (:req "req-bar"
+                                  :proc "proc-bar"))))
     (should (eden-conversation-locked-p "conv-foo"))
     (should-not (eden-conversation-locked-p "conv-baz")))
   (let ((eden-pending-requests nil))
@@ -2212,7 +2211,7 @@ baz-assistant-content
   ;; error -  when an error.json file exists in req directory
   (let* ((eden-conversations nil)
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:ai-dir ,eden-dir :uuid "foo-req-uuid")))
+         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
     (eden-request-write 'prompt req "")
     (eden-request-write 'request req "")
     (eden-request-write 'exchanges req "")
@@ -2233,7 +2232,7 @@ baz-assistant-content
   ;; - exchanges.json
   (let* ((eden-conversations nil)
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:ai-dir ,eden-dir :uuid "foo-req-uuid")))
+         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
     (make-directory (eden-request-dir req) 'parent)
     (should-error
      (eden-conversation 'start-from "foo title" "foo-req-uuid")))
@@ -2361,13 +2360,13 @@ baz-assistant-content
            ("conversation-id-baz" .
             (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
     (eden-conversation-update '(:conversation-id "conversation-id-foo")
-                                 '(:uuid "new-foo-req-uuid"))
+                              '(:uuid "new-foo-req-uuid"))
     (eden-conversation-update '(:conversation-id "conversation-id-bar")
-                                 '(:uuid "new-bar-req-uuid"))
+                              '(:uuid "new-bar-req-uuid"))
     (eden-conversation-update '(:conversation-id "conversation-id-baz")
-                                 '(:uuid "new-baz-req-uuid"))
+                              '(:uuid "new-baz-req-uuid"))
     (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
-                                 '(:uuid "fake-req-uuid"))
+                              '(:uuid "fake-req-uuid"))
     (should
      (equal
       (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
@@ -2455,11 +2454,11 @@ baz-assistant-content
     (should
      (equal
       (eden-conversation-last-req "conversation-id-bar")
-      `(:uuid "bar-req-uuid" :ai-dir "/tmp/eden/")))
+      `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))
     (should
      (equal
       (eden-conversation-last-req "conversation-id-baz")
-      `(:uuid "baz-req-uuid" :ai-dir "/tmp/eden/")))))
+      `(:uuid "baz-req-uuid" :dir "/tmp/eden/")))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exchanges-test")))
 (ert-deftest eden-conversation-exchanges-test ()
@@ -2488,9 +2487,9 @@ baz-assistant-content
                          :user "bar user"
                          :assistant "bar assistant\n"
                          :response "bar assistant\n")]
-            :ai-dir ,eden-dir
+            :dir ,eden-dir
             :uuid "uuid-baz"))
-         ;; #_(ai-dir (plist-get req :ai-dir))
+         ;; #_(dir (plist-get req :dir))
          (last-req-uuid (plist-get last-req :uuid))
          (last-resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                       :object "chat.completion"
