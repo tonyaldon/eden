@@ -862,7 +862,7 @@ arr[0]
     (should (equal (eden-request-read 'response-org req)
                    "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n"))))
 
-(defun rich-test-echo-resp (resp-str buffer-or-name sentinel &optional sleep)
+(defun eden-test-echo-resp (resp-str buffer-or-name sentinel &optional sleep)
   "..."
   (let ((command (format "%secho %s"
                          (if sleep (format "sleep %s | " sleep) "")
@@ -904,7 +904,7 @@ arr[0]
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
-       (rich-test-echo-resp resp-str buff-name sentinel-wrapped)
+       (eden-test-echo-resp resp-str buff-name sentinel-wrapped)
        (sleep-for 0.2)))
     (should-not (get-buffer buff-name))
     (message "%s" (eden-request-file 'error -req))
@@ -937,7 +937,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (kill-process
-        (rich-test-echo-resp
+        (eden-test-echo-resp
          resp-str buff-name
          (eden-sentinel -req -callback -callback-error -info)
          1))
@@ -974,7 +974,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (interrupt-process
-        (rich-test-echo-resp
+        (eden-test-echo-resp
          resp-str buff-name
          (eden-sentinel -req -callback -callback-error -info)
          1))
@@ -1006,7 +1006,7 @@ arr[0]
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
-       (rich-test-echo-resp
+       (eden-test-echo-resp
         resp-str buff-name
         (eden-sentinel -req -callback -callback-error -info))
        (sleep-for 0.2)))
@@ -1046,7 +1046,7 @@ arr[0]
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
-       (rich-test-echo-resp
+       (eden-test-echo-resp
         resp-str buff-name
         (eden-sentinel -req -callback -callback-error -info))
        (sleep-for 0.2)))
@@ -1097,7 +1097,7 @@ arr[0]
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
-       (rich-test-echo-resp
+       (eden-test-echo-resp
         resp-str buff-name
         (eden-sentinel -req -callback -callback-error -info))
        (sleep-for 0.2)))
@@ -1135,7 +1135,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (kill-process
-        (rich-test-echo-resp
+        (eden-test-echo-resp
          resp-str buff-name
          (eden-sentinel -req -callback -callback-error -info)
          1))
@@ -1174,7 +1174,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (kill-process
-        (rich-test-echo-resp
+        (eden-test-echo-resp
          resp-str buff-name
          (eden-sentinel -req -callback -callback-error -info)
          1))
@@ -1236,7 +1236,7 @@ arr[0]
          (-info '(:foo "bar"))
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (let ((debug-on-error t))
-      (rich-test-echo-resp
+      (eden-test-echo-resp
        resp-str buff-name
        (eden-sentinel -req -callback -callback-error -info))
       (sleep-for 0.2))
@@ -2630,7 +2630,7 @@ baz-assistant-content
                ;; with sentinel constructed using `eden-sentinel'
                (lambda (req callback callback-error info)
                  (eden-write-request req)
-                 (rich-test-echo-resp
+                 (eden-test-echo-resp
                   (format resp-fmt "resp-foo") (generate-new-buffer-name "eden")
                   (eval (macroexpand-all
                          `(eden-sentinel
@@ -2651,7 +2651,7 @@ baz-assistant-content
                ;; with sentinel constructed using `eden-sentinel'
                (lambda (req callback callback-error info)
                  (eden-write-request req)
-                 (rich-test-echo-resp
+                 (eden-test-echo-resp
                   (format resp-fmt "resp-foo-foo") (generate-new-buffer-name "eden")
                   (eval (macroexpand-all
                          `(eden-sentinel
@@ -2674,7 +2674,7 @@ baz-assistant-content
                ;; with sentinel constructed using `eden-sentinel'
                (lambda (req callback callback-error info)
                  (eden-write-request req)
-                 (rich-test-echo-resp
+                 (eden-test-echo-resp
                   (format resp-fmt "resp-bar") (generate-new-buffer-name "eden")
                   (eval (macroexpand-all
                          `(eden-sentinel
@@ -2696,7 +2696,7 @@ baz-assistant-content
           ;; with sentinel constructed using `eden-sentinel'
           (lambda (req callback callback-error info)
             (eden-write-request req)
-            (rich-test-echo-resp
+            (eden-test-echo-resp
              (format resp-fmt "resp-baz") (generate-new-buffer-name "eden")
              (eval (macroexpand-all
                     `(eden-sentinel
@@ -2788,7 +2788,7 @@ baz-assistant-content
                ;; with sentinel constructed using `eden-sentinel'
                (lambda (req callback callback-error info)
                  (eden-write-request req)
-                 (rich-test-echo-resp
+                 (eden-test-echo-resp
                   (format resp-fmt "resp-baz") proc-buff
                   (eval (macroexpand-all
                          `(eden-sentinel
@@ -2824,7 +2824,7 @@ baz-assistant-content
           ;; with sentinel constructed using `eden-sentinel'
           (lambda (req callback callback-error info)
             (eden-write-request req)
-            (rich-test-echo-resp
+            (eden-test-echo-resp
              "\"resp-baz\"" (generate-new-buffer-name "eden")
              (eval (macroexpand-all
                     `(eden-sentinel
