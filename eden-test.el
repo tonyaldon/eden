@@ -1688,7 +1688,7 @@ foo bar baz
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-req "AI_ASSISTANT_REQ")
+              (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")))
@@ -1704,7 +1704,7 @@ foo bar baz
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
-:AI_ASSISTANT_REQ: uuid
+:EDEN_REQ: uuid
 :END:
 *** prompt
 
@@ -1726,7 +1726,7 @@ foo bar baz assistant response
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-req "AI_ASSISTANT_REQ")
+              (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")))
@@ -1743,7 +1743,7 @@ foo bar baz assistant response
     "** Title of the request
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
-:AI_ASSISTANT_REQ: uuid
+:EDEN_REQ: uuid
 :END:
 *** prompt
 
@@ -1781,7 +1781,7 @@ bar baz
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
         (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-req "AI_ASSISTANT_REQ")
+              (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
@@ -1808,7 +1808,7 @@ bar baz
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
-:AI_ASSISTANT_REQ: uuid-baz
+:EDEN_REQ: uuid-baz
 :END:
 *** prompt
 
@@ -1868,7 +1868,7 @@ baz-assistant-content
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
         (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-req "AI_ASSISTANT_REQ")
+              (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
@@ -1889,7 +1889,7 @@ baz-assistant-content
           (insert "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [date]
-:AI_ASSISTANT_REQ: uuid-bar
+:EDEN_REQ: uuid-bar
 :END:
 *** prompt
 
@@ -1929,7 +1929,7 @@ bar-assistant-content
     "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [date]
-:AI_ASSISTANT_REQ: uuid-baz
+:EDEN_REQ: uuid-baz
 :END:
 *** prompt
 
@@ -1989,7 +1989,7 @@ baz-assistant-content
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let* ((eden-org-property-date "EDEN_DATE")
-               (eden-org-property-req "AI_ASSISTANT_REQ")
+               (eden-org-property-req "EDEN_REQ")
                (eden-dir (concat (make-temp-file "eden-" t) "/"))
                (req (eden-request
                      :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
@@ -2016,7 +2016,7 @@ baz-assistant-content
     (concat "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
-:AI_ASSISTANT_REQ: uuid
+:EDEN_REQ: uuid
 :END:
 *** prompt
 

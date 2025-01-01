@@ -537,7 +537,7 @@ is in our case `eden-api-key-openai-service'."
 (defvar eden-conversations nil "...")
 (defvar eden-conversation-id nil "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
-(defvar eden-org-property-req "AI_ASSISTANT_REQ" "...")
+(defvar eden-org-property-req "EDEN_REQ" "...")
 
 (defun eden-history-requests-set ()
   "..."
