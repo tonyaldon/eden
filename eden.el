@@ -967,6 +967,9 @@ like this:
         (select-window
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
+(defun eden-buffer-name (&optional title)
+  (if title (format "*eden[%s]*" title) "*eden*"))
+
 (defun eden-show-current-conversation-in-req-history ()
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
