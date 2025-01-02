@@ -1111,9 +1111,10 @@ like this:
              (default-model (plist-get api :default-model)))
         (setq eden-api api)
         (when default-model (setq eden-model default-model)))
-    (error (format "`eden-apis' variable must be a list of API specifications like this
-
-((:service \"openai\"
+    (error
+     (format
+      (concat "`eden-apis' variable must be a list of API specifications like this\n\n"
+              "((:service \"openai\"
   :endpoint \"https://api.openai.com/v1/chat/completions\"
   :default-model \"gpt-4o-mini\"
   :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
@@ -1122,9 +1123,9 @@ like this:
   :default-model \"llama-3.1-sonar-small-128k-online\"
   :models (\"llama-3.1-sonar-small-128k-online\"
            \"llama-3.1-sonar-large-128k-online\"
-           \"llama-3.1-sonar-huge-128k-online\")))
-
-not `%S'" eden-apis))))
+           \"llama-3.1-sonar-huge-128k-online\")))\n\n"
+              "not `%S'")
+      eden-apis))))
 
 (defun eden-model-set ()
   "..."
@@ -1157,12 +1158,13 @@ See `eden-system-prompt-set' command.")
 
 (defun eden-system-prompt-set ()
   (interactive)
-  (let ((err (format "`eden-system-prompts' variable must be nil or an alist like this
-
-((\"writer\" . \"You're a good writer who only writes in Italian.\")
- (\"programmer\" . \"You're a programmer who only answers with code snippets.\"))
-
-not `%S'" eden-system-prompts)))
+  (let ((err
+         (format
+          (concat "`eden-system-prompts' variable must be nil or an alist like this\n\n"
+                  "((\"writer\" . \"You're a good writer who only writes in Italian.\")
+ (\"programmer\" . \"You're a programmer who only answers with code snippets.\"))\n\n"
+                  "not `%S'")
+          eden-system-prompts)))
     (cond
      ((null eden-system-prompts)
       (message "There's no system prompt to select from `eden-system-prompts' variable which is nil."))
