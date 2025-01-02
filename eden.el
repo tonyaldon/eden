@@ -1310,21 +1310,14 @@ not `%S'" eden-system-prompts)))
                      (goto-char (point-max))
                      ;; If `buff' has been newly created we are at
                      ;; the beginning of buffer and `append' is nil such
-                     ;; that we insert completly the conversation
+                     ;; that we insert the conversation completly
                      (eden-insert-conversation req title append)))
-                 (cond
-                  ((equal (window-buffer (selected-window)) buff) nil)
-                  ((get-buffer-window buff)
-                   (with-selected-window (get-buffer-window buff)
+                 (when (not (equal (window-buffer (selected-window)) buff))
+                   (with-selected-window (display-buffer
+                                          buff '(display-buffer-reuse-window))
                      (goto-char (point-max))
                      (when (re-search-backward "^\\*\\*\\* response" nil t)
                        (recenter-top-bottom 0))))
-                  (t (let ((w (selected-window)))
-                       (pop-to-buffer buff)
-                       (goto-char (point-max))
-                       (when (re-search-backward "^\\*\\*\\* response" nil t)
-                         (recenter-top-bottom 0))
-                       (select-window w))))
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
