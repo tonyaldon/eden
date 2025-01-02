@@ -1377,6 +1377,14 @@ not `%S'" eden-system-prompts)))
 (defun eden (&optional arg)
   ""
   (interactive "P")
+  (let ((error-fmt
+         (concat
+          "To use `eden' you must have `%s' utility installed.  "
+          "Be sure it is in one of `exec-path' directories.")))
+    (cond
+     ((not (executable-find "curl")) (error (format error-fmt "curl")))
+     ((not (executable-find "uuidgen")) (error (format error-fmt "uuidgen")))
+     ((not (executable-find "pandoc")) (error (format error-fmt "pandoc")))))
   (cond
    (arg (call-interactively 'eden-req-at-point-menu))
    ((string= (buffer-name) eden-prompt-buffer-name)
