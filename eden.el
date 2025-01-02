@@ -975,8 +975,8 @@ like this:
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req `(:dir ,eden-dir :uuid ,req-uuid)))
       (if (condition-case nil (eden-request-check req) (error nil))
-          (let* ((title "Current conversation in history")
-                 (buff (get-buffer-create (format "*ai <%s>*" title))))
+          (let* ((title "current conversation in history")
+                 (buff (get-buffer-create (eden-buffer-name title))))
             (with-current-buffer buff
               (save-excursion
                 (erase-buffer)
@@ -996,7 +996,7 @@ like this:
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
          (conversations (eden-conversations num-of-days))
-         (buff (get-buffer-create "*ai <Last conversations>*")))
+         (buff (get-buffer-create (eden-buffer-name "last conversations"))))
     (with-current-buffer buff
       (save-excursion
         (erase-buffer)
@@ -1012,7 +1012,7 @@ like this:
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
          (requests (eden-requests num-of-days))
-         (buff (get-buffer-create "*ai <Last requests>*")))
+         (buff (get-buffer-create (eden-buffer-name "last requests"))))
     (with-current-buffer buff
       (save-excursion
         (erase-buffer)
@@ -1072,7 +1072,7 @@ like this:
 (defun eden-show-current-settings ()
   "..."
   (interactive)
-  (let ((buff (get-buffer-create "*Eden - Current settings*"))
+  (let ((buff (get-buffer-create (eden-buffer-name "current settings")))
         (service (plist-get eden-api :service))
         (endpoint (plist-get eden-api :endpoint))
         (model eden-model)
@@ -1231,7 +1231,8 @@ not `%S'" eden-system-prompts)))
                 (lambda (exchange)
                   `(:dir ,eden-dir :uuid ,(plist-get exchange :uuid)))
                 (eden-request-conversation req)))
-              (buff (get-buffer-create "*ai Requests of conversation at point*")))
+              (buff (get-buffer-create
+                     (eden-buffer-name "requests of conversation at point"))))
     (with-current-buffer buff
       (erase-buffer)
       (org-mode)
@@ -1246,7 +1247,8 @@ not `%S'" eden-system-prompts)))
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
     (if-let ((citations (eden-request-perplexity-citations req)))
-        (let ((buff (get-buffer-create "*ai Perplexity citations*")))
+        (let ((buff (get-buffer-create
+                     (eden-buffer-name "perplexity citations"))))
           (with-current-buffer buff
             (erase-buffer)
             (org-mode)
@@ -1297,7 +1299,7 @@ not `%S'" eden-system-prompts)))
                                  "Request"))
                       (buff-name
                        (or (eden-conversation-buffer-name conversation-id)
-                           "*ai*"))
+                           (eden-buffer-name "requests")))
                       (buff-already-exist-p (get-buffer buff-name))
                       (append (and conversation-id buff-already-exist-p 'append))
                       (buff (get-buffer-create buff-name)))
