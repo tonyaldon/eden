@@ -1162,14 +1162,12 @@ not `%S'" eden-system-prompts)))
     ("l" "Show last conversations" eden-show-last-conversations)
     ("r" "Show last requests" eden-show-last-requests)
     ("k" "Kill last request" eden-kill-last-request)
-    ("g" "Go to directory of current request in history" eden-prompt-current-goto-req-dir)
-    ]]
-  [["Model"
+    ("g" "Go to current request in history" eden-prompt-current-goto-req-dir)]
+   ["Model"
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("p" "Set system prompt" eden-system-prompt-set)
-    ]])
+    ("p" "Set system prompt" eden-system-prompt-set)]])
 
 (defun eden-req-at-point-uuid ()
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
