@@ -1123,8 +1123,8 @@ not `%S'" eden-apis))))
 
 For instance we can set `eden-system-prompts' to:
 
-    ((\"writer\" . \"You're a good writer who only writes in Italian.\")
-     (\"programmer\" . \"You're a programmer who only answers with code snippets.\"))
+    ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
+     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))
 
 See `eden-system-prompt-set' command.")
 
