@@ -967,7 +967,7 @@ like this:
         (when (> (length (window-list)) 1)
           (delete-window))
         (select-window
-         (display-buffer buff-name '(nil (inhibit-same-window . t))))))))
+         (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
 (defun eden-show-current-conversation-in-req-history ()
   (interactive)
@@ -975,8 +975,8 @@ like this:
             (req `(:dir ,eden-dir :uuid ,req-uuid)))
       (if (condition-case nil (eden-request-check req) (error nil))
           (let* ((title "Current conversation in history")
-                 (buff-name (get-buffer-create (format "*ai <%s>*" title))))
-            (with-current-buffer buff-name
+                 (buff (get-buffer-create (format "*ai <%s>*" title))))
+            (with-current-buffer buff
               (save-excursion
                 (erase-buffer)
                 (org-mode)
@@ -984,7 +984,7 @@ like this:
             (when (> (length (window-list)) 1)
               (delete-window))
             (select-window
-             (display-buffer buff-name '(nil (inhibit-same-window . t)))))
+             (display-buffer buff '(display-buffer-reuse-window))))
         (message (concat "Current prompt is associated with a failed or missing request.  "
                          "Try navigating the prompt history with `M-p' and `M-n', "
                          "default binding of `eden-prompt-previous' and `eden-prompt-next'.")))
@@ -996,8 +996,8 @@ like this:
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
          (conversations (eden-conversations num-of-days))
-         (buff-name (get-buffer-create "*ai <Last conversations>*")))
-    (with-current-buffer buff-name
+         (buff (get-buffer-create "*ai <Last conversations>*")))
+    (with-current-buffer buff
       (save-excursion
         (erase-buffer)
         (org-mode)
@@ -1007,14 +1007,14 @@ like this:
     (when (> (length (window-list)) 1)
       (delete-window))
     (select-window
-     (display-buffer buff-name '(nil (inhibit-same-window . t))))))
+     (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-show-last-requests ()
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
          (requests (eden-requests num-of-days))
-         (buff-name (get-buffer-create "*ai <Last requests>*")))
-    (with-current-buffer buff-name
+         (buff (get-buffer-create "*ai <Last requests>*")))
+    (with-current-buffer buff
       (save-excursion
         (erase-buffer)
         (org-mode)
@@ -1025,7 +1025,7 @@ like this:
     (when (> (length (window-list)) 1)
       (delete-window))
     (select-window
-     (display-buffer buff-name '(nil (inhibit-same-window . t))))))
+     (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-conversation-switch ()
   (interactive)
@@ -1242,7 +1242,7 @@ not `%S'" eden-system-prompts)))
         (dolist (req requests)
           (eden-insert-conversation req "Request" nil 'start-from))))
     (select-window
-     (display-buffer buff '(nil (inhibit-same-window . t))))))
+     (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-req-at-point-show-perplexity-citations ()
   (interactive)
@@ -1256,7 +1256,8 @@ not `%S'" eden-system-prompts)))
             (save-excursion
               (dolist (citation citations)
                 (insert (format "- %s\n" citation)))))
-          (display-buffer buff '(nil (inhibit-same-window . t))))
+          (select-window
+           (display-buffer buff '(display-buffer-reuse-window))))
       (message "No citations for `%s' conversation."
                (eden-request-dir req)))))
 
