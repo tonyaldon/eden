@@ -1285,6 +1285,8 @@ not `%S'" eden-system-prompts)))
       ('start-from (vector (aref conversation (1- (length conversation)))))
       ('continue-from conversation))))
 
+(defvar eden-pops-up-upon-receipt t "...")
+
 (defun eden-send ()
   ""
   (interactive)
