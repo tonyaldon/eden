@@ -1315,11 +1315,14 @@ not `%S'" eden-system-prompts)))
                      ;; that we insert the conversation completly
                      (eden-insert-conversation req title append)))
                  (when (not (equal (window-buffer (selected-window)) buff))
-                   (with-selected-window (display-buffer
-                                          buff '(display-buffer-reuse-window))
-                     (goto-char (point-max))
-                     (when (re-search-backward "^\\*\\*\\* response" nil t)
-                       (recenter-top-bottom 0))))
+                   (when-let ((w (or (and eden-pops-up-upon-receipt
+                                          (display-buffer
+                                           buff '(display-buffer-reuse-window)))
+                                     (get-buffer-window buff))))
+                     (with-selected-window w
+                       (goto-char (point-max))
+                       (when (re-search-backward "^\\*\\*\\* response" nil t)
+                         (recenter-top-bottom 0)))))
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
