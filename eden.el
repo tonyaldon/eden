@@ -1346,17 +1346,21 @@ not `%S'" eden-system-prompts)))
   (setq
    mode-line-format
    '(" "
-     mode-line-buffer-identification
+     (:propertize "%6b" face mode-line-buffer-id)
      " "
      (:eval (plist-get eden-api :service))
      "/"
-     (:eval eden-model)
+     (:eval (truncate-string-to-width eden-model 16 nil nil t))
      (:eval (when eden-temperature (format " %s" eden-temperature)))
      (:eval (when eden-conversation-id
               (format " <%s>"
-                      (eden-conversation-title eden-conversation-id))))
+                      (truncate-string-to-width
+                       (eden-conversation-title eden-conversation-id)
+                       16 nil nil t))))
      (:eval (when-let ((system-prompt-title (car-safe eden-system-prompt)))
-              (format " * %s" system-prompt-title)))
+              (format " * %s"
+                      (truncate-string-to-width
+                       system-prompt-title 16 nil nil t))))
      " "
      mode-line-misc-info))
   (eden-history-requests-set)
