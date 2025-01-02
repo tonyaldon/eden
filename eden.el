@@ -115,20 +115,20 @@ Raise an error in the following cases:
   (let ((req-dir (eden-request-dir req)))
     (cond
      ((not (file-exists-p (eden-request-dir req)))
-      (error "Request `%s' doesn't exist." req-dir))
+      (error "Request `%s' doesn't exist" req-dir))
      ((file-exists-p (eden-request-file 'error req))
-      (error "Request `%s' has failed in a prior attempt.  See why in `%s' file."
+      (error "Request `%s' has failed in a prior attempt.  See why in `%s' file"
              req-dir (eden-request-file 'error req)))
      ((not (file-exists-p (eden-request-file 'prompt req)))
-      (error "Missing `%s' file." (eden-request-file 'prompt req)))
+      (error "Missing `%s' file" (eden-request-file 'prompt req)))
      ((not (file-exists-p (eden-request-file 'request req)))
-      (error "Missing `%s' file." (eden-request-file 'request req)))
+      (error "Missing `%s' file" (eden-request-file 'request req)))
      ((not (file-exists-p (eden-request-file 'response req)))
-      (error "Missing `%s' file." (eden-request-file 'response req)))
+      (error "Missing `%s' file" (eden-request-file 'response req)))
      ((not (file-exists-p (eden-request-file 'response-org req)))
-      (error "Missing `%s' file." (eden-request-file 'response-org req)))
+      (error "Missing `%s' file" (eden-request-file 'response-org req)))
      ((not (file-exists-p (eden-request-file 'exchanges req)))
-      (error "Missing `%s' file." (eden-request-file 'exchanges req)))
+      (error "Missing `%s' file" (eden-request-file 'exchanges req)))
      (t t))))
 
 (defun eden-request-conversation (req)
@@ -676,7 +676,7 @@ is in our case `eden-api-key-openai-service'."
                              stream model temperature
                              api dir)
   (when (null prompt)
-    (error "You must provide a prompt via `:prompt' key to build a request."))
+    (error "You must provide a prompt via `:prompt' key to build a request"))
   (let* ((-system-prompt
           (or system-prompt (cdr-safe eden-system-prompt) ""))
          (-messages
@@ -838,7 +838,7 @@ See variables `eden-conversations' and `eden-dir'."
    ((seq-contains-p [start-from continue-from] action)
     (let ((req `(:dir ,eden-dir :uuid ,req-uuid)))
       (when (null req-uuid)
-        (error "When action is `%s', `req-uuid' argument is mandatory."
+        (error "When action is `%s', `req-uuid' argument is mandatory"
                action req-uuid))
       (condition-case err
           (eden-request-check req)
@@ -1202,8 +1202,8 @@ See `eden-system-prompt-set' command.")
                       `(:dir ,eden-dir :uuid ,req-uuid))))
       (if (file-exists-p req-dir)
           req-uuid
-        (error "Request `%s' doesn't exist." req-dir))
-    (error "No request at point found.")))
+        (error "Request `%s' doesn't exist" req-dir))
+    (error "No request at point found")))
 
 (defun eden-req-at-point-start-conversation ()
   "..."
@@ -1256,7 +1256,7 @@ See `eden-system-prompt-set' command.")
                 (insert (format "- %s\n" citation)))))
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))
-      (message "No citations for `%s' conversation."
+      (message "No citations for `%s' conversation"
                (eden-request-dir req)))))
 
 (defun eden-req-at-point-goto ()
