@@ -759,9 +759,15 @@ LEVEL must be 3 or 4."
     (dolist (exchange conversation)
       (seq-let (prompt response) exchange
         (insert "*** prompt\n\n" prompt)
-        (ensure-empty-lines 1)
+        (cond
+         ((looking-back "\n\n") nil)
+         ((looking-back "\n") (insert "\n"))
+         (t (insert "\n\n")))
         (insert "*** response\n\n" response)
-        (ensure-empty-lines 1)))))
+        (cond
+         ((looking-back "\n\n") nil)
+         ((looking-back "\n") (insert "\n"))
+         (t (insert "\n\n")))))))
 
 (defun eden-pending-remove (req)
   "..."
