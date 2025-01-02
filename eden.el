@@ -1376,9 +1376,6 @@ not `%S'" eden-system-prompts)))
         (when (not eden-buffer-p)
           (eden-mode))))))
 
-(define-key input-decode-map "\C-i" [C-i])
-(global-set-key [C-i] #'eden)
-
 (defun eden-paths (num-of-days)
   (let* ((today (calendar-current-date))
          (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
