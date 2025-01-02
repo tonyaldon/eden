@@ -541,17 +541,18 @@ is in our case `eden-api-key-openai-service'."
 
 (defun eden-history-requests-set ()
   "..."
-  (let* ((timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
-    (setq eden-history-requests
-          (thread-last
-            timestamp-files
-            (mapcar (lambda (f)
-                      (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                      (cons (match-string 1 f)
-                            (string-to-number (match-string 2 f)))))
-            (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
-            (mapcar 'car)))))
+  (when (file-exists-p eden-dir)
+    (let* ((timestamp-files
+            (directory-files-recursively eden-dir "timestamp-.*")))
+      (setq eden-history-requests
+            (thread-last
+              timestamp-files
+              (mapcar (lambda (f)
+                        (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
+                        (cons (match-string 1 f)
+                              (string-to-number (match-string 2 f)))))
+              (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
+              (mapcar 'car))))))
 
 (defun eden-history-previous (state &optional prompt discard-current)
   "..."

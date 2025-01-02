@@ -1274,8 +1274,15 @@ arr[0]
              (format command-fmt eden-api-key-someservice-name request-file)
              (format command-fmt "<api-key>" request-file))))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-history-requests-set-test")))
 (ert-deftest eden-history-requests-set-test ()
-
+  ;; `eden-dir' doesn't exist
+  (let* (eden-history-requests
+         (eden-dir (concat (make-temp-file "eden-" t) "/")))
+    (delete-directory eden-dir)
+    (eden-history-requests-set)
+    (should-not eden-history-requests))
+  ;; `eden-dir' exist with request and timestamp files
   (let* (eden-history-requests
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
          (req-0 (eden-request :prompt "req-0"))
