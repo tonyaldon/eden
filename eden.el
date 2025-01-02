@@ -1359,6 +1359,12 @@ not `%S'" eden-system-prompts)))
 
 (defvar eden-prompt-buffer-name "*Eden*" "...")
 
+(defun eden-maybe-delete-window-prompt-buffer ()
+  (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
+    (when (and (equal (selected-window) prompt-buffer-window)
+               (> (length (window-list)) 1))
+      (delete-window))))
+
 (defun eden (&optional arg)
   ""
   (interactive "P")
