@@ -287,7 +287,7 @@ end")
 
 (defvar eden-errors
   '((eden-error-api . "API error")
-    (eden-error-api-key . "Error using AI assitant: API key not set correctly")
+    (eden-error-api-key . "Error setting API key")
     (eden-error-callback . "Error while calling callback function in sentinel")
     (eden-error-callback-error . "Error while calling callback-error function when signaling an error in sentinel")
     (eden-error-json-read . "Error while parsing JSON in process buffer")
