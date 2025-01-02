@@ -916,7 +916,7 @@ in the buffer \"*Eden*\":
         (eden-pending-remove req)
         (eden-conversation-update info req)
         (eden-mode-line-waiting \\='maybe-stop)
-        (message \"AI assistant received a response\"))
+        (message \"Eden received a response\"))
 
 If REQ is part of a conversation present in `eden-conversations',
 the conversation id must be specified in INFO argument as value of
@@ -1322,10 +1322,12 @@ not `%S'" eden-system-prompts)))
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
-                 (message "AI assistant received a response"))))
+                 (message "Eden received a response from `%s' service"
+                          (plist-get eden-api :service)))))
   (erase-buffer)
   (eden-maybe-delete-window-prompt-buffer)
-  (message "AI assistant sent a request"))
+  (message "Eden sent a request to `%s' service"
+           (plist-get eden-api :service)))
 
 (defvar eden-mode-map
   (let ((map (make-sparse-keymap)))
