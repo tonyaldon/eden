@@ -1355,7 +1355,7 @@ not `%S'" eden-system-prompts)))
   (eden-history-requests-set)
   (eden-prompt-history-state-set))
 
-(defvar eden-prompt-buffer-name "*Eden*" "...")
+(defvar eden-prompt-buffer-name "*eden*" "...")
 
 (defun eden-maybe-delete-window-prompt-buffer ()
   (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
