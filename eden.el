@@ -1169,8 +1169,7 @@ not `%S'" eden-system-prompts)))
     ("m" "Set model for current API" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
     ("p" "Set system prompt" eden-system-prompt-set)
-    ]]
-  )
+    ]])
 
 (defun eden-req-at-point-uuid ()
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
@@ -1247,8 +1246,7 @@ not `%S'" eden-system-prompts)))
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
-    ]]
-  )
+    ]])
 
 (defun eden-conversation-exchanges (conversation-id)
   (when-let ((last-req (eden-conversation-last-req
