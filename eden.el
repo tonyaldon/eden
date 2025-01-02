@@ -901,15 +901,15 @@ in that order
 with `eden-pending-requests' being called first.
 
 Here's a valid CALLBACK function that appends responses
-in the buffer \"*ai*\":
+in the buffer \"*Eden*\":
 
     (lambda (req resp info)
-        (with-current-buffer (get-buffer-create \"*ai*\")
+        (with-current-buffer (get-buffer-create \"*Eden*\")
           (org-mode)
           (save-excursion
             (widen)
             (goto-char (point-max))
-            (eden-insert-conversation req)
+            (eden-insert-conversation req \"Request\")
             (save-buffer)))
         (eden-pending-remove req)
         (eden-conversation-update info req)
