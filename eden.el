@@ -216,7 +216,6 @@ Raise an error in the following cases:
 
 (defun eden-markdown-to-org (markdown-str)
   "Return MARKDOWN-STR markdown string converted into org-mode string."
-  (interactive)
   (let ((file-markdown (concat (make-temp-file "ai-response-") ".md"))
         (file-org (concat (make-temp-file "ai-response-") ".org"))
         (file-lua-filter (concat (make-temp-file "ai-lua-filter-") ".lua"))
@@ -489,7 +488,6 @@ is in our case `eden-api-key-openai-service'."
 
 (defun eden-request-send (req callback &optional callback-error info)
   "..."
-  (interactive)
   (seq-let (command command-no-api-key) (eden-request-command req)
     (eden-write-request req)
     (eden-write-command command-no-api-key req)
@@ -504,7 +502,6 @@ is in our case `eden-api-key-openai-service'."
 
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
-  (interactive)
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
 
 (defvar eden-model "gpt-4o-mini" "...")
