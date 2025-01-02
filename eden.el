@@ -494,7 +494,7 @@ is in our case `eden-api-key-openai-service'."
     (eden-write-request req)
     (eden-write-command command-no-api-key req)
     (make-process
-     :name "ai"
+     :name "eden"
      :buffer (generate-new-buffer-name "eden")
      :command (list "sh" "-c" command)
      :connection-type 'pipe
