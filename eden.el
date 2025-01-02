@@ -606,8 +606,7 @@ is in our case `eden-api-key-openai-service'."
             (req-dir (eden-request-dir
                       `(:dir ,eden-dir :uuid ,req-uuid))))
       (progn
-        (when (> (length (window-list)) 1)
-          (delete-window))
+        (eden-maybe-delete-window-prompt-buffer)
         (dired-other-window req-dir))
     (message (concat "Current prompt is not associated with a request.  "
                      "Try navigating the prompt history with `M-p' and `M-n', "
@@ -964,8 +963,7 @@ like this:
               (org-mode)
               (eden-insert-conversation
                last-req title nil (eq action 'start-from)))))
-        (when (> (length (window-list)) 1)
-          (delete-window))
+        (eden-maybe-delete-window-prompt-buffer)
         (select-window
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
@@ -981,8 +979,7 @@ like this:
                 (erase-buffer)
                 (org-mode)
                 (eden-insert-conversation req title)))
-            (when (> (length (window-list)) 1)
-              (delete-window))
+            (eden-maybe-delete-window-prompt-buffer)
             (select-window
              (display-buffer buff '(display-buffer-reuse-window))))
         (message (concat "Current prompt is associated with a failed or missing request.  "
@@ -1004,8 +1001,7 @@ like this:
         (dolist (req-uuid conversations)
           (eden-insert-conversation
            `(:dir ,eden-dir :uuid ,req-uuid) "Conversation"))))
-    (when (> (length (window-list)) 1)
-      (delete-window))
+    (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
@@ -1022,8 +1018,7 @@ like this:
           (eden-insert-conversation
            `(:dir ,eden-dir :uuid ,req-uuid)
            "Request" nil 'start-from))))
-    (when (> (length (window-list)) 1)
-      (delete-window))
+    (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
@@ -1093,8 +1088,7 @@ like this:
                   " conversation: %s\n"
                   "system prompt: %s\n")
           service endpoint model temperature conversation system-prompt))))
-    (when (> (length (window-list)) 1)
-      (delete-window))
+    (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
@@ -1324,8 +1318,7 @@ not `%S'" eden-system-prompts)))
                  (eden-mode-line-waiting 'maybe-stop)
                  (message "AI assistant received a response"))))
   (erase-buffer)
-  (when (> (length (window-list)) 1)
-    (delete-window))
+  (eden-maybe-delete-window-prompt-buffer)
   (message "AI assistant sent a request"))
 
 (defvar eden-mode-map
