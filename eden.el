@@ -811,8 +811,9 @@ LEVEL must be 3 or 4."
                   (progn
                     (setq global-mode-string
                           `(:propertize
-                            ,(format "• AI Assistant.%s"
-                                     (make-string (mod idx 3) ?.))
+                            ,(format "[Eden.%s%s]"
+                                     (make-string (mod idx 3) ?.)
+                                     (make-string (aref [2 1 0] (mod idx 3)) ? ))
                             face (:weight bold)))
                     (force-mode-line-update 'all)
                     (cl-incf idx))))))))
