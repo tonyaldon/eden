@@ -1297,21 +1297,21 @@ not `%S'" eden-system-prompts)))
                (let* ((conversation-id (plist-get info :conversation-id))
                       (title (or (eden-conversation-title conversation-id)
                                  "Request"))
-                      (append (and conversation-id t))
                       (buff-name
                        (or (eden-conversation-buffer-name conversation-id)
                            "*ai*"))
                       (buff-already-exist-p (get-buffer buff-name))
+                      (append (and conversation-id buff-already-exist-p 'append))
                       (buff (get-buffer-create buff-name)))
                  (with-current-buffer buff
                    (save-excursion
-                     (if (not buff-already-exist-p)
-                         (progn
-                           (org-mode)
-                           (eden-insert-conversation req title))
-                       (widen)
-                       (goto-char (point-max))
-                       (eden-insert-conversation req title append))))
+                     (widen)
+                     (org-mode)
+                     (goto-char (point-max))
+                     ;; If `buff' has been newly created we are at
+                     ;; the beginning of buffer and `append' is nil such
+                     ;; that we insert completly the conversation
+                     (eden-insert-conversation req title append)))
                  (cond
                   ((equal (window-buffer (selected-window)) buff) nil)
                   ((get-buffer-window buff)
