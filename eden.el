@@ -1381,7 +1381,7 @@ not `%S'" eden-system-prompts)))
             (buff (get-buffer-create eden-prompt-buffer-name)))
         (select-window
          (display-buffer-at-bottom buff '(display-buffer-below-selected
-                                          (window-height . 4))))
+                                          (window-height . 6))))
         (when (not eden-buffer-p)
           (eden-mode))))))
 
