@@ -1068,6 +1068,33 @@ like this:
   (interactive)
   (setq eden-conversation-id nil))
 
+(defun eden-show-current-settings ()
+  "..."
+  (interactive)
+  (let ((buff (get-buffer-create "*Eden - Current settings*"))
+        (service (plist-get eden-api :service))
+        (endpoint (plist-get eden-api :endpoint))
+        (model eden-model)
+        (temperature (or eden-temperature ""))
+        (system-prompt (or eden-system-prompt ""))
+        (conversation (or (assoc eden-conversation-id eden-conversations) "")))
+    (with-current-buffer buff
+      (save-excursion
+        (erase-buffer)
+        (insert
+         (format
+          (concat "      service: %s\n"
+                  "     endpoint: %s\n"
+                  "        model: %s\n"
+                  "  temperature: %s\n"
+                  " conversation: %s\n"
+                  "system prompt: %s\n")
+          service endpoint model temperature conversation system-prompt))))
+    (when (> (length (window-list)) 1)
+      (delete-window))
+    (select-window
+     (display-buffer buff '(display-buffer-reuse-window)))))
+
 (defun eden-api-set ()
   "..."
   (interactive)
@@ -1167,7 +1194,8 @@ not `%S'" eden-system-prompts)))
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("p" "Set system prompt" eden-system-prompt-set)]])
+    ("p" "Set system prompt" eden-system-prompt-set)
+    ("S" "Show current settings" eden-show-current-settings)]])
 
 (defun eden-req-at-point-uuid ()
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
