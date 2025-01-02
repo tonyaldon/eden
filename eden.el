@@ -1325,11 +1325,11 @@ See `eden-system-prompt-set' command.")
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
-                 (message "Eden received a response from `%s' service"
+                 (message "Eden received a response from %s service"
                           (plist-get eden-api :service)))))
   (erase-buffer)
   (eden-maybe-delete-window-prompt-buffer)
-  (message "Eden sent a request to `%s' service"
+  (message "Eden sent a request to %s service"
            (plist-get eden-api :service)))
 
 (defvar eden-mode-map
