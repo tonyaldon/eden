@@ -1654,7 +1654,7 @@ foo bar baz
   (should-error
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-insert-conversation req)))
+     (eden-insert-conversation req "title")))
 
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
@@ -1666,7 +1666,7 @@ foo bar baz
     (eden-request-write 'response-org req "")
 
     (eden-request-write 'error req "")
-    (should-error (eden-insert-conversation req)))
+    (should-error (eden-insert-conversation req "title")))
 
   ;; Signal error when the request in incomplete, specificaly
   ;; when the following files are missing:
@@ -1679,8 +1679,20 @@ foo bar baz
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-insert-conversation req)))
+    (should-error (eden-insert-conversation req "title")))
 
+
+  ;; Signal error when both `title' and `append' argument are nil
+  (let ((req (eden-request
+              :prompt "foo bar baz"
+              :dir (concat (make-temp-file "eden-" t) "/")))
+        (resp '(:model "gpt-4o-mini-2024-07-18"
+                :choices [(:index 0
+                           :message (:role "assistant"
+                                     :content "foo bar baz assistant response"))])))
+    (eden-write-request req)
+    (eden-write-response (eden-json-encode resp) resp req)
+    (should-error (eden-insert-conversation req nil)))
 
   ;; We call `eden-test-add-or-replace-timestamp-file' before
   ;; inserting the conversation.  This adds or replaces the timestamp
@@ -1706,7 +1718,7 @@ foo bar baz
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation req)))
+          (eden-insert-conversation req "Conversation")))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -1810,7 +1822,7 @@ bar baz
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation req)))
+          (eden-insert-conversation req "Conversation")))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:

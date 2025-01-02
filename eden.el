@@ -730,9 +730,11 @@ LEVEL must be 3 or 4."
             (insert (make-string (- level headline-top-level) ?*))))))
     (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun eden-insert-conversation (req &optional title append start-from)
+(defun eden-insert-conversation (req title &optional append start-from)
   ""
   (eden-request-check req)
+  (when (and (null title) (null append))
+    (error "`title' argument can be nil only when `append' argument is non-nil"))
   (let* ((uuid (plist-get req :uuid))
          (format-exchange
           (lambda (exchange)
@@ -1000,7 +1002,8 @@ like this:
         (erase-buffer)
         (org-mode)
         (dolist (req-uuid conversations)
-          (eden-insert-conversation `(:dir ,eden-dir :uuid ,req-uuid)))))
+          (eden-insert-conversation
+           `(:dir ,eden-dir :uuid ,req-uuid) "Conversation"))))
     (when (> (length (window-list)) 1)
       (delete-window))
     (select-window
@@ -1292,7 +1295,8 @@ not `%S'" eden-system-prompts)))
    :info `(:conversation-id ,eden-conversation-id)
    :callback (lambda (req resp info)
                (let* ((conversation-id (plist-get info :conversation-id))
-                      (title (eden-conversation-title conversation-id))
+                      (title (or (eden-conversation-title conversation-id)
+                                 "Request"))
                       (append (and conversation-id t))
                       (buff-name
                        (or (eden-conversation-buffer-name conversation-id)
