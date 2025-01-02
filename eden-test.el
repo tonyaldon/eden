@@ -2435,7 +2435,7 @@ baz-assistant-content
     (should
      (string=
       (eden-conversation-buffer-name "conversation-id-foo")
-      "*ai foo title*"))))
+      "*eden<foo title>*"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-action-test")))
 (ert-deftest eden-conversation-action-test ()

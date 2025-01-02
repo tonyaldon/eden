@@ -946,7 +946,7 @@ like this:
 
 (defun eden-conversation-buffer-name (conversation-id)
   (when-let ((title (eden-conversation-title conversation-id)))
-    (format "*ai %s*" title)))
+    (format "*eden<%s>*" title)))
 
 (defun eden-show-current-conversation ()
   (interactive)
