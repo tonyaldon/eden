@@ -522,13 +522,18 @@ just before signaling the error.  It takes 3 arguments:
 (defvar eden-model "gpt-4o-mini" "...")
 (defvar eden-temperature nil "...")
 (defvar eden-system-prompt nil "...")
+(defvar eden-system-prompts nil
+  "Alist of (\"title\" . \"system prompt\") to choose from.
 
+For instance we can set `eden-system-prompts' to:
+
+    ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
+     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))
+
+See `eden-system-prompt-set' command.")
 (defvar eden-dir (concat (temporary-file-directory) "eden/") "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
-
-(defvar eden-conversations nil "...")
-(defvar eden-conversation-id nil "...")
 
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
@@ -773,63 +778,10 @@ LEVEL must be 3 or 4."
          ((looking-back "\n") (insert "\n"))
          (t (insert "\n\n")))))))
 
-;;;; To organize
+;;;; Conversations
 
-(defvar eden-pending-requests nil "...")
-(defvar eden-pending-timer nil "...")
-
-(defun eden-pending-remove (req)
-  "..."
-  (setq eden-pending-requests
-        (seq-remove (lambda (p)
-                      (string=
-                       (eden-get-in p [:req :uuid])
-                       (plist-get req :uuid)))
-                    eden-pending-requests)))
-
-(defun eden-running-p ()
-  ""
-  (when-let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
-    (and (processp proc) (buffer-name (process-buffer proc)) t)))
-
-(defun eden-kill-last-request ()
-  ""
-  (interactive)
-  (when (eden-running-p)
-    (message "Killing last request")
-    (let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
-      ;; So that the error signaled in sentinel is not printed
-      ;; in the echo area.
-      (setq inhibit-message t)
-      (kill-process proc)))
-  ;; After 0.2s, the error has been signaled and the message logged,
-  ;; so we can reestablish `inhibit-message' default value
-  (run-at-time 0.2 nil (lambda () (setq inhibit-message nil))))
-
-(defun eden-mode-line-waiting (action)
-  "..."
-  (pcase action
-    ('maybe-start
-     (when (null eden-pending-timer)
-       (setq eden-pending-timer
-             (run-with-timer
-              0 0.66
-              (let ((idx 0))
-                (lambda ()
-                  (progn
-                    (setq global-mode-string
-                          `(:propertize
-                            ,(format "| Eden.%s"
-                                     (make-string (mod idx 3) ?.))
-                            face (:weight bold)))
-                    (force-mode-line-update 'all)
-                    (cl-incf idx))))))))
-    ('maybe-stop
-     (when (and (not (eden-running-p)) eden-pending-timer)
-       (cancel-timer eden-pending-timer)
-       (setq eden-pending-timer nil)
-       (setq global-mode-string nil)
-       (force-mode-line-update 'all)))))
+(defvar eden-conversations nil "...")
+(defvar eden-conversation-id nil "...")
 
 (defun eden-conversation (action title &optional req-uuid)
   "...
@@ -889,6 +841,120 @@ See `eden-conversation' and `eden-conversations'."
                     (plist-put :action 'continue-from)
                     (plist-put :last-req-uuid req-uuid))))
         (setf conversation-data data)))))
+
+(defun eden-conversation-buffer-name (conversation-id)
+  (when-let ((title (eden-conversation-title conversation-id)))
+    (format "*eden<%s>*" title)))
+
+(defun eden-conversation-switch ()
+  (interactive)
+  (if (null eden-conversations)
+      (message "No conversation to switch to yet.")
+    (let* ((conversations
+            (mapcar (lambda (c) (cons (plist-get (cdr c) :title) (car c)))
+                    eden-conversations))
+           (title (completing-read "Conversation title: "
+                                   (mapcar #'car conversations)
+                                   nil 'require-match)))
+      (setq eden-conversation-id
+            (alist-get title conversations nil nil #'string=)))))
+
+(defun eden-conversation-start ()
+  "..."
+  (interactive)
+  (eden-conversation
+   'start (read-string "Enter a conversation title: ")))
+
+(defun eden-conversation-start-from-req-history ()
+  "..."
+  (interactive)
+  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
+      (eden-conversation
+       'start-from (read-string "Enter a conversation title: ") req-uuid)
+    (message (concat "Current prompt is not associated with a request.  "
+                     "Try navigating the prompt history with `M-p' and `M-n', "
+                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
+
+(defun eden-conversation-continue-from-req-history ()
+  "..."
+  (interactive)
+  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
+      (eden-conversation
+       'continue-from (read-string "Enter a conversation title: ") req-uuid)
+    (message (concat "Current prompt is not associated with a request.  "
+                     "Try navigating the prompt history with `M-p' and `M-n', "
+                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
+
+(defun eden-conversation-pause ()
+  "..."
+  (interactive)
+  (setq eden-conversation-id nil))
+
+(defun eden-conversation-exchanges (conversation-id)
+  (when-let ((last-req (eden-conversation-last-req
+                        conversation-id))
+             (conversation (eden-request-conversation last-req)))
+    (pcase (eden-conversation-action conversation-id)
+      ('start-from (vector (aref conversation (1- (length conversation)))))
+      ('continue-from conversation))))
+
+;;;; To organize
+
+(defvar eden-pending-requests nil "...")
+(defvar eden-pending-timer nil "...")
+
+(defun eden-pending-remove (req)
+  "..."
+  (setq eden-pending-requests
+        (seq-remove (lambda (p)
+                      (string=
+                       (eden-get-in p [:req :uuid])
+                       (plist-get req :uuid)))
+                    eden-pending-requests)))
+
+(defun eden-running-p ()
+  ""
+  (when-let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
+    (and (processp proc) (buffer-name (process-buffer proc)) t)))
+
+(defun eden-kill-last-request ()
+  ""
+  (interactive)
+  (when (eden-running-p)
+    (message "Killing last request")
+    (let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
+      ;; So that the error signaled in sentinel is not printed
+      ;; in the echo area.
+      (setq inhibit-message t)
+      (kill-process proc)))
+  ;; After 0.2s, the error has been signaled and the message logged,
+  ;; so we can reestablish `inhibit-message' default value
+  (run-at-time 0.2 nil (lambda () (setq inhibit-message nil))))
+
+(defun eden-mode-line-waiting (action)
+  "..."
+  (pcase action
+    ('maybe-start
+     (when (null eden-pending-timer)
+       (setq eden-pending-timer
+             (run-with-timer
+              0 0.66
+              (let ((idx 0))
+                (lambda ()
+                  (progn
+                    (setq global-mode-string
+                          `(:propertize
+                            ,(format "| Eden.%s"
+                                     (make-string (mod idx 3) ?.))
+                            face (:weight bold)))
+                    (force-mode-line-update 'all)
+                    (cl-incf idx))))))))
+    ('maybe-stop
+     (when (and (not (eden-running-p)) eden-pending-timer)
+       (cancel-timer eden-pending-timer)
+       (setq eden-pending-timer nil)
+       (setq global-mode-string nil)
+       (force-mode-line-update 'all)))))
 
 (defun eden-pending-conversation-p (conversation-id)
   (seq-some
@@ -951,10 +1017,6 @@ like this:
         (push (plist-get req :uuid) eden-request-history)
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
-
-(defun eden-conversation-buffer-name (conversation-id)
-  (when-let ((title (eden-conversation-title conversation-id)))
-    (format "*eden<%s>*" title)))
 
 (defun eden-show-current-conversation ()
   (interactive)
@@ -1033,50 +1095,6 @@ like this:
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
-(defun eden-conversation-switch ()
-  (interactive)
-  (if (null eden-conversations)
-      (message "No conversation to switch to yet.")
-    (let* ((conversations
-            (mapcar (lambda (c) (cons (plist-get (cdr c) :title) (car c)))
-                    eden-conversations))
-           (title (completing-read "Conversation title: "
-                                   (mapcar #'car conversations)
-                                   nil 'require-match)))
-      (setq eden-conversation-id
-            (alist-get title conversations nil nil #'string=)))))
-
-(defun eden-conversation-start ()
-  "..."
-  (interactive)
-  (eden-conversation
-   'start (read-string "Enter a conversation title: ")))
-
-(defun eden-conversation-start-from-req-history ()
-  "..."
-  (interactive)
-  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
-      (eden-conversation
-       'start-from (read-string "Enter a conversation title: ") req-uuid)
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
-
-(defun eden-conversation-continue-from-req-history ()
-  "..."
-  (interactive)
-  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
-      (eden-conversation
-       'continue-from (read-string "Enter a conversation title: ") req-uuid)
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
-
-(defun eden-conversation-pause ()
-  "..."
-  (interactive)
-  (setq eden-conversation-id nil))
-
 (defun eden-show-current-settings ()
   "..."
   (interactive)
@@ -1153,16 +1171,6 @@ like this:
     (setq eden-temperature
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
-
-(defvar eden-system-prompts nil
-  "Alist of (\"title\" . \"system prompt\") to choose from.
-
-For instance we can set `eden-system-prompts' to:
-
-    ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
-     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))
-
-See `eden-system-prompt-set' command.")
 
 (defun eden-system-prompt-set ()
   (interactive)
@@ -1286,14 +1294,6 @@ See `eden-system-prompt-set' command.")
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
-
-(defun eden-conversation-exchanges (conversation-id)
-  (when-let ((last-req (eden-conversation-last-req
-                        conversation-id))
-             (conversation (eden-request-conversation last-req)))
-    (pcase (eden-conversation-action conversation-id)
-      ('start-from (vector (aref conversation (1- (length conversation)))))
-      ('continue-from conversation))))
 
 (defvar eden-pops-up-upon-receipt t "...")
 
