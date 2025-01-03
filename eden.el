@@ -501,12 +501,6 @@ just before signaling the error.  It takes 3 arguments:
 
 ;;; AI Assistant UI
 
-(defun eden-uuid ()
-  "Generate a random-based UUID using `uuidgen' linux utility."
-  (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
-
-(defvar eden-model "gpt-4o-mini" "...")
-(defvar eden-temperature nil "...")
 (defvar eden-api
   '(:service "openai"
     :endpoint "https://api.openai.com/v1/chat/completions"
@@ -525,8 +519,13 @@ just before signaling the error.  It takes 3 arguments:
               "llama-3.1-sonar-large-128k-online"
               "llama-3.1-sonar-huge-128k-online")))
   "...")
+(defvar eden-model "gpt-4o-mini" "...")
+(defvar eden-temperature nil "...")
 (defvar eden-system-prompt nil "...")
+
 (defvar eden-dir (concat (temporary-file-directory) "eden/") "...")
+(defvar eden-org-property-date "EDEN_DATE" "...")
+(defvar eden-org-property-req "EDEN_REQ" "...")
 
 (defvar eden-history-requests nil "...")
 (defvar eden-prompt-history-state [nil nil nil] "...")
@@ -534,8 +533,10 @@ just before signaling the error.  It takes 3 arguments:
 (defvar eden-pending-timer nil "...")
 (defvar eden-conversations nil "...")
 (defvar eden-conversation-id nil "...")
-(defvar eden-org-property-date "EDEN_DATE" "...")
-(defvar eden-org-property-req "EDEN_REQ" "...")
+
+(defun eden-uuid ()
+  "Generate a random-based UUID using `uuidgen' linux utility."
+  (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
 
 (defun eden-history-requests-set ()
   "..."
