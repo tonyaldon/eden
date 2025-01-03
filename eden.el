@@ -713,49 +713,6 @@ LEVEL must be 3 or 4."
   (interactive)
   (eden-prompt-history 'next))
 
-;;;; To organize
-
-(defun eden-conversation-insert (req title &optional append start-from)
-  ""
-  (eden-request-check req)
-  (when (and (null title) (null append))
-    (error "`title' argument can be nil only when `append' argument is non-nil"))
-  (let* ((uuid (plist-get req :uuid))
-         (format-exchange
-          (lambda (exchange)
-            (list (eden-org-demote (plist-get exchange :prompt) 4)
-                  (eden-org-demote (plist-get exchange :response) 4))))
-         (conversation
-          (mapcar format-exchange (eden-request-conversation req)))
-         (conversation
-          (if (or append start-from) (last conversation) conversation)))
-    (if (and append
-             (progn (goto-char (point-min))
-                    (re-search-forward
-                     (format "^:%s: \\(.*\\)" eden-org-property-req) nil t)))
-        (progn
-          (replace-match uuid nil nil nil 1)
-          (goto-char (point-max)))
-      (insert
-       "** " (or title "Conversation") "\n"
-       ":PROPERTIES:\n"
-       ":" eden-org-property-date ": " (or (eden-request-date req) "")
-       "\n"
-       ":" eden-org-property-req ": " uuid "\n"
-       ":END:\n"))
-    (dolist (exchange conversation)
-      (seq-let (prompt response) exchange
-        (insert "*** prompt\n\n" prompt)
-        (cond
-         ((looking-back "\n\n") nil)
-         ((looking-back "\n") (insert "\n"))
-         (t (insert "\n\n")))
-        (insert "*** response\n\n" response)
-        (cond
-         ((looking-back "\n\n") nil)
-         ((looking-back "\n") (insert "\n"))
-         (t (insert "\n\n")))))))
-
 ;;;; Conversations
 
 (defvar eden-conversations nil "...")
@@ -806,6 +763,18 @@ See variables `eden-conversations' and `eden-dir'."
                     eden-conversations `(,conversation-id :last-req-uuid))))
     `(:uuid ,uuid :dir ,eden-dir)))
 
+(defun eden-conversation-buffer-name (conversation-id)
+  (when-let ((title (eden-conversation-title conversation-id)))
+    (format "*eden<%s>*" title)))
+
+(defun eden-conversation-exchanges (conversation-id)
+  (when-let ((last-req (eden-conversation-last-req
+                        conversation-id))
+             (conversation (eden-request-conversation last-req)))
+    (pcase (eden-conversation-action conversation-id)
+      ('start-from (vector (aref conversation (1- (length conversation)))))
+      ('continue-from conversation))))
+
 (defun eden-conversation-update (info req)
   "...
 
@@ -819,10 +788,6 @@ See `eden-conversation' and `eden-conversations'."
                     (plist-put :action 'continue-from)
                     (plist-put :last-req-uuid req-uuid))))
         (setf conversation-data data)))))
-
-(defun eden-conversation-buffer-name (conversation-id)
-  (when-let ((title (eden-conversation-title conversation-id)))
-    (format "*eden<%s>*" title)))
 
 (defun eden-conversation-switch ()
   (interactive)
@@ -868,13 +833,46 @@ See `eden-conversation' and `eden-conversations'."
   (interactive)
   (setq eden-conversation-id nil))
 
-(defun eden-conversation-exchanges (conversation-id)
-  (when-let ((last-req (eden-conversation-last-req
-                        conversation-id))
-             (conversation (eden-request-conversation last-req)))
-    (pcase (eden-conversation-action conversation-id)
-      ('start-from (vector (aref conversation (1- (length conversation)))))
-      ('continue-from conversation))))
+(defun eden-conversation-insert (req title &optional append start-from)
+  ""
+  (eden-request-check req)
+  (when (and (null title) (null append))
+    (error "`title' argument can be nil only when `append' argument is non-nil"))
+  (let* ((uuid (plist-get req :uuid))
+         (format-exchange
+          (lambda (exchange)
+            (list (eden-org-demote (plist-get exchange :prompt) 4)
+                  (eden-org-demote (plist-get exchange :response) 4))))
+         (conversation
+          (mapcar format-exchange (eden-request-conversation req)))
+         (conversation
+          (if (or append start-from) (last conversation) conversation)))
+    (if (and append
+             (progn (goto-char (point-min))
+                    (re-search-forward
+                     (format "^:%s: \\(.*\\)" eden-org-property-req) nil t)))
+        (progn
+          (replace-match uuid nil nil nil 1)
+          (goto-char (point-max)))
+      (insert
+       "** " (or title "Conversation") "\n"
+       ":PROPERTIES:\n"
+       ":" eden-org-property-date ": " (or (eden-request-date req) "")
+       "\n"
+       ":" eden-org-property-req ": " uuid "\n"
+       ":END:\n"))
+    (dolist (exchange conversation)
+      (seq-let (prompt response) exchange
+        (insert "*** prompt\n\n" prompt)
+        (cond
+         ((looking-back "\n\n") nil)
+         ((looking-back "\n") (insert "\n"))
+         (t (insert "\n\n")))
+        (insert "*** response\n\n" response)
+        (cond
+         ((looking-back "\n\n") nil)
+         ((looking-back "\n") (insert "\n"))
+         (t (insert "\n\n")))))))
 
 ;;;; Sending Requests
 
