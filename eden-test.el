@@ -2977,11 +2977,11 @@ baz-assistant-content
         (should (equal (eden-last-requests 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
-        ;; Test `eden-conversations'
-        (should (equal (eden-conversations 10)
+        ;; Test `eden-last-conversations'
+        (should (equal (eden-last-conversations 10)
                        '("uuid-req-3" "uuid-req-4" "uuid-req-6" "uuid-req-7")))
-        (should (equal (eden-conversations 1) '("uuid-req-7")))
-        (should (equal (eden-conversations 4)
+        (should (equal (eden-last-conversations 1) '("uuid-req-7")))
+        (should (equal (eden-last-conversations 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
 
 (ert-deftest eden-last-conversations-keep-test ()

@@ -1121,7 +1121,7 @@ like this:
 (defun eden-show-last-conversations ()
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
-         (conversations (eden-conversations num-of-days))
+         (conversations (eden-last-conversations num-of-days))
          (buff (get-buffer-create (eden-buffer-name "last conversations"))))
     (with-current-buffer buff
       (save-excursion
@@ -1438,7 +1438,7 @@ like this:
   (mapcar (lambda (p) (aref p (1- (length p))))
           (eden-last-paths num-of-days)))
 
-(defun eden-conversations (num-of-days)
+(defun eden-last-conversations (num-of-days)
   (eden-last-conversations-keep (eden-last-paths num-of-days)))
 
 (defun eden-last-conversations-keep (paths)
