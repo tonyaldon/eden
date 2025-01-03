@@ -534,6 +534,7 @@ See `eden-system-prompt-set' command.")
 (defvar eden-dir (concat (temporary-file-directory) "eden/") "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
+(defvar eden-pops-up-upon-receipt t "...")
 
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
@@ -1018,6 +1019,57 @@ like this:
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
 
+(defun eden-send ()
+  ""
+  (interactive)
+  (eden-send-request
+   :req (eden-request
+         :prompt (buffer-substring-no-properties (point-min) (point-max))
+         :exchanges (eden-conversation-exchanges eden-conversation-id))
+   :info `(:conversation-id ,eden-conversation-id)
+   :callback (lambda (req resp info)
+               (let* ((conversation-id (plist-get info :conversation-id))
+                      (title (or (eden-conversation-title conversation-id)
+                                 "Request"))
+                      (buff-name
+                       (or (eden-conversation-buffer-name conversation-id)
+                           (eden-buffer-name "requests")))
+                      (buff-already-exist-p (get-buffer buff-name))
+                      (append (and conversation-id buff-already-exist-p 'append))
+                      (buff (get-buffer-create buff-name)))
+                 (with-current-buffer buff
+                   (save-excursion
+                     (widen)
+                     (org-mode)
+                     (goto-char (point-max))
+                     ;; If `buff' has been newly created we are at
+                     ;; the beginning of buffer and `append' is nil such
+                     ;; that we insert the conversation completly
+                     (eden-insert-conversation req title append)))
+                 (when (not (equal (window-buffer (selected-window)) buff))
+                   (when-let ((w (or (and eden-pops-up-upon-receipt
+                                          (display-buffer
+                                           buff '(display-buffer-reuse-window)))
+                                     (get-buffer-window buff))))
+                     (with-selected-window w
+                       (goto-char (point-max))
+                       (when (re-search-backward "^\\*\\*\\* response" nil t)
+                         (recenter-top-bottom 0)))))
+                 (eden-pending-remove req)
+                 (eden-conversation-update info req)
+                 (eden-mode-line-waiting 'maybe-stop)
+                 (message "Eden received a response from %s service"
+                          (plist-get eden-api :service)))))
+  (erase-buffer)
+  (eden-maybe-delete-window-prompt-buffer)
+  (message "Eden sent a request to %s service"
+           (plist-get eden-api :service)))
+
+;;;; Main menu
+
+(defun eden-buffer-name (&optional title)
+  (if title (format "*eden[%s]*" title) "*eden*"))
+
 (defun eden-show-current-conversation ()
   (interactive)
   (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
@@ -1036,9 +1088,6 @@ like this:
         (eden-maybe-delete-window-prompt-buffer)
         (select-window
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
-
-(defun eden-buffer-name (&optional title)
-  (if title (format "*eden[%s]*" title) "*eden*"))
 
 (defun eden-show-current-conversation-in-req-history ()
   (interactive)
@@ -1215,6 +1264,8 @@ like this:
     ("p" "Set system prompt" eden-system-prompt-set)
     ("S" "Show current settings" eden-show-current-settings)]])
 
+;;;; Request at point menu
+
 (defun eden-req-at-point-uuid ()
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
             (req-dir (eden-request-dir
@@ -1295,53 +1346,7 @@ like this:
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
 
-(defvar eden-pops-up-upon-receipt t "...")
-
-(defun eden-send ()
-  ""
-  (interactive)
-  (eden-send-request
-   :req (eden-request
-         :prompt (buffer-substring-no-properties (point-min) (point-max))
-         :exchanges (eden-conversation-exchanges eden-conversation-id))
-   :info `(:conversation-id ,eden-conversation-id)
-   :callback (lambda (req resp info)
-               (let* ((conversation-id (plist-get info :conversation-id))
-                      (title (or (eden-conversation-title conversation-id)
-                                 "Request"))
-                      (buff-name
-                       (or (eden-conversation-buffer-name conversation-id)
-                           (eden-buffer-name "requests")))
-                      (buff-already-exist-p (get-buffer buff-name))
-                      (append (and conversation-id buff-already-exist-p 'append))
-                      (buff (get-buffer-create buff-name)))
-                 (with-current-buffer buff
-                   (save-excursion
-                     (widen)
-                     (org-mode)
-                     (goto-char (point-max))
-                     ;; If `buff' has been newly created we are at
-                     ;; the beginning of buffer and `append' is nil such
-                     ;; that we insert the conversation completly
-                     (eden-insert-conversation req title append)))
-                 (when (not (equal (window-buffer (selected-window)) buff))
-                   (when-let ((w (or (and eden-pops-up-upon-receipt
-                                          (display-buffer
-                                           buff '(display-buffer-reuse-window)))
-                                     (get-buffer-window buff))))
-                     (with-selected-window w
-                       (goto-char (point-max))
-                       (when (re-search-backward "^\\*\\*\\* response" nil t)
-                         (recenter-top-bottom 0)))))
-                 (eden-pending-remove req)
-                 (eden-conversation-update info req)
-                 (eden-mode-line-waiting 'maybe-stop)
-                 (message "Eden received a response from %s service"
-                          (plist-get eden-api :service)))))
-  (erase-buffer)
-  (eden-maybe-delete-window-prompt-buffer)
-  (message "Eden sent a request to %s service"
-           (plist-get eden-api :service)))
+;;;; To organize
 
 (defvar eden-mode-map
   (let ((map (make-sparse-keymap)))
