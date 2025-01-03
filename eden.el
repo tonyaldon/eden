@@ -32,7 +32,7 @@
 
 (defalias 'eden-get-in 'map-nested-elt)
 
-;;; AI Assistant API to send asynchronous requests to OpenAI
+;;; API to send asynchronous requests to OpenAI and Perplexity
 
 (defun eden-json-encode (object)
   "..."
@@ -499,7 +499,8 @@ just before signaling the error.  It takes 3 arguments:
      :connection-type 'pipe
      :sentinel (eden-sentinel req callback callback-error info))))
 
-;;; AI Assistant UI
+;;; UI
+;;;; User options
 
 (defvar eden-api
   '(:service "openai"
@@ -1397,7 +1398,7 @@ like this:
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
 
-;;;; To organize
+;;;; Main command
 
 (defvar eden-mode-map
   (let ((map (make-sparse-keymap)))
