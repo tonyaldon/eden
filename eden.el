@@ -657,11 +657,11 @@ just before signaling the error.  It takes 3 arguments:
   (interactive)
   (eden-prompt-history 'next))
 
-(defun eden-org-to-markdown (markdown-str)
+(defun eden-org-to-markdown (org-str)
   (let ((org-export-with-toc nil)
         (org-md-headline-style 'atx))
     ;; Default md backend uses `org-md-example-block' to export
-    ;; example blocks and source blocks and it prefares 4 leading
+    ;; example blocks and source blocks and it prefers 4 leading
     ;; spaces over triple backticks.  Here we redefine it to always
     ;; use triple backticks and the language name of the block when
     ;; there is one.
@@ -672,7 +672,7 @@ just before signaling the error.  It takes 3 arguments:
                               (org-export-format-code-default block info))))
                    (format "```%s\n%s\n```" (or lang "") code)))))
       (string-trim
-       (org-export-string-as markdown-str 'md nil)))))
+       (org-export-string-as org-str 'md nil)))))
 
 (cl-defun eden-request (&key prompt system-prompt exchanges
                              stream model temperature
