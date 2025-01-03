@@ -2852,7 +2852,7 @@ baz-assistant-content
     (should-not (memq pr-timer timer-list))
     (should-not global-mode-string)))
 
-(ert-deftest eden-paths/conversations/requests-test ()
+(ert-deftest eden-last-paths/conversations/requests-test ()
 
   ;; ["uuid-req-1"]                           ;; not a conversation
   ;; ["uuid-req-1" "uuid-req-2"]              ;; not a conversation
@@ -2943,7 +2943,7 @@ baz-assistant-content
              req (nth idx timestamps))
             ;; add response.json except for req-5 such that this request
             ;; is considered to be an error and so its path will not
-            ;; be listed by `eden-paths' function
+            ;; be listed by `eden-last-paths' function
             (when (not (= idx 4)) ;;
               (let* ((resp-str (format resp-fmt (format "req-%s assistant" (1+ idx))))
                      (resp (with-temp-buffer
@@ -2951,16 +2951,16 @@ baz-assistant-content
                              (eden-json-read))))
                 (eden-write-response resp-str resp req)))))
 
-        ;; Test `eden-paths'
-        (should (equal (eden-paths 10)
+        ;; Test `eden-last-paths'
+        (should (equal (eden-last-paths 10)
                        '(["uuid-req-1"]
                          ["uuid-req-1" "uuid-req-2"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
-        (should (equal (eden-paths 1) '(["uuid-req-7"])))
-        (should (equal (eden-paths 4)
+        (should (equal (eden-last-paths 1) '(["uuid-req-7"])))
+        (should (equal (eden-last-paths 4)
                        '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
@@ -2973,7 +2973,7 @@ baz-assistant-content
                          "uuid-req-4"
                          "uuid-req-6"
                          "uuid-req-7")))
-        (should (equal (eden-paths 1) '(["uuid-req-7"])))
+        (should (equal (eden-last-paths 1) '(["uuid-req-7"])))
         (should (equal (eden-requests 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 

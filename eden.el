@@ -1411,7 +1411,7 @@ like this:
         (when (not eden-buffer-p)
           (eden-mode))))))
 
-(defun eden-paths (num-of-days)
+(defun eden-last-paths (num-of-days)
   (let* ((today (calendar-current-date))
          (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
          (timestamp-start
@@ -1436,10 +1436,10 @@ like this:
 
 (defun eden-requests (num-of-days)
   (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-paths num-of-days)))
+          (eden-last-paths num-of-days)))
 
 (defun eden-conversations (num-of-days)
-  (eden-conversations-keep (eden-paths num-of-days)))
+  (eden-conversations-keep (eden-last-paths num-of-days)))
 
 (defun eden-conversations-keep (paths)
   (let ((tail (reverse paths))
