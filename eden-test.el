@@ -1638,12 +1638,12 @@ foo bar baz
              (eden-request-dir req)
              (or timestamp 1734664733.06362)))))
 
-(ert-deftest eden-insert-conversation-test ()
+(ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-insert-conversation req "title")))
+     (eden-conversation-insert req "title")))
 
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
@@ -1655,7 +1655,7 @@ foo bar baz
     (eden-request-write 'response-org req "")
 
     (eden-request-write 'error req "")
-    (should-error (eden-insert-conversation req "title")))
+    (should-error (eden-conversation-insert req "title")))
 
   ;; Signal error when the request in incomplete, specificaly
   ;; when the following files are missing:
@@ -1668,7 +1668,7 @@ foo bar baz
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-insert-conversation req "title")))
+    (should-error (eden-conversation-insert req "title")))
 
 
   ;; Signal error when both `title' and `append' argument are nil
@@ -1681,11 +1681,11 @@ foo bar baz
                                      :content "foo bar baz assistant response"))])))
     (eden-write-request req)
     (eden-write-response (eden-json-encode resp) resp req)
-    (should-error (eden-insert-conversation req nil)))
+    (should-error (eden-conversation-insert req nil)))
 
   ;; We call `eden-test-add-or-replace-timestamp-file' before
   ;; inserting the conversation.  This adds or replaces the timestamp
-  ;; file that `eden-insert-conversation' uses to determine the
+  ;; file that `eden-conversation-insert' uses to determine the
   ;; date of the request
 
   ;; conversation with no previous exchanges
@@ -1707,7 +1707,7 @@ foo bar baz
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation req "Conversation")))
+          (eden-conversation-insert req "Conversation")))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -1746,7 +1746,7 @@ foo bar baz assistant response
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation req title)))
+          (eden-conversation-insert req title)))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the request
 :PROPERTIES:
@@ -1811,7 +1811,7 @@ bar baz
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation req "Conversation")))
+          (eden-conversation-insert req "Conversation")))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -1866,7 +1866,7 @@ baz-assistant-content
 
   ;; Append last request to an existing conversation.
   ;; As we're appending, the date is not inserted again by
-  ;; `eden-insert-conversation', so we don't need to call
+  ;; `eden-conversation-insert', so we don't need to call
   ;; `eden-test-add-or-replace-timestamp-file' to add a timestamp
   ;; file
   (should
@@ -1932,7 +1932,7 @@ bar-assistant-content
 ")
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
-          (eden-insert-conversation req nil 'append)))
+          (eden-conversation-insert req nil 'append)))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the conversation
 :PROPERTIES:
@@ -2018,7 +2018,7 @@ baz-assistant-content
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
           (eden-test-add-or-replace-timestamp-file req)
-          (eden-insert-conversation
+          (eden-conversation-insert
            req "Title of the conversation" nil 'start-from)))
       (buffer-substring-no-properties (point-min) (point-max)))
     (concat "** Title of the conversation

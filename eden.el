@@ -715,7 +715,7 @@ LEVEL must be 3 or 4."
 
 ;;;; To organize
 
-(defun eden-insert-conversation (req title &optional append start-from)
+(defun eden-conversation-insert (req title &optional append start-from)
   ""
   (eden-request-check req)
   (when (and (null title) (null append))
@@ -962,7 +962,7 @@ in the buffer \"*Eden*\":
           (save-excursion
             (widen)
             (goto-char (point-max))
-            (eden-insert-conversation req \"Request\")
+            (eden-conversation-insert req \"Request\")
             (save-buffer)))
         (eden-pending-remove req)
         (eden-conversation-update info req)
@@ -1054,7 +1054,7 @@ like this:
                      ;; If `buff' has been newly created we are at
                      ;; the beginning of buffer and `append' is nil such
                      ;; that we insert the conversation completly
-                     (eden-insert-conversation req title append)))
+                     (eden-conversation-insert req title append)))
                  (when (not (equal (window-buffer (selected-window)) buff))
                    (when-let ((w (or (and eden-pops-up-upon-receipt
                                           (display-buffer
@@ -1092,7 +1092,7 @@ like this:
           (with-current-buffer (get-buffer-create buff-name)
             (save-excursion
               (org-mode)
-              (eden-insert-conversation
+              (eden-conversation-insert
                last-req title nil (eq action 'start-from)))))
         (eden-maybe-delete-window-prompt-buffer)
         (select-window
@@ -1109,7 +1109,7 @@ like this:
               (save-excursion
                 (erase-buffer)
                 (org-mode)
-                (eden-insert-conversation req title)))
+                (eden-conversation-insert req title)))
             (eden-maybe-delete-window-prompt-buffer)
             (select-window
              (display-buffer buff '(display-buffer-reuse-window))))
@@ -1130,7 +1130,7 @@ like this:
         (erase-buffer)
         (org-mode)
         (dolist (req-uuid conversations)
-          (eden-insert-conversation
+          (eden-conversation-insert
            `(:dir ,eden-dir :uuid ,req-uuid) "Conversation"))))
     (eden-maybe-delete-window-prompt-buffer)
     (select-window
@@ -1146,7 +1146,7 @@ like this:
         (erase-buffer)
         (org-mode)
         (dolist (req-uuid requests)
-          (eden-insert-conversation
+          (eden-conversation-insert
            `(:dir ,eden-dir :uuid ,req-uuid)
            "Request" nil 'start-from))))
     (eden-maybe-delete-window-prompt-buffer)
@@ -1316,7 +1316,7 @@ like this:
       (org-mode)
       (save-excursion
         (dolist (req requests)
-          (eden-insert-conversation req "Request" nil 'start-from))))
+          (eden-conversation-insert req "Request" nil 'start-from))))
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
