@@ -2965,8 +2965,8 @@ baz-assistant-content
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
 
-        ;; Test `eden-requests'
-        (should (equal (eden-requests 10)
+        ;; Test `eden-last-requests'
+        (should (equal (eden-last-requests 10)
                        '("uuid-req-1"
                          "uuid-req-2"
                          "uuid-req-3"
@@ -2974,7 +2974,7 @@ baz-assistant-content
                          "uuid-req-6"
                          "uuid-req-7")))
         (should (equal (eden-last-paths 1) '(["uuid-req-7"])))
-        (should (equal (eden-requests 4)
+        (should (equal (eden-last-requests 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
         ;; Test `eden-conversations'
