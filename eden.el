@@ -1459,3 +1459,7 @@ like this:
 (provide 'eden)
 
 ;;; eden.el ends here
+
+;; Local Variables:
+;; byte-compile-warnings: (not docstrings)
+;; End:
