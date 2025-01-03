@@ -1118,6 +1118,50 @@ like this:
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
+(defun eden-last-paths (num-of-days)
+  (let* ((today (calendar-current-date))
+         (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
+         (timestamp-start
+          (thread-last (days-to-time (1- num-of-days))
+                       (time-subtract midnight)
+                       (float-time)))
+         (timestamp-files
+          (directory-files-recursively eden-dir "timestamp-.*")))
+    (thread-last
+      timestamp-files
+      (mapcar (lambda (f)
+                (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
+                (cons (match-string 1 f)
+                      (string-to-number (match-string 2 f)))))
+      (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
+      (mapcar (lambda (r)
+                (when (< timestamp-start (cdr r))
+                  (let ((req `(:dir ,eden-dir
+                               :uuid ,(car r))))
+                    (eden-request-conversation-path req)))))
+      (delq nil))))
+
+(defun eden-last-requests (num-of-days)
+  (mapcar (lambda (p) (aref p (1- (length p))))
+          (eden-last-paths num-of-days)))
+
+(defun eden-last-conversations-keep (paths)
+  (let ((tail (reverse paths))
+        alist-paths-of-kept
+        kept)
+    (while tail
+      (let ((path-vec (pop tail)))
+        (when (not (map-nested-elt alist-paths-of-kept path-vec))
+          (push path-vec kept)
+          (setq alist-paths-of-kept
+                (append alist-paths-of-kept
+                        (eden-request-conversation-path-alist path-vec))))))
+    (mapcar (lambda (path) (aref path (1- (length path))))
+            kept)))
+
+(defun eden-last-conversations (num-of-days)
+  (eden-last-conversations-keep (eden-last-paths num-of-days)))
+
 (defun eden-show-last-conversations ()
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
@@ -1410,50 +1454,6 @@ like this:
                                           (window-height . 6))))
         (when (not eden-buffer-p)
           (eden-mode))))))
-
-(defun eden-last-paths (num-of-days)
-  (let* ((today (calendar-current-date))
-         (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
-         (timestamp-start
-          (thread-last (days-to-time (1- num-of-days))
-                       (time-subtract midnight)
-                       (float-time)))
-         (timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
-    (thread-last
-      timestamp-files
-      (mapcar (lambda (f)
-                (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                (cons (match-string 1 f)
-                      (string-to-number (match-string 2 f)))))
-      (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
-      (mapcar (lambda (r)
-                (when (< timestamp-start (cdr r))
-                  (let ((req `(:dir ,eden-dir
-                               :uuid ,(car r))))
-                    (eden-request-conversation-path req)))))
-      (delq nil))))
-
-(defun eden-last-requests (num-of-days)
-  (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-last-paths num-of-days)))
-
-(defun eden-last-conversations (num-of-days)
-  (eden-last-conversations-keep (eden-last-paths num-of-days)))
-
-(defun eden-last-conversations-keep (paths)
-  (let ((tail (reverse paths))
-        alist-paths-of-kept
-        kept)
-    (while tail
-      (let ((path-vec (pop tail)))
-        (when (not (map-nested-elt alist-paths-of-kept path-vec))
-          (push path-vec kept)
-          (setq alist-paths-of-kept
-                (append alist-paths-of-kept
-                        (eden-request-conversation-path-alist path-vec))))))
-    (mapcar (lambda (path) (aref path (1- (length path))))
-            kept)))
 
 (provide 'eden)
 
