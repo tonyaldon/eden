@@ -738,7 +738,7 @@ See variables `eden-conversations' and `eden-dir'."
     (let ((req `(:dir ,eden-dir :uuid ,req-uuid)))
       (when (null req-uuid)
         (error "When action is `%s', `req-uuid' argument is mandatory"
-               action req-uuid))
+               action))
       (condition-case err
           (eden-request-check req)
         (error
@@ -866,13 +866,13 @@ See `eden-conversation' and `eden-conversations'."
       (seq-let (prompt response) exchange
         (insert "*** prompt\n\n" prompt)
         (cond
-         ((looking-back "\n\n") nil)
-         ((looking-back "\n") (insert "\n"))
+         ((looking-back "\n\n" nil) nil)
+         ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))
         (insert "*** response\n\n" response)
         (cond
-         ((looking-back "\n\n") nil)
-         ((looking-back "\n") (insert "\n"))
+         ((looking-back "\n\n" nil) nil)
+         ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))))))
 
 ;;;; Sending Requests
@@ -984,7 +984,7 @@ like this:
           (message "Cannot send two concurrent requests in the same conversation.")
           (let ((inhibit-message t))
             (message "req: %S\nconversation: %s" req conversation-id)))
-      (let ((callback-error (lambda (req err info)
+      (let ((callback-error (lambda (req _err _info)
                               (eden-pending-remove req)
                               (eden-mode-line-waiting 'maybe-stop))))
         (push (list :req req
@@ -1035,7 +1035,7 @@ like this:
          :prompt (buffer-substring-no-properties (point-min) (point-max))
          :exchanges (eden-conversation-exchanges eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id)
-   :callback (lambda (req resp info)
+   :callback (lambda (req _resp info)
                (let* ((conversation-id (plist-get info :conversation-id))
                       (title (or (eden-conversation-title conversation-id)
                                  "Request"))
@@ -1228,8 +1228,7 @@ like this:
   (if-let* ((services
              (mapcar (lambda (api) (plist-get api :service)) eden-apis)))
       (let* ((service (completing-read
-                       (format "Choose an API from the following services: "
-                               services)
+                       "Choose an API from the following services: "
                        services nil 'require-match))
              (api (seq-some (lambda (api)
                               (when (string= (plist-get api :service) service)
