@@ -1,6 +1,34 @@
 (defmacro comment (&rest body) "Ignores body and yield nil." nil)
 
-;;; AI Assistant API to send asynchronous requests to OpenAI
+(defun eden-test-echo-resp (resp-str buffer-or-name sentinel &optional sleep)
+  "..."
+  (let ((command (format "%secho %s"
+                         (if sleep (format "sleep %s | " sleep) "")
+                         (shell-quote-argument resp-str))))
+    (make-process
+     :name "echo-resp"
+     :buffer buffer-or-name
+     :command (list "sh" "-c" command)
+     :connection-type 'pipe
+     :sentinel sentinel)))
+
+(defun eden-test-add-or-replace-timestamp-file (req &optional timestamp)
+  ""
+  ;; we replace (or add) the timestamp file with
+  ;; timestamp-1734664733.06362 file which corresponds
+  ;; to the date [2024-12-20 Fri]
+  (make-directory (eden-request-dir req) 'parents)
+  (when-let ((timestamp-file-original
+              (car
+               (directory-files (eden-request-dir req) t "timestamp-.*"))))
+    (delete-file timestamp-file-original))
+  (with-temp-buffer
+    (write-file
+     (format "%stimestamp-%s"
+             (eden-request-dir req)
+             (or timestamp 1734664733.06362)))))
+
+;;; API to send asynchronous requests to OpenAI and Perplexity
 
 (ert-deftest eden-json-encoding/decoding-test ()
   (should
@@ -872,18 +900,6 @@ arr[0]
     (should (equal (eden-request-read 'response-org req)
                    "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n"))))
 
-(defun eden-test-echo-resp (resp-str buffer-or-name sentinel &optional sleep)
-  "..."
-  (let ((command (format "%secho %s"
-                         (if sleep (format "sleep %s | " sleep) "")
-                         (shell-quote-argument resp-str))))
-    (make-process
-     :name "echo-resp"
-     :buffer buffer-or-name
-     :command (list "sh" "-c" command)
-     :connection-type 'pipe
-     :sentinel sentinel)))
-
 (ert-deftest eden-sentinel-test ()
   ;; we let-bind requests, callbacks and infos with the variables
   ;; `-req', `-callback' and `-info' to be sure that `eden-sentinel'
@@ -1267,33 +1283,7 @@ arr[0]
 ;; See `eden-api-key-symbol'.
 
 ;;; AI Assistant UI
-
-(ert-deftest eden-request-history-set-test ()
-  ;; `eden-dir' doesn't exist
-  (let* (eden-request-history
-         (eden-dir (concat (make-temp-file "eden-" t) "/")))
-    (delete-directory eden-dir)
-    (eden-request-history-set)
-    (should-not eden-request-history))
-  ;; `eden-dir' exist with request and timestamp files
-  (let* (eden-request-history
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req-0 (eden-request :prompt "req-0"))
-         (req-1 (eden-request :prompt "req-1"))
-         (req-2 (eden-request :prompt "req-2"))
-         (req-3 (eden-request :prompt "req-3"))
-         (uuid-0 (plist-get req-0 :uuid))
-         (uuid-1 (plist-get req-1 :uuid))
-         (uuid-2 (plist-get req-2 :uuid))
-         (uuid-3 (plist-get req-3 :uuid)))
-    (message "%s" eden-dir)
-    (eden-write-request req-0)
-    (eden-write-request req-1)
-    (eden-write-request req-2)
-    (eden-write-request req-3)
-    (eden-request-history-set)
-    (should
-     (equal eden-request-history (list uuid-3 uuid-2 uuid-1 uuid-0)))))
+;;;; Utils
 
 (ert-deftest eden-org-to-markdown-test ()
   (should
@@ -1325,188 +1315,6 @@ foo bar baz
 ## h2"))
 
   )
-
-(ert-deftest eden-request-test ()
-  ;; Test :uuid
-  (should
-   (stringp
-    (plist-get (eden-request :prompt "foo prompt")
-               :uuid)))
-
-  ;; Test :dir
-  (should
-   (string=
-    (let ((eden-dir nil))
-      (plist-get (eden-request :prompt "foo prompt")
-                 :dir))
-    (concat (temporary-file-directory) "eden/")))
-  (should
-   (string=
-    (plist-get
-     (eden-request :prompt "foo prompt" :dir "/tmp/foo/")
-     :dir)
-    "/tmp/foo/"))
-  (should
-   (string=
-    (let ((eden-dir "/tmp/bar/"))
-      (plist-get (eden-request :prompt "foo prompt")
-                 :dir))
-    "/tmp/bar/"))
-
-  ;; Check :prompt, :system-prompt, :exchanges
-  ;;
-  ;; :prompt argument is mandatory
-  (should-error (eden-request))
-  ;; :prompt and :system-prompt
-  (let* ((eden-system-prompt nil)
-         (req (eden-request :prompt "foo prompt"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (string= (plist-get req :prompt) "foo prompt"))
-    (should (string= (plist-get req :system-prompt) ""))
-    (should (equal req-messages [(:role "user" :content "foo prompt")])))
-  (let* ((req (eden-request :prompt "foo prompt"
-                            :system-prompt "foo system"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (string= (plist-get req :system-prompt) "foo system"))
-    (should (equal req-messages
-                   [(:role "system" :content "foo system")
-                    (:role "user" :content "foo prompt")])))
-  ;; :prompt, :system-prompt and :exchanges
-  (let* ((exchanges [(:uuid "uuid-foo"
-                      :prompt "foo prompt"
-                      :user "foo user"
-                      :assistant "foo assistant"
-                      :response "foo response")
-                     (:uuid "uuid-bar"
-                      :prompt "bar prompt"
-                      :user "bar user"
-                      :assistant "bar assistant"
-                      :response "bar response")])
-         (req (eden-request
-               :prompt "baz prompt"
-               :system-prompt "baz system"
-               :exchanges exchanges))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (string= (plist-get req :system-prompt) "baz system"))
-    (should (equal (plist-get req :exchanges) exchanges))
-    (should (equal req-messages
-                   [(:role "system" :content "baz system")
-                    (:role "user" :content "foo user")
-                    (:role "assistant" :content "foo assistant")
-                    (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")
-                    (:role "user" :content "baz prompt")])))
-  ;; :prompt and :system-prompt
-  ;; both converted from org-mode to markdown
-  (let* ((eden-system-prompt nil)
-         (req (eden-request :prompt "* prompt h1\n** prompt h2"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-prompt) ""))
-    (should (equal req-messages
-                   [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((req (eden-request :prompt "* prompt h1\n** prompt h2"
-                            :system-prompt "* system h1\n** system h2"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
-    (should (equal req-messages
-                   [(:role "system" :content "# system h1\n\n\n## system h2")
-                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((exchanges [(:uuid "uuid-foo"
-                      :prompt "foo prompt"
-                      :user "foo user"
-                      :assistant "foo assistant")
-                     (:uuid "uuid-bar"
-                      :prompt "bar prompt"
-                      :user "bar user"
-                      :assistant "bar assistant")])
-         (req (eden-request
-               :prompt "* prompt h1\n** prompt h2"
-               :system-prompt "* system h1\n** system h2"
-               :exchanges exchanges))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (equal req-messages
-                   [(:role "system" :content "# system h1\n\n\n## system h2")
-                    (:role "user" :content "foo user")
-                    (:role "assistant" :content "foo assistant")
-                    (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")
-                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  ;; :system-prompt and default `eden-system-prompt'
-  (should
-   (string=
-    (let ((eden-system-prompt nil))
-      (plist-get (eden-request :prompt "foo prompt")
-                 :system-prompt))
-    ""))
-  (should
-   (string=
-    (let ((eden-system-prompt
-           '("bar system prompt title" . "bar system prompt") ))
-      (plist-get
-       (eden-request :prompt "foo prompt"
-                     :system-prompt "foo system prompt")
-       :system-prompt))
-    "foo system prompt"))
-  (should
-   (string=
-    (let ((eden-system-prompt
-           '("bar system prompt title" . "bar system prompt") ))
-      (plist-get (eden-request :prompt "foo prompt")
-                 :system-prompt))
-    "bar system prompt"))
-
-
-  ;; Test :stream
-  (let ((req (eden-request :prompt "foo prompt")))
-    (should (equal
-             (plist-get (plist-get req :req) :stream)
-             :false)))
-  (let ((req (eden-request :prompt "foo prompt"
-                           :stream t)))
-    (should (equal
-             (plist-get (plist-get req :req) :stream)
-             t)))
-
-  ;; Test :model
-  (let* ((eden-model "gpt-4o")
-         (req (eden-request :prompt "foo prompt")))
-    (should (equal
-             (plist-get (plist-get req :req) :model)
-             "gpt-4o")))
-  (let* ((eden-model "gpt-4o")
-         (req (eden-request :prompt "foo prompt"
-                            :model "gpt-4o-mini")))
-    (should (equal
-             (plist-get (plist-get req :req) :model)
-             "gpt-4o-mini")))
-
-  ;; Test :temperature
-  (let* ((eden-temperature 0)
-         (req (eden-request :prompt "foo prompt")))
-    (should (= (plist-get (plist-get req :req) :temperature)
-               0)))
-  (let* ((eden-temperature 0)
-         (req (eden-request :prompt "foo prompt"
-                            :temperature 1.1)))
-    (should (= (plist-get (plist-get req :req) :temperature)
-               1.1)))
-
-  ;; Test :api
-  (let* ((eden-api '(:service "openai"
-                     :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-request :prompt "foo prompt")))
-    (should (equal (plist-get req :api) eden-api)))
-  (let* ((eden-api '(:service "openai"
-                     :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-request
-               :prompt "foo prompt"
-               :api '(:service "openai-service"
-                      :endpoint "https://openai-endpoint"))))
-    (should (equal (plist-get req :api)
-                   '(:service "openai-service"
-                     :endpoint "https://openai-endpoint")))))
 
 (ert-deftest eden-org-demote-test ()
   ;; headline top level is 1
@@ -1622,21 +1430,525 @@ foo bar baz
 ***** foo-6
 ")))
 
-(defun eden-test-add-or-replace-timestamp-file (req &optional timestamp)
-  ""
-  ;; we replace (or add) the timestamp file with
-  ;; timestamp-1734664733.06362 file which corresponds
-  ;; to the date [2024-12-20 Fri]
-  (make-directory (eden-request-dir req) 'parents)
-  (when-let ((timestamp-file-original
-              (car
-               (directory-files (eden-request-dir req) t "timestamp-.*"))))
-    (delete-file timestamp-file-original))
-  (with-temp-buffer
-    (write-file
-     (format "%stimestamp-%s"
-             (eden-request-dir req)
-             (or timestamp 1734664733.06362)))))
+;;;; Prompt and Request history
+
+(ert-deftest eden-request-history-set-test ()
+  ;; `eden-dir' doesn't exist
+  (let* (eden-request-history
+         (eden-dir (concat (make-temp-file "eden-" t) "/")))
+    (delete-directory eden-dir)
+    (eden-request-history-set)
+    (should-not eden-request-history))
+  ;; `eden-dir' exist with request and timestamp files
+  (let* (eden-request-history
+         (eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (req-0 (eden-request :prompt "req-0"))
+         (req-1 (eden-request :prompt "req-1"))
+         (req-2 (eden-request :prompt "req-2"))
+         (req-3 (eden-request :prompt "req-3"))
+         (uuid-0 (plist-get req-0 :uuid))
+         (uuid-1 (plist-get req-1 :uuid))
+         (uuid-2 (plist-get req-2 :uuid))
+         (uuid-3 (plist-get req-3 :uuid)))
+    (message "%s" eden-dir)
+    (eden-write-request req-0)
+    (eden-write-request req-1)
+    (eden-write-request req-2)
+    (eden-write-request req-3)
+    (eden-request-history-set)
+    (should
+     (equal eden-request-history (list uuid-3 uuid-2 uuid-1 uuid-0)))))
+
+(ert-deftest eden-prompt-history-previous/next ()
+  ;; default usage
+  (should
+   (equal (eden-prompt-history-previous [("foo" "bar" "baz") nil nil])
+          [("bar" "baz") "foo" nil]))
+  (should
+   (equal (eden-prompt-history-previous [("bar" "baz") "foo" nil])
+          [("baz") "bar" ("foo")]))
+  (should
+   (equal (eden-prompt-history-previous [("baz") "bar" ("foo")])
+          [nil "baz" ("bar" "foo")]))
+  (should
+   (equal (eden-prompt-history-previous [nil "baz" ("bar" "foo")])
+          [nil "baz" ("bar" "foo")]))
+  (should
+   (equal (eden-prompt-history-next [nil "baz" ("bar" "foo")])
+          [("baz") "bar" ("foo")]))
+  (should
+   (equal (eden-prompt-history-next [("baz") "bar" ("foo")])
+          [("bar" "baz") "foo" nil]))
+  (should
+   (equal (eden-prompt-history-next [("bar" "baz") "foo" nil])
+          [("bar" "baz") "foo" nil]))
+
+  ;; signal error if both `prompt' and `discard-current' optional
+  ;; arguments are non nil
+  ;; todo
+  (should-error
+   (eden-prompt-history-previous
+    [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt") 'discard-current))
+
+  (should-error
+   (eden-prompt-history-next
+    [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt") 'discard-current))
+
+  ;; with `prompt' optional argument
+  (should
+   (equal (eden-prompt-history-previous
+           [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt"))
+          [("bar" "baz") "foo" ((:prompt "scratch prompt"))]))
+  (should
+   (equal (eden-prompt-history-previous
+           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
+          [("baz") "bar" ((:prompt "scratch prompt") "foo")]))
+  (should
+   (equal (eden-prompt-history-previous
+           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
+          [nil "baz" ((:prompt "scratch prompt") "bar" "foo")]))
+  (should
+   (equal (eden-prompt-history-previous
+           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
+          [nil "baz" ("bar" "foo")]))
+  (should
+   (equal (eden-prompt-history-next
+           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
+          [((:prompt "scratch prompt") "baz") "bar" ("foo")]))
+  (should
+   (equal (eden-prompt-history-next
+           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
+          [((:prompt "scratch prompt") "bar" "baz") "foo" nil]))
+  (should
+   (equal (eden-prompt-history-next
+           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
+          [("bar" "baz") "foo" nil]))
+
+  ;; with `discard-current' optional argument
+  (should
+   (equal (eden-prompt-history-previous
+           [("foo" "bar") "to-be-discarded" nil] nil 'discard-current)
+          [("bar") "foo" nil]))
+  (should
+   (equal (eden-prompt-history-previous
+           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
+          [nil "bar" ("foo")]))
+  (should
+   (equal (eden-prompt-history-next
+           [nil "to-be-discarded" ("bar" "foo")] nil 'discard-current)
+          [nil "bar" ("foo")]))
+  (should
+   (equal (eden-prompt-history-next
+           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
+          [("bar") "foo" nil])))
+
+(ert-deftest eden-prompt-current-test ()
+  (let ((eden-prompt-history-state [("foo-uuid" "bar-uuid" "baz-uuid") nil nil]))
+    (should-not (eden-prompt-current)))
+  (let ((eden-prompt-history-state
+         [("foo-uuid" "bar-uuid" "baz-uuid") (:prompt "scratch prompt") nil]))
+    (should (string= (eden-prompt-current) "scratch prompt")))
+  (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,eden-dir :uuid "foo-uuid"))
+         (eden-prompt-history-state [("bar-uuid" "baz-uuid") "foo-uuid" nil]))
+    (message "%S" (eden-request-dir req))
+    (eden-request-write 'prompt req "foo prompt\n")
+    (should (string= (eden-prompt-current) "foo prompt\n"))))
+
+;;;; Conversations
+
+(ert-deftest eden-conversation-test ()
+
+  ;; Titles must be unique
+  (let ((eden-conversations
+         '(("conversation-id-foo" . (:title "foo title"
+                                     :action start
+                                     :last-req-uuid nil)))))
+    (should-error
+     (eden-conversation 'start "foo title")))
+
+  ;; actions must be start, start-from, continue-from
+  (let ((eden-conversations nil))
+    (should-error
+     (eden-conversation 'wrong-action "foo title")))
+
+  ;; action - start
+  (let (eden-conversations eden-conversation-id)
+    (cl-letf (((symbol-function 'eden-uuid)
+               (lambda nil "conversation-id-foo")))
+      (eden-conversation 'start "foo title")
+      (should
+       (equal eden-conversations
+              '(("conversation-id-foo" . (:title "foo title"
+                                          :action start
+                                          :last-req-uuid nil)))))
+      (should
+       (string= eden-conversation-id "conversation-id-foo"))))
+  (let ((eden-conversations
+         '(("conversation-id-foo" . (:title "foo title"
+                                     :action start
+                                     :last-req-uuid nil))))
+        eden-conversation-id)
+    (cl-letf (((symbol-function 'eden-uuid)
+               (lambda nil "conversation-id-bar")))
+      (eden-conversation 'start "bar title")
+      (should
+       (seq-set-equal-p
+        (mapcar #'car eden-conversations)
+        '("conversation-id-foo" "conversation-id-bar")))
+      (should
+       (equal (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+              '(:title "bar title" :action start :last-req-uuid nil)))
+      (should
+       (string= eden-conversation-id "conversation-id-bar"))))
+
+  ;; action - start
+  ;; error - req-uuid must not be specified
+  (let ((eden-conversations nil))
+    (should-error
+     (eden-conversation 'start "foo title" "foo-req-uuid")))
+
+  ;; actions - start-from, continue-from
+  ;; error - req-uuid is mandatory
+  (let ((eden-conversations nil))
+    (should-error (eden-conversation 'start-from "foo title")))
+  ;; error - req associated with req-uuid doesn't exist in `eden-dir'
+  (let ((eden-conversations nil)
+        (eden-dir (concat (make-temp-file "eden-" t) "/")))
+    (should-error
+     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
+
+  ;; error -  when an error.json file exists in req directory
+  (let* ((eden-conversations nil)
+         (eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
+    (eden-request-write 'prompt req "")
+    (eden-request-write 'request req "")
+    (eden-request-write 'exchanges req "")
+    (eden-request-write 'response req "")
+    (eden-request-write 'response-org req "")
+
+    (eden-request-write 'error req "")
+    (should-error
+     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
+
+  ;; error - when req associated with req-uuid is in incomplete,
+  ;; specificaly when the following files are missing:
+  ;;
+  ;; - prompt.org
+  ;; - request.json
+  ;; - response.json
+  ;; - response.org
+  ;; - exchanges.json
+  (let* ((eden-conversations nil)
+         (eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
+    (make-directory (eden-request-dir req) 'parent)
+    (should-error
+     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
+
+  ;; action - start-from, continue-from
+  ;; we can start-from and continue-from multiple different conversations
+  ;; from the same req-uuid
+  (let* (eden-conversations
+         eden-conversation-id
+         (eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (foo-req (eden-request :prompt "foo-req")) ;; depend on `eden-dir'
+         (foo-req-uuid (plist-get foo-req :uuid))
+         (bar-req (eden-request :prompt "bar-req")) ;; depend on `eden-dir'
+         (bar-req-uuid (plist-get bar-req :uuid))
+         ;; we use the same response for two different requests
+         ;; because we just need them to exist in the request directory
+         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
+                 :object "chat.completion"
+                 :created 1733030031
+                 :model "gpt-4o-mini-2024-07-18"
+                 :choices [(:index 0
+                            :message (:role "assistant" :content "assistant" :refusal nil)
+                            :logprobs nil :finish_reason "stop")]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-request foo-req)
+    (eden-write-response resp-str resp foo-req)
+    (eden-write-request bar-req)
+    (eden-write-response resp-str resp bar-req)
+
+    (let ((n 0))
+      (cl-letf (((symbol-function 'eden-uuid)
+                 (lambda nil (format "conversation-id-foo-%s" (cl-incf n)))))
+        (eden-conversation 'start-from "foo-1 title" foo-req-uuid)
+        (eden-conversation 'start-from "foo-2 title" foo-req-uuid)
+        (eden-conversation 'continue-from "foo-3 title" foo-req-uuid)))
+
+    (let ((n 0))
+      (cl-letf (((symbol-function 'eden-uuid)
+                 (lambda nil (format "conversation-id-bar-%s" (cl-incf n)))))
+        (eden-conversation 'start-from  "bar-1 title" bar-req-uuid)
+        (eden-conversation 'continue-from  "bar-2 title" bar-req-uuid)
+        (eden-conversation 'continue-from  "bar-3 title" bar-req-uuid)))
+
+    (should
+     (seq-set-equal-p
+      (mapcar #'car eden-conversations)
+      '("conversation-id-foo-1" "conversation-id-foo-2" "conversation-id-foo-3"
+        "conversation-id-bar-1" "conversation-id-bar-2" "conversation-id-bar-3")))
+    (should
+     (string= eden-conversation-id "conversation-id-bar-3"))
+
+    (should
+     (equal
+      (alist-get "conversation-id-foo-1" eden-conversations nil nil 'string=)
+      `(:title "foo-1 title" :action start-from  :last-req-uuid ,foo-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-foo-2" eden-conversations nil nil 'string=)
+      `(:title "foo-2 title" :action start-from  :last-req-uuid ,foo-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-foo-3" eden-conversations nil nil 'string=)
+      `(:title "foo-3 title" :action continue-from  :last-req-uuid ,foo-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-bar-1" eden-conversations nil nil 'string=)
+      `(:title "bar-1 title" :action start-from  :last-req-uuid ,bar-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-bar-2" eden-conversations nil nil 'string=)
+      `(:title "bar-2 title" :action continue-from  :last-req-uuid ,bar-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-bar-3" eden-conversations nil nil 'string=)
+      `(:title "bar-3 title" :action continue-from  :last-req-uuid ,bar-req-uuid))))
+
+  (let* ((eden-conversations
+          '(("conversation-id-foo" . (:title "foo title"
+                                      :action start
+                                      :last-req-uuid nil))))
+         eden-conversation-id
+         (eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (foo-req (eden-request :prompt "foo-req")) ;; depend on `eden-dir'
+         (foo-req-uuid (plist-get foo-req :uuid))
+         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
+                 :object "chat.completion"
+                 :created 1733030031
+                 :model "gpt-4o-mini-2024-07-18"
+                 :choices [(:index 0
+                            :message (:role "assistant" :content "assistant" :refusal nil)
+                            :logprobs nil :finish_reason "stop")]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-request foo-req)
+    (eden-write-response resp-str resp foo-req)
+
+    (cl-letf (((symbol-function 'eden-uuid)
+               (lambda nil "conversation-id-bar")))
+      (eden-conversation 'start-from "bar title" foo-req-uuid))
+    (cl-letf (((symbol-function 'eden-uuid)
+               (lambda nil "conversation-id-baz")))
+      (eden-conversation 'continue-from "baz title" foo-req-uuid))
+
+    (should
+     (seq-set-equal-p
+      (mapcar #'car eden-conversations)
+      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))
+    (should
+     (string= eden-conversation-id "conversation-id-baz"))
+    (should
+     (equal
+      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+      `(:title "bar title" :action start-from  :last-req-uuid ,foo-req-uuid)))
+    (should
+     (equal
+      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
+      `(:title "baz title" :action continue-from  :last-req-uuid ,foo-req-uuid)))))
+
+
+(ert-deftest eden-conversation-title-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-title "conversation-id-bar")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (should
+     (string=
+      (eden-conversation-title "conversation-id-bar")
+      "bar title"))))
+
+(ert-deftest eden-conversation-action-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-action "conversation-id-bar")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (should
+     (eq (eden-conversation-action "conversation-id-foo")
+         'start))
+    (should
+     (eq (eden-conversation-action "conversation-id-bar")
+         'start-from))
+    (should
+     (eq (eden-conversation-action "conversation-id-baz")
+         'continue-from))))
+
+(ert-deftest eden-conversation-last-req-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-title "conversation-id-bar")))
+  (let ((eden-dir "/tmp/eden/")
+        (eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (should-not (eden-conversation-last-req "conversation-id-foo"))
+    (should
+     (equal
+      (eden-conversation-last-req "conversation-id-bar")
+      `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))
+    (should
+     (equal
+      (eden-conversation-last-req "conversation-id-baz")
+      `(:uuid "baz-req-uuid" :dir "/tmp/eden/")))))
+
+(ert-deftest eden-conversation-buffer-name-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-buffer-name "conversation-id-foo"))
+    (should-not (eden-conversation-buffer-name nil)))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (should-not (eden-conversation-buffer-name nil))
+    (should-not (eden-conversation-buffer-name "wrong-id"))
+    (should
+     (string=
+      (eden-conversation-buffer-name "conversation-id-foo")
+      "*eden<foo title>*"))))
+
+(ert-deftest eden-conversation-exchanges-test ()
+  (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
+         (last-req
+          `(:req (:stream :false
+                  :model "gpt-4o-mini"
+                  :temperature 1
+                  :messages [(:role "system" :content "baz system")
+                             (:role "user" :content "foo user")
+                             (:role "assistant" :content "foo assistant\n")
+                             (:role "user" :content "bar prompt")
+                             (:role "assistant" :content "bar assistant\n")
+                             (:role "user" :content "baz user")])
+            :api (:service "chatgpt"
+                  :endpoint "https://api.openai.com/v1/chat/completions")
+            :prompt "baz prompt\n"
+            :system-prompt "baz system prompt\n"
+            :exchanges [(:uuid "uuid-foo"
+                         :prompt "foo prompt\n"
+                         :user "foo user"
+                         :assistant "foo assistant\n"
+                         :response "foo assistant\n")
+                        (:uuid "uuid-bar"
+                         :prompt "bar prompt\n"
+                         :user "bar user"
+                         :assistant "bar assistant\n"
+                         :response "bar assistant\n")]
+            :dir ,eden-dir
+            :uuid "uuid-baz"))
+         ;; #_(dir (plist-get req :dir))
+         (last-req-uuid (plist-get last-req :uuid))
+         (last-resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
+                      :object "chat.completion"
+                      :created 1733030031
+                      :model "gpt-4o-mini-2024-07-18"
+                      :choices [(:index 0
+                                 :message (:role "assistant" :content "baz assistant\n" :refusal nil)
+                                 :logprobs nil :finish_reason "stop")]))
+         (last-resp-str (eden-json-encode last-resp))
+         (eden-conversations
+          '(("conversation-id-start" .
+             (:title "start title" :action start :last-req-uuid nil))
+            ("conversation-id-start-from" .
+             (:title "start-from title"
+              :action start-from
+              :last-req-uuid "uuid-baz"))
+            ("conversation-id-continue-from" .
+             (:title "continue-from title"
+              :action continue-from
+              :last-req-uuid "uuid-baz")))))
+    (eden-write-request last-req)
+    (eden-write-response last-resp-str last-resp last-req)
+    (should-not (eden-conversation-exchanges "conversation-id-start"))
+    (should
+     (equal
+      (eden-conversation-exchanges "conversation-id-start-from")
+      [(:uuid "uuid-baz"
+        :prompt "baz prompt\n"
+        :user "baz user"
+        :assistant "baz assistant\n"
+        :response "baz assistant\n")]
+      ))
+    (should
+     (equal
+      (eden-conversation-exchanges "conversation-id-continue-from")
+      [(:uuid "uuid-foo"
+        :prompt "foo prompt\n"
+        :user "foo user"
+        :assistant "foo assistant\n"
+        :response "foo assistant\n")
+       (:uuid "uuid-bar"
+        :prompt "bar prompt\n"
+        :user "bar user"
+        :assistant "bar assistant\n"
+        :response "bar assistant\n")
+       (:uuid "uuid-baz"
+        :prompt "baz prompt\n"
+        :user "baz user"
+        :assistant "baz assistant\n"
+        :response "baz assistant\n")]
+      ))
+    ))
+
+(ert-deftest eden-conversation-update-test ()
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (eden-conversation-update '(:conversation-id "conversation-id-foo")
+                              '(:uuid "new-foo-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-bar")
+                              '(:uuid "new-bar-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-baz")
+                              '(:uuid "new-baz-req-uuid"))
+    (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
+                              '(:uuid "fake-req-uuid"))
+    (should
+     (equal
+      (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
+      '(:title "foo title" :action continue-from :last-req-uuid "new-foo-req-uuid")))
+    (should
+     (equal
+      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+      '(:title "bar title" :action continue-from :last-req-uuid "new-bar-req-uuid")))
+    (should
+     (equal
+      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
+      '(:title "baz title" :action continue-from :last-req-uuid "new-baz-req-uuid")))
+    (should
+     (seq-set-equal-p
+      (mapcar #'car eden-conversations)
+      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
 
 (ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'
@@ -2043,101 +2355,51 @@ baz-assistant-content
 
 "))))
 
-(ert-deftest eden-prompt-history-previous/next ()
-  ;; default usage
-  (should
-   (equal (eden-prompt-history-previous [("foo" "bar" "baz") nil nil])
-          [("bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-previous [("bar" "baz") "foo" nil])
-          [("baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-previous [("baz") "bar" ("foo")])
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-previous [nil "baz" ("bar" "foo")])
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-next [nil "baz" ("bar" "foo")])
-          [("baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next [("baz") "bar" ("foo")])
-          [("bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-next [("bar" "baz") "foo" nil])
-          [("bar" "baz") "foo" nil]))
+;;;; Sending Requests
 
-  ;; signal error if both `prompt' and `discard-current' optional
-  ;; arguments are non nil
-  ;; todo
-  (should-error
-   (eden-prompt-history-previous
-    [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt") 'discard-current))
+(ert-deftest eden-kill-last-request-test ()
+  ;; See test `eden-send-request-test' for explanation about
+  ;; redefining `eden-request-send'.
 
-  (should-error
-   (eden-prompt-history-next
-    [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt") 'discard-current))
+  (let ((debug-on-error t)
+        (eden-dir (concat (make-temp-file "eden-" t) "/"))
+        pr-timer)
+    (cl-letf
+        (((symbol-function 'eden-request-send)
+          ;; Print "resp-baz" in stdout after 1 second
+          ;; with sentinel constructed using `eden-sentinel'
+          (lambda (req callback callback-error info)
+            (eden-write-request req)
+            (eden-test-echo-resp
+             "\"resp-baz\"" (generate-new-buffer-name "eden")
+             (eval (macroexpand-all
+                    `(eden-sentinel
+                      (quote ,req)
+                      ;; no need for `quote' because car is `lambda'
+                      ,callback
+                      ;; works because ,callback-error returns (closure ...)
+                      ;; because it is define with `lambda' in `eden-send-request'
+                      (quote ,callback-error)
+                      (quote ,info))))
+             1))))
+      (eden-send-request :req (eden-request :prompt "req")))
+    (setq pr-timer eden-pending-timer)
+    ;; When we kill the last request, we actually kill its
+    ;; associated process which signal an error.
+    ;; But here we are not interested in that error but in checking
+    ;; that global variables of interest are set back correctly after
+    ;; the process is killed.
+    (should-error
+     (progn
+       (eden-kill-last-request)
+       (sleep-for 0.2)))
 
-  ;; with `prompt' optional argument
-  (should
-   (equal (eden-prompt-history-previous
-           [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt"))
-          [("bar" "baz") "foo" ((:prompt "scratch prompt"))]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
-          [("baz") "bar" ((:prompt "scratch prompt") "foo")]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
-          [nil "baz" ((:prompt "scratch prompt") "bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-previous
-           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
-          [((:prompt "scratch prompt") "baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
-          [((:prompt "scratch prompt") "bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-next
-           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
-          [("bar" "baz") "foo" nil]))
+    (should (equal eden-pending-requests nil))
+    (should (equal eden-pending-timer nil))
+    ;; waiting widget is gone
+    (should-not (memq pr-timer timer-list))
+    (should-not global-mode-string)))
 
-  ;; with `discard-current' optional argument
-  (should
-   (equal (eden-prompt-history-previous
-           [("foo" "bar") "to-be-discarded" nil] nil 'discard-current)
-          [("bar") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
-          [nil "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [nil "to-be-discarded" ("bar" "foo")] nil 'discard-current)
-          [nil "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
-          [("bar") "foo" nil])))
-
-(ert-deftest eden-prompt-current-test ()
-  (let ((eden-prompt-history-state [("foo-uuid" "bar-uuid" "baz-uuid") nil nil]))
-    (should-not (eden-prompt-current)))
-  (let ((eden-prompt-history-state
-         [("foo-uuid" "bar-uuid" "baz-uuid") (:prompt "scratch prompt") nil]))
-    (should (string= (eden-prompt-current) "scratch prompt")))
-  (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,eden-dir :uuid "foo-uuid"))
-         (eden-prompt-history-state [("bar-uuid" "baz-uuid") "foo-uuid" nil]))
-    (message "%S" (eden-request-dir req))
-    (eden-request-write 'prompt req "foo prompt\n")
-    (should (string= (eden-prompt-current) "foo prompt\n"))))
 
 (ert-deftest eden-pending-conversation-p-test ()
   ;; Values of :req and :proc keys are normally not string, but
@@ -2151,398 +2413,6 @@ baz-assistant-content
     (should-not (eden-pending-conversation-p "conv-baz")))
   (let ((eden-pending-requests nil))
     (should-not (eden-pending-conversation-p "conv-foo"))))
-
-(ert-deftest eden-conversation-test ()
-
-  ;; Titles must be unique
-  (let ((eden-conversations
-         '(("conversation-id-foo" . (:title "foo title"
-                                     :action start
-                                     :last-req-uuid nil)))))
-    (should-error
-     (eden-conversation 'start "foo title")))
-
-  ;; actions must be start, start-from, continue-from
-  (let ((eden-conversations nil))
-    (should-error
-     (eden-conversation 'wrong-action "foo title")))
-
-  ;; action - start
-  (let (eden-conversations eden-conversation-id)
-    (cl-letf (((symbol-function 'eden-uuid)
-               (lambda nil "conversation-id-foo")))
-      (eden-conversation 'start "foo title")
-      (should
-       (equal eden-conversations
-              '(("conversation-id-foo" . (:title "foo title"
-                                          :action start
-                                          :last-req-uuid nil)))))
-      (should
-       (string= eden-conversation-id "conversation-id-foo"))))
-  (let ((eden-conversations
-         '(("conversation-id-foo" . (:title "foo title"
-                                     :action start
-                                     :last-req-uuid nil))))
-        eden-conversation-id)
-    (cl-letf (((symbol-function 'eden-uuid)
-               (lambda nil "conversation-id-bar")))
-      (eden-conversation 'start "bar title")
-      (should
-       (seq-set-equal-p
-        (mapcar #'car eden-conversations)
-        '("conversation-id-foo" "conversation-id-bar")))
-      (should
-       (equal (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-              '(:title "bar title" :action start :last-req-uuid nil)))
-      (should
-       (string= eden-conversation-id "conversation-id-bar"))))
-
-  ;; action - start
-  ;; error - req-uuid must not be specified
-  (let ((eden-conversations nil))
-    (should-error
-     (eden-conversation 'start "foo title" "foo-req-uuid")))
-
-  ;; actions - start-from, continue-from
-  ;; error - req-uuid is mandatory
-  (let ((eden-conversations nil))
-    (should-error (eden-conversation 'start-from "foo title")))
-  ;; error - req associated with req-uuid doesn't exist in `eden-dir'
-  (let ((eden-conversations nil)
-        (eden-dir (concat (make-temp-file "eden-" t) "/")))
-    (should-error
-     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
-
-  ;; error -  when an error.json file exists in req directory
-  (let* ((eden-conversations nil)
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
-    (eden-request-write 'error req "")
-    (should-error
-     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
-
-  ;; error - when req associated with req-uuid is in incomplete,
-  ;; specificaly when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
-  (let* ((eden-conversations nil)
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
-    (make-directory (eden-request-dir req) 'parent)
-    (should-error
-     (eden-conversation 'start-from "foo title" "foo-req-uuid")))
-
-  ;; action - start-from, continue-from
-  ;; we can start-from and continue-from multiple different conversations
-  ;; from the same req-uuid
-  (let* (eden-conversations
-         eden-conversation-id
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (foo-req (eden-request :prompt "foo-req")) ;; depend on `eden-dir'
-         (foo-req-uuid (plist-get foo-req :uuid))
-         (bar-req (eden-request :prompt "bar-req")) ;; depend on `eden-dir'
-         (bar-req-uuid (plist-get bar-req :uuid))
-         ;; we use the same response for two different requests
-         ;; because we just need them to exist in the request directory
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "assistant" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
-         (resp-str (eden-json-encode resp)))
-    (eden-write-request foo-req)
-    (eden-write-response resp-str resp foo-req)
-    (eden-write-request bar-req)
-    (eden-write-response resp-str resp bar-req)
-
-    (let ((n 0))
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil (format "conversation-id-foo-%s" (cl-incf n)))))
-        (eden-conversation 'start-from "foo-1 title" foo-req-uuid)
-        (eden-conversation 'start-from "foo-2 title" foo-req-uuid)
-        (eden-conversation 'continue-from "foo-3 title" foo-req-uuid)))
-
-    (let ((n 0))
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil (format "conversation-id-bar-%s" (cl-incf n)))))
-        (eden-conversation 'start-from  "bar-1 title" bar-req-uuid)
-        (eden-conversation 'continue-from  "bar-2 title" bar-req-uuid)
-        (eden-conversation 'continue-from  "bar-3 title" bar-req-uuid)))
-
-    (should
-     (seq-set-equal-p
-      (mapcar #'car eden-conversations)
-      '("conversation-id-foo-1" "conversation-id-foo-2" "conversation-id-foo-3"
-        "conversation-id-bar-1" "conversation-id-bar-2" "conversation-id-bar-3")))
-    (should
-     (string= eden-conversation-id "conversation-id-bar-3"))
-
-    (should
-     (equal
-      (alist-get "conversation-id-foo-1" eden-conversations nil nil 'string=)
-      `(:title "foo-1 title" :action start-from  :last-req-uuid ,foo-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-foo-2" eden-conversations nil nil 'string=)
-      `(:title "foo-2 title" :action start-from  :last-req-uuid ,foo-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-foo-3" eden-conversations nil nil 'string=)
-      `(:title "foo-3 title" :action continue-from  :last-req-uuid ,foo-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-bar-1" eden-conversations nil nil 'string=)
-      `(:title "bar-1 title" :action start-from  :last-req-uuid ,bar-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-bar-2" eden-conversations nil nil 'string=)
-      `(:title "bar-2 title" :action continue-from  :last-req-uuid ,bar-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-bar-3" eden-conversations nil nil 'string=)
-      `(:title "bar-3 title" :action continue-from  :last-req-uuid ,bar-req-uuid))))
-
-  (let* ((eden-conversations
-          '(("conversation-id-foo" . (:title "foo title"
-                                      :action start
-                                      :last-req-uuid nil))))
-         eden-conversation-id
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (foo-req (eden-request :prompt "foo-req")) ;; depend on `eden-dir'
-         (foo-req-uuid (plist-get foo-req :uuid))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "assistant" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
-         (resp-str (eden-json-encode resp)))
-    (eden-write-request foo-req)
-    (eden-write-response resp-str resp foo-req)
-
-    (cl-letf (((symbol-function 'eden-uuid)
-               (lambda nil "conversation-id-bar")))
-      (eden-conversation 'start-from "bar title" foo-req-uuid))
-    (cl-letf (((symbol-function 'eden-uuid)
-               (lambda nil "conversation-id-baz")))
-      (eden-conversation 'continue-from "baz title" foo-req-uuid))
-
-    (should
-     (seq-set-equal-p
-      (mapcar #'car eden-conversations)
-      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))
-    (should
-     (string= eden-conversation-id "conversation-id-baz"))
-    (should
-     (equal
-      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-      `(:title "bar title" :action start-from  :last-req-uuid ,foo-req-uuid)))
-    (should
-     (equal
-      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
-      `(:title "baz title" :action continue-from  :last-req-uuid ,foo-req-uuid)))))
-
-(ert-deftest eden-conversation-update-test ()
-  (let ((eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (eden-conversation-update '(:conversation-id "conversation-id-foo")
-                              '(:uuid "new-foo-req-uuid"))
-    (eden-conversation-update '(:conversation-id "conversation-id-bar")
-                              '(:uuid "new-bar-req-uuid"))
-    (eden-conversation-update '(:conversation-id "conversation-id-baz")
-                              '(:uuid "new-baz-req-uuid"))
-    (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
-                              '(:uuid "fake-req-uuid"))
-    (should
-     (equal
-      (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-      '(:title "foo title" :action continue-from :last-req-uuid "new-foo-req-uuid")))
-    (should
-     (equal
-      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-      '(:title "bar title" :action continue-from :last-req-uuid "new-bar-req-uuid")))
-    (should
-     (equal
-      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
-      '(:title "baz title" :action continue-from :last-req-uuid "new-baz-req-uuid")))
-    (should
-     (seq-set-equal-p
-      (mapcar #'car eden-conversations)
-      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
-
-(ert-deftest eden-conversation-title-test ()
-  (let ((eden-conversations nil))
-    (should-not (eden-conversation-title "conversation-id-bar")))
-  (let ((eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (should
-     (string=
-      (eden-conversation-title "conversation-id-bar")
-      "bar title"))))
-
-(ert-deftest eden-conversation-buffer-name-test ()
-  (let ((eden-conversations nil))
-    (should-not (eden-conversation-buffer-name "conversation-id-foo"))
-    (should-not (eden-conversation-buffer-name nil)))
-  (let ((eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (should-not (eden-conversation-buffer-name nil))
-    (should-not (eden-conversation-buffer-name "wrong-id"))
-    (should
-     (string=
-      (eden-conversation-buffer-name "conversation-id-foo")
-      "*eden<foo title>*"))))
-
-(ert-deftest eden-conversation-action-test ()
-  (let ((eden-conversations nil))
-    (should-not (eden-conversation-action "conversation-id-bar")))
-  (let ((eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (should
-     (eq (eden-conversation-action "conversation-id-foo")
-         'start))
-    (should
-     (eq (eden-conversation-action "conversation-id-bar")
-         'start-from))
-    (should
-     (eq (eden-conversation-action "conversation-id-baz")
-         'continue-from))))
-
-(ert-deftest eden-conversation-last-req-test ()
-  (let ((eden-conversations nil))
-    (should-not (eden-conversation-title "conversation-id-bar")))
-  (let ((eden-dir "/tmp/eden/")
-        (eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (should-not (eden-conversation-last-req "conversation-id-foo"))
-    (should
-     (equal
-      (eden-conversation-last-req "conversation-id-bar")
-      `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))
-    (should
-     (equal
-      (eden-conversation-last-req "conversation-id-baz")
-      `(:uuid "baz-req-uuid" :dir "/tmp/eden/")))))
-
-(ert-deftest eden-conversation-exchanges-test ()
-  (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (last-req
-          `(:req (:stream :false
-                  :model "gpt-4o-mini"
-                  :temperature 1
-                  :messages [(:role "system" :content "baz system")
-                             (:role "user" :content "foo user")
-                             (:role "assistant" :content "foo assistant\n")
-                             (:role "user" :content "bar prompt")
-                             (:role "assistant" :content "bar assistant\n")
-                             (:role "user" :content "baz user")])
-            :api (:service "chatgpt"
-                  :endpoint "https://api.openai.com/v1/chat/completions")
-            :prompt "baz prompt\n"
-            :system-prompt "baz system prompt\n"
-            :exchanges [(:uuid "uuid-foo"
-                         :prompt "foo prompt\n"
-                         :user "foo user"
-                         :assistant "foo assistant\n"
-                         :response "foo assistant\n")
-                        (:uuid "uuid-bar"
-                         :prompt "bar prompt\n"
-                         :user "bar user"
-                         :assistant "bar assistant\n"
-                         :response "bar assistant\n")]
-            :dir ,eden-dir
-            :uuid "uuid-baz"))
-         ;; #_(dir (plist-get req :dir))
-         (last-req-uuid (plist-get last-req :uuid))
-         (last-resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                      :object "chat.completion"
-                      :created 1733030031
-                      :model "gpt-4o-mini-2024-07-18"
-                      :choices [(:index 0
-                                 :message (:role "assistant" :content "baz assistant\n" :refusal nil)
-                                 :logprobs nil :finish_reason "stop")]))
-         (last-resp-str (eden-json-encode last-resp))
-         (eden-conversations
-          '(("conversation-id-start" .
-             (:title "start title" :action start :last-req-uuid nil))
-            ("conversation-id-start-from" .
-             (:title "start-from title"
-              :action start-from
-              :last-req-uuid "uuid-baz"))
-            ("conversation-id-continue-from" .
-             (:title "continue-from title"
-              :action continue-from
-              :last-req-uuid "uuid-baz")))))
-    (eden-write-request last-req)
-    (eden-write-response last-resp-str last-resp last-req)
-    (should-not (eden-conversation-exchanges "conversation-id-start"))
-    (should
-     (equal
-      (eden-conversation-exchanges "conversation-id-start-from")
-      [(:uuid "uuid-baz"
-        :prompt "baz prompt\n"
-        :user "baz user"
-        :assistant "baz assistant\n"
-        :response "baz assistant\n")]
-      ))
-    (should
-     (equal
-      (eden-conversation-exchanges "conversation-id-continue-from")
-      [(:uuid "uuid-foo"
-        :prompt "foo prompt\n"
-        :user "foo user"
-        :assistant "foo assistant\n"
-        :response "foo assistant\n")
-       (:uuid "uuid-bar"
-        :prompt "bar prompt\n"
-        :user "bar user"
-        :assistant "bar assistant\n"
-        :response "bar assistant\n")
-       (:uuid "uuid-baz"
-        :prompt "baz prompt\n"
-        :user "baz user"
-        :assistant "baz assistant\n"
-        :response "baz assistant\n")]
-      ))
-    ))
 
 (ert-deftest eden-send-request-test ()
   ;; We want to test that concurrent requests work as expected:
@@ -2809,48 +2679,216 @@ baz-assistant-content
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string))))
 
-(ert-deftest eden-kill-last-request-test ()
-  ;; See test `eden-send-request-test' for explanation about
-  ;; redefining `eden-request-send'.
+(ert-deftest eden-request-test ()
+  ;; Test :uuid
+  (should
+   (stringp
+    (plist-get (eden-request :prompt "foo prompt")
+               :uuid)))
 
-  (let ((debug-on-error t)
-        (eden-dir (concat (make-temp-file "eden-" t) "/"))
-        pr-timer)
-    (cl-letf
-        (((symbol-function 'eden-request-send)
-          ;; Print "resp-baz" in stdout after 1 second
-          ;; with sentinel constructed using `eden-sentinel'
-          (lambda (req callback callback-error info)
-            (eden-write-request req)
-            (eden-test-echo-resp
-             "\"resp-baz\"" (generate-new-buffer-name "eden")
-             (eval (macroexpand-all
-                    `(eden-sentinel
-                      (quote ,req)
-                      ;; no need for `quote' because car is `lambda'
-                      ,callback
-                      ;; works because ,callback-error returns (closure ...)
-                      ;; because it is define with `lambda' in `eden-send-request'
-                      (quote ,callback-error)
-                      (quote ,info))))
-             1))))
-      (eden-send-request :req (eden-request :prompt "req")))
-    (setq pr-timer eden-pending-timer)
-    ;; When we kill the last request, we actually kill its
-    ;; associated process which signal an error.
-    ;; But here we are not interested in that error but in checking
-    ;; that global variables of interest are set back correctly after
-    ;; the process is killed.
-    (should-error
-     (progn
-       (eden-kill-last-request)
-       (sleep-for 0.2)))
+  ;; Test :dir
+  (should
+   (string=
+    (let ((eden-dir nil))
+      (plist-get (eden-request :prompt "foo prompt")
+                 :dir))
+    (concat (temporary-file-directory) "eden/")))
+  (should
+   (string=
+    (plist-get
+     (eden-request :prompt "foo prompt" :dir "/tmp/foo/")
+     :dir)
+    "/tmp/foo/"))
+  (should
+   (string=
+    (let ((eden-dir "/tmp/bar/"))
+      (plist-get (eden-request :prompt "foo prompt")
+                 :dir))
+    "/tmp/bar/"))
 
-    (should (equal eden-pending-requests nil))
-    (should (equal eden-pending-timer nil))
-    ;; waiting widget is gone
-    (should-not (memq pr-timer timer-list))
-    (should-not global-mode-string)))
+  ;; Check :prompt, :system-prompt, :exchanges
+  ;;
+  ;; :prompt argument is mandatory
+  (should-error (eden-request))
+  ;; :prompt and :system-prompt
+  (let* ((eden-system-prompt nil)
+         (req (eden-request :prompt "foo prompt"))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (string= (plist-get req :prompt) "foo prompt"))
+    (should (string= (plist-get req :system-prompt) ""))
+    (should (equal req-messages [(:role "user" :content "foo prompt")])))
+  (let* ((req (eden-request :prompt "foo prompt"
+                            :system-prompt "foo system"))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (string= (plist-get req :system-prompt) "foo system"))
+    (should (equal req-messages
+                   [(:role "system" :content "foo system")
+                    (:role "user" :content "foo prompt")])))
+  ;; :prompt, :system-prompt and :exchanges
+  (let* ((exchanges [(:uuid "uuid-foo"
+                      :prompt "foo prompt"
+                      :user "foo user"
+                      :assistant "foo assistant"
+                      :response "foo response")
+                     (:uuid "uuid-bar"
+                      :prompt "bar prompt"
+                      :user "bar user"
+                      :assistant "bar assistant"
+                      :response "bar response")])
+         (req (eden-request
+               :prompt "baz prompt"
+               :system-prompt "baz system"
+               :exchanges exchanges))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (string= (plist-get req :system-prompt) "baz system"))
+    (should (equal (plist-get req :exchanges) exchanges))
+    (should (equal req-messages
+                   [(:role "system" :content "baz system")
+                    (:role "user" :content "foo user")
+                    (:role "assistant" :content "foo assistant")
+                    (:role "user" :content "bar user")
+                    (:role "assistant" :content "bar assistant")
+                    (:role "user" :content "baz prompt")])))
+  ;; :prompt and :system-prompt
+  ;; both converted from org-mode to markdown
+  (let* ((eden-system-prompt nil)
+         (req (eden-request :prompt "* prompt h1\n** prompt h2"))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
+    (should (string= (plist-get req :system-prompt) ""))
+    (should (equal req-messages
+                   [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
+  (let* ((req (eden-request :prompt "* prompt h1\n** prompt h2"
+                            :system-prompt "* system h1\n** system h2"))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
+    (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
+    (should (equal req-messages
+                   [(:role "system" :content "# system h1\n\n\n## system h2")
+                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
+  (let* ((exchanges [(:uuid "uuid-foo"
+                      :prompt "foo prompt"
+                      :user "foo user"
+                      :assistant "foo assistant")
+                     (:uuid "uuid-bar"
+                      :prompt "bar prompt"
+                      :user "bar user"
+                      :assistant "bar assistant")])
+         (req (eden-request
+               :prompt "* prompt h1\n** prompt h2"
+               :system-prompt "* system h1\n** system h2"
+               :exchanges exchanges))
+         (req-messages (plist-get (plist-get req :req) :messages)))
+    (should (equal req-messages
+                   [(:role "system" :content "# system h1\n\n\n## system h2")
+                    (:role "user" :content "foo user")
+                    (:role "assistant" :content "foo assistant")
+                    (:role "user" :content "bar user")
+                    (:role "assistant" :content "bar assistant")
+                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
+  ;; :system-prompt and default `eden-system-prompt'
+  (should
+   (string=
+    (let ((eden-system-prompt nil))
+      (plist-get (eden-request :prompt "foo prompt")
+                 :system-prompt))
+    ""))
+  (should
+   (string=
+    (let ((eden-system-prompt
+           '("bar system prompt title" . "bar system prompt") ))
+      (plist-get
+       (eden-request :prompt "foo prompt"
+                     :system-prompt "foo system prompt")
+       :system-prompt))
+    "foo system prompt"))
+  (should
+   (string=
+    (let ((eden-system-prompt
+           '("bar system prompt title" . "bar system prompt") ))
+      (plist-get (eden-request :prompt "foo prompt")
+                 :system-prompt))
+    "bar system prompt"))
+
+
+  ;; Test :stream
+  (let ((req (eden-request :prompt "foo prompt")))
+    (should (equal
+             (plist-get (plist-get req :req) :stream)
+             :false)))
+  (let ((req (eden-request :prompt "foo prompt"
+                           :stream t)))
+    (should (equal
+             (plist-get (plist-get req :req) :stream)
+             t)))
+
+  ;; Test :model
+  (let* ((eden-model "gpt-4o")
+         (req (eden-request :prompt "foo prompt")))
+    (should (equal
+             (plist-get (plist-get req :req) :model)
+             "gpt-4o")))
+  (let* ((eden-model "gpt-4o")
+         (req (eden-request :prompt "foo prompt"
+                            :model "gpt-4o-mini")))
+    (should (equal
+             (plist-get (plist-get req :req) :model)
+             "gpt-4o-mini")))
+
+  ;; Test :temperature
+  (let* ((eden-temperature 0)
+         (req (eden-request :prompt "foo prompt")))
+    (should (= (plist-get (plist-get req :req) :temperature)
+               0)))
+  (let* ((eden-temperature 0)
+         (req (eden-request :prompt "foo prompt"
+                            :temperature 1.1)))
+    (should (= (plist-get (plist-get req :req) :temperature)
+               1.1)))
+
+  ;; Test :api
+  (let* ((eden-api '(:service "openai"
+                     :endpoint "https://api.openai.com/v1/chat/completions"))
+         (req (eden-request :prompt "foo prompt")))
+    (should (equal (plist-get req :api) eden-api)))
+  (let* ((eden-api '(:service "openai"
+                     :endpoint "https://api.openai.com/v1/chat/completions"))
+         (req (eden-request
+               :prompt "foo prompt"
+               :api '(:service "openai-service"
+                      :endpoint "https://openai-endpoint"))))
+    (should (equal (plist-get req :api)
+                   '(:service "openai-service"
+                     :endpoint "https://openai-endpoint")))))
+
+;;;; Main menu
+
+(ert-deftest eden-last-conversations-keep-test ()
+  (should-not (eden-last-conversations-keep nil))
+  (let ((paths '(["uuid-req-1"]
+                 ["uuid-req-1" "uuid-req-2"]
+                 ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+                 ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                 ["uuid-req-2" "uuid-req-5"]
+                 ["uuid-req-6"]
+                 ["uuid-req-7"]
+                 ["uuid-req-7" "uuid-req-8"]
+                 ["uuid-req-5" "uuid-req-9"]
+                 ["uuid-req-5" "uuid-req-9" "uuid-req-10"]
+                 ["uuid-req-11"]
+                 ["uuid-req-11" "uuid-req-12"]
+                 ["uuid-req-13"])))
+    (should
+     (equal
+      (eden-last-conversations-keep paths)
+      '("uuid-req-3"
+        "uuid-req-4"
+        "uuid-req-5"
+        "uuid-req-6"
+        "uuid-req-8"
+        "uuid-req-10"
+        "uuid-req-12"
+        "uuid-req-13")))))
 
 (ert-deftest eden-last-paths/conversations/requests-test ()
 
@@ -2983,30 +3021,3 @@ baz-assistant-content
         (should (equal (eden-last-conversations 1) '("uuid-req-7")))
         (should (equal (eden-last-conversations 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
-
-(ert-deftest eden-last-conversations-keep-test ()
-  (should-not (eden-last-conversations-keep nil))
-  (let ((paths '(["uuid-req-1"]
-                 ["uuid-req-1" "uuid-req-2"]
-                 ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
-                 ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-                 ["uuid-req-2" "uuid-req-5"]
-                 ["uuid-req-6"]
-                 ["uuid-req-7"]
-                 ["uuid-req-7" "uuid-req-8"]
-                 ["uuid-req-5" "uuid-req-9"]
-                 ["uuid-req-5" "uuid-req-9" "uuid-req-10"]
-                 ["uuid-req-11"]
-                 ["uuid-req-11" "uuid-req-12"]
-                 ["uuid-req-13"])))
-    (should
-     (equal
-      (eden-last-conversations-keep paths)
-      '("uuid-req-3"
-        "uuid-req-4"
-        "uuid-req-5"
-        "uuid-req-6"
-        "uuid-req-8"
-        "uuid-req-10"
-        "uuid-req-12"
-        "uuid-req-13")))))
