@@ -1439,9 +1439,9 @@ like this:
           (eden-last-paths num-of-days)))
 
 (defun eden-conversations (num-of-days)
-  (eden-conversations-keep (eden-last-paths num-of-days)))
+  (eden-last-conversations-keep (eden-last-paths num-of-days)))
 
-(defun eden-conversations-keep (paths)
+(defun eden-last-conversations-keep (paths)
   (let ((tail (reverse paths))
         alist-paths-of-kept
         kept)

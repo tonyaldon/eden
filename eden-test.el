@@ -2984,8 +2984,8 @@ baz-assistant-content
         (should (equal (eden-conversations 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
 
-(ert-deftest eden-conversations-keep-test ()
-  (should-not (eden-conversations-keep nil))
+(ert-deftest eden-last-conversations-keep-test ()
+  (should-not (eden-last-conversations-keep nil))
   (let ((paths '(["uuid-req-1"]
                  ["uuid-req-1" "uuid-req-2"]
                  ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
@@ -3001,7 +3001,7 @@ baz-assistant-content
                  ["uuid-req-13"])))
     (should
      (equal
-      (eden-conversations-keep paths)
+      (eden-last-conversations-keep paths)
       '("uuid-req-3"
         "uuid-req-4"
         "uuid-req-5"
