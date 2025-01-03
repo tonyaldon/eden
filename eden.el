@@ -527,8 +527,6 @@ just before signaling the error.  It takes 3 arguments:
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
 
-(defvar eden-history-requests nil "...")
-(defvar eden-prompt-history-state [nil nil nil] "...")
 (defvar eden-pending-requests nil "...")
 (defvar eden-pending-timer nil "...")
 (defvar eden-conversations nil "...")
@@ -537,6 +535,8 @@ just before signaling the error.  It takes 3 arguments:
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
+
+(defvar eden-history-requests nil "...")
 
 (defun eden-history-requests-set ()
   "..."
@@ -552,6 +552,38 @@ just before signaling the error.  It takes 3 arguments:
                               (string-to-number (match-string 2 f)))))
               (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
               (mapcar 'car))))))
+
+(defvar eden-prompt-history-state [nil nil nil] "...")
+
+(defun eden-prompt-history-state-set ()
+  (setq eden-prompt-history-state
+        (vector eden-history-requests nil nil)))
+
+(defun eden-prompt-current-buffer ()
+  (buffer-substring-no-properties (point-min) (point-max)))
+
+(defun eden-prompt-current-req-uuid ()
+  (when-let ((current (aref eden-prompt-history-state 1)))
+    (when (not (consp current)) current)))
+
+(defun eden-prompt-current ()
+  (let ((current (aref eden-prompt-history-state 1)))
+    (cond
+     ((null current) nil)
+     ((consp current) (plist-get current :prompt))
+     (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
+
+(defun eden-prompt-current-goto-req-dir ()
+  (interactive)
+  (if-let* ((req-uuid (eden-prompt-current-req-uuid))
+            (req-dir (eden-request-dir
+                      `(:dir ,eden-dir :uuid ,req-uuid))))
+      (progn
+        (eden-maybe-delete-window-prompt-buffer)
+        (dired-other-window req-dir))
+    (message (concat "Current prompt is not associated with a request.  "
+                     "Try navigating the prompt history with `M-p' and `M-n', "
+                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-prompt-history-previous (state &optional prompt discard-current)
   "..."
@@ -584,36 +616,6 @@ just before signaling the error.  It takes 3 arguments:
                 (car next-items)
                 (cdr next-items))
       state)))
-
-(defun eden-prompt-current-buffer ()
-  (buffer-substring-no-properties (point-min) (point-max)))
-
-(defun eden-prompt-current-req-uuid ()
-  (when-let ((current (aref eden-prompt-history-state 1)))
-    (when (not (consp current)) current)))
-
-(defun eden-prompt-current ()
-  (let ((current (aref eden-prompt-history-state 1)))
-    (cond
-     ((null current) nil)
-     ((consp current) (plist-get current :prompt))
-     (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
-
-(defun eden-prompt-current-goto-req-dir ()
-  (interactive)
-  (if-let* ((req-uuid (eden-prompt-current-req-uuid))
-            (req-dir (eden-request-dir
-                      `(:dir ,eden-dir :uuid ,req-uuid))))
-      (progn
-        (eden-maybe-delete-window-prompt-buffer)
-        (dired-other-window req-dir))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
-
-(defun eden-prompt-history-state-set ()
-  (setq eden-prompt-history-state
-        (vector eden-history-requests nil nil)))
 
 (defun eden-prompt-discard-current-p ()
   (let ((current (aref eden-prompt-history-state 1)))
