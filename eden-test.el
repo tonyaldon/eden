@@ -2139,7 +2139,7 @@ baz-assistant-content
     (eden-request-write 'prompt req "foo prompt\n")
     (should (string= (eden-prompt-current) "foo prompt\n"))))
 
-(ert-deftest eden-conversation-locked-p-test ()
+(ert-deftest eden-pending-conversation-p-test ()
   ;; Values of :req and :proc keys are normally not string, but
   ;; as we don't use them `eden-pending-requests', it's ok.
   (let ((eden-pending-requests '((:conversation-id "conv-foo"
@@ -2147,10 +2147,10 @@ baz-assistant-content
                                   :proc "proc-foo")
                                  (:req "req-bar"
                                   :proc "proc-bar"))))
-    (should (eden-conversation-locked-p "conv-foo"))
-    (should-not (eden-conversation-locked-p "conv-baz")))
+    (should (eden-pending-conversation-p "conv-foo"))
+    (should-not (eden-pending-conversation-p "conv-baz")))
   (let ((eden-pending-requests nil))
-    (should-not (eden-conversation-locked-p "conv-foo"))))
+    (should-not (eden-pending-conversation-p "conv-foo"))))
 
 (ert-deftest eden-conversation-test ()
 
@@ -2728,8 +2728,8 @@ baz-assistant-content
               '(("baz" . t)
                 ("bar" . t)
                 ("foo" . t))))
-      (should (eden-conversation-locked-p conversation-id-foo))
-      (should (eden-conversation-locked-p conversation-id-bar))
+      (should (eden-pending-conversation-p conversation-id-foo))
+      (should (eden-pending-conversation-p conversation-id-bar))
       ;; This means that the waiting widget still showing up
       ;; in the modeline
       (should (memq pr-timer timer-list))

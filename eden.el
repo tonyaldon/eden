@@ -890,7 +890,7 @@ See `eden-conversation' and `eden-conversations'."
                     (plist-put :last-req-uuid req-uuid))))
         (setf conversation-data data)))))
 
-(defun eden-conversation-locked-p (conversation-id)
+(defun eden-pending-conversation-p (conversation-id)
   (seq-some
    (lambda (r)
      (when-let ((id (plist-get r :conversation-id)))
@@ -936,7 +936,7 @@ like this:
 
     (:conversation-id \"conversation-id-foo\" ...)"
   (let ((conversation-id (plist-get info :conversation-id)))
-    (if (eden-conversation-locked-p conversation-id)
+    (if (eden-pending-conversation-p conversation-id)
         (progn
           (message "Cannot send two concurrent requests in the same conversation.")
           (let ((inhibit-message t))
