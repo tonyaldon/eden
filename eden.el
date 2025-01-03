@@ -27,9 +27,12 @@
 ;;    up upon receipt.
 ;;; Code:
 
-;;; AI Assistant API to send asynchronous requests to OpenAI
 (require 'json)
 (require 'ox-md)
+
+(defalias 'eden-get-in 'map-nested-elt)
+
+;;; AI Assistant API to send asynchronous requests to OpenAI
 
 (defun eden-json-encode (object)
   "..."
@@ -84,8 +87,6 @@
         (if (string= (file-name-extension -file) "json")
             (eden-json-read)
           (buffer-substring-no-properties (point-min) (point-max)))))))
-
-(defalias 'eden-get-in 'map-nested-elt)
 
 (defun eden-request-assistant-content (resp)
   "..."
@@ -208,6 +209,69 @@ Raise an error in the following cases:
     (eden-request-write 'prompt req prompt)
     (eden-request-write 'system-prompt req system-prompt)
     (eden-request-write 'exchanges req exchanges)))
+
+(defun eden-api-key-symbol (service)
+  "Return the symbol we use for holding api key for SERVICE service.
+
+It is used in `eden-request-command'.
+
+When we want to use `eden-request-send' programmatically without
+asking the user (and so gpg) for the encrytped key in ~/.authinfo.gpg
+file we can use `eden-api-key-symbol' to set the api key like this
+assumming SERVICE is \"openai\":
+
+    (let ((api-key-symbol (eden-api-key-symbol \"openai\")))
+      (defvar-1 api-key-symbol nil)
+      (set api-key-symbol \"secret-api-key\")
+      nil)"
+  (intern (format "eden-api-key-%s" service)))
+
+(defun eden-request-command (req)
+  "Return list of commands (command command-no-api-key).
+
+`command' contains the real api key and `command-no-api-key' does not.
+This way we can use the latter for logging.
+
+req must have the following keys as in this example
+
+    (:api (:service \"openai-service\"
+           :endpoint \"https://openai-endpoint\")
+     :dir \"/tmp/eden/\"
+     :uuid \"uuid-foo\")
+
+Also set AI api key (the first time) from `~/.authinfo.gpg'
+file (encrypted with gpg) or `~/.authinfo' file
+
+    machine openai-service password <foo-bar-baz>
+
+where `openai-service' is :service key of :api key of REQ request.
+
+The AI api key is stored in `eden-api-key-<service-name>' which
+is in our case `eden-api-key-openai-service'."
+  (let* ((endpoint (eden-get-in req [:api :endpoint]))
+         (service (eden-get-in req [:api :service]))
+         (api-key-symbol (eden-api-key-symbol service))
+         (request-file (eden-request-file 'request req))
+         (command-fmt (concat "curl -s -X POST %s "
+                              "-H 'Authorization: Bearer %s' "
+                              "-H 'Content-Type: application/json' -d @%s")))
+    (when (not (boundp api-key-symbol))
+      ;; because we need a dynamic variable
+      (defvar-1 api-key-symbol nil))
+    (when (not (stringp (eval api-key-symbol)))
+      ;; don't use `setq' here because we want to set the symbol
+      ;; hold by the let-binded variable `api-key-symbol'
+      (set api-key-symbol (auth-source-pick-first-password :host service)))
+    (when (null (eval api-key-symbol))
+      (signal 'eden-error-api-key
+              (format
+               (concat "Do you have a line in ~/.authinfo.gpg file declaring "
+                       "the API key of service `%s' like this: "
+                       "machine %s password <api-key>")
+               service service)))
+    (list
+     (format command-fmt endpoint (eval api-key-symbol) request-file)
+     (format command-fmt endpoint "<api-key>" request-file))))
 
 (defun eden-write-command (command-no-api-key req)
   "..."
@@ -422,69 +486,6 @@ just before signaling the error.  It takes 3 arguments:
             :event event
             :callback-error ,callback-error
             :info ,info))))))
-
-(defun eden-api-key-symbol (service)
-  "Return the symbol we use for holding api key for SERVICE service.
-
-It is used in `eden-request-command'.
-
-When we want to use `eden-request-send' programmatically without
-asking the user (and so gpg) for the encrytped key in ~/.authinfo.gpg
-file we can use `eden-api-key-symbol' to set the api key like this
-assumming SERVICE is \"openai\":
-
-    (let ((api-key-symbol (eden-api-key-symbol \"openai\")))
-      (defvar-1 api-key-symbol nil)
-      (set api-key-symbol \"secret-api-key\")
-      nil)"
-  (intern (format "eden-api-key-%s" service)))
-
-(defun eden-request-command (req)
-  "Return list of commands (command command-no-api-key).
-
-`command' contains the real api key and `command-no-api-key' does not.
-This way we can use the latter for logging.
-
-req must have the following keys as in this example
-
-    (:api (:service \"openai-service\"
-           :endpoint \"https://openai-endpoint\")
-     :dir \"/tmp/eden/\"
-     :uuid \"uuid-foo\")
-
-Also set AI api key (the first time) from `~/.authinfo.gpg'
-file (encrypted with gpg) or `~/.authinfo' file
-
-    machine openai-service password <foo-bar-baz>
-
-where `openai-service' is :service key of :api key of REQ request.
-
-The AI api key is stored in `eden-api-key-<service-name>' which
-is in our case `eden-api-key-openai-service'."
-  (let* ((endpoint (eden-get-in req [:api :endpoint]))
-         (service (eden-get-in req [:api :service]))
-         (api-key-symbol (eden-api-key-symbol service))
-         (request-file (eden-request-file 'request req))
-         (command-fmt (concat "curl -s -X POST %s "
-                              "-H 'Authorization: Bearer %s' "
-                              "-H 'Content-Type: application/json' -d @%s")))
-    (when (not (boundp api-key-symbol))
-      ;; because we need a dynamic variable
-      (defvar-1 api-key-symbol nil))
-    (when (not (stringp (eval api-key-symbol)))
-      ;; don't use `setq' here because we want to set the symbol
-      ;; hold by the let-binded variable `api-key-symbol'
-      (set api-key-symbol (auth-source-pick-first-password :host service)))
-    (when (null (eval api-key-symbol))
-      (signal 'eden-error-api-key
-              (format
-               (concat "Do you have a line in ~/.authinfo.gpg file declaring "
-                       "the API key of service `%s' like this: "
-                       "machine %s password <api-key>")
-               service service)))
-    (list
-     (format command-fmt endpoint (eval api-key-symbol) request-file)
-     (format command-fmt endpoint "<api-key>" request-file))))
 
 (defun eden-request-send (req callback &optional callback-error info)
   "..."

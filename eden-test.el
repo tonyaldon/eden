@@ -1,5 +1,7 @@
 (defmacro comment (&rest body) "Ignores body and yield nil." nil)
 
+;;; AI Assistant API to send asynchronous requests to OpenAI
+
 (ert-deftest eden-json-encoding/decoding-test ()
   (should
    (string=
@@ -100,6 +102,26 @@
    (string= (eden-request-dir '(:dir "/tmp/eden" :uuid "foo-uuid"))
             "/tmp/eden/foo-uuid/")))
 
+(ert-deftest eden-request-read-test ()
+  (let* ((request '(:stream :false
+                    :model "gpt-4o-mini"
+                    :temperature 1
+                    :messages [(:role "user" :content "user prompt\n")]))
+         (req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (message "%s" (eden-request-dir req))
+
+    ;; json files
+    (eden-request-write 'request req (eden-json-encode request))
+    (should (equal (eden-request-read 'request req) request))
+
+    ;; non json files
+    (eden-request-write 'prompt req "user prompt\n")
+    (should (equal (eden-request-read 'prompt req) "user prompt\n"))
+
+    ;; response.json doesn't exist
+    (should-error (eden-request-read 'response req))))
+
 (ert-deftest eden-request-assistant-content-test ()
   (let ((resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                 :object "chat.completion"
@@ -144,56 +166,6 @@
     (should
      (string= (eden-request-user-content request) "baz user"))))
 
-(ert-deftest eden-request-timestamp-test ()
-  ;; `eden-request-write' function uses `time-to-seconds' function
-  ;; to write the timestamp file of a request so to be able to test
-  ;; `eden-request-timestamp', we temporary redefine `time-to-seconds'
-  ;; to return a constant number similar to the one it would normally return.
-
-  (cl-letf (((symbol-function 'time-to-seconds)
-             (lambda () 1733921715.2331347)))
-    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
-      (eden-request-write 'timestamp req "")
-      (sleep-for 0.1)
-      (should
-       (equal (eden-request-timestamp req) 1733921715.2331347)))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-date-test")))
-(ert-deftest eden-request-date-test ()
-  ;; `eden-request-write' function uses `time-to-seconds' function
-  ;; to write the timestamp file of a request so to be able to test
-  ;; `eden-request-date', we temporary redefine `time-to-seconds'
-  ;; to return a constant number similar to the one it would normally return.
-  (cl-letf (((symbol-function 'time-to-seconds)
-             (lambda () 1733921715.2331347)))
-    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
-      (eden-request-write 'timestamp req "")
-      (sleep-for 0.1)
-      (should
-       (equal (eden-request-date req) "[2024-12-11 Wed]")))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-read-test")))
-(ert-deftest eden-request-read-test ()
-  (let* ((request '(:stream :false
-                    :model "gpt-4o-mini"
-                    :temperature 1
-                    :messages [(:role "user" :content "user prompt\n")]))
-         (req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo")))
-    (message "%s" (eden-request-dir req))
-
-    ;; json files
-    (eden-request-write 'request req (eden-json-encode request))
-    (should (equal (eden-request-read 'request req) request))
-
-    ;; non json files
-    (eden-request-write 'prompt req "user prompt\n")
-    (should (equal (eden-request-read 'prompt req) "user prompt\n"))
-
-    ;; response.json doesn't exist
-    (should-error (eden-request-read 'response req))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-check-test")))
 (ert-deftest eden-request-check-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
@@ -236,7 +208,6 @@
     (eden-request-write 'response-org req "")
     (should (eden-request-check req))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-test")))
 (ert-deftest eden-request-conversation-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
@@ -357,7 +328,6 @@
         :assistant "baz assistant\n"
         :response "baz assistant\n")]))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-path-test")))
 (ert-deftest eden-request-conversation-path-test ()
   ;; nil if the request doesn't exist in `:dir'
   (should-not
@@ -459,7 +429,6 @@
       (eden-request-conversation-path `(:dir ,dir :uuid "uuid-baz"))
       ["uuid-foo" "uuid-bar" "uuid-baz"]))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-path-alist-test")))
 (ert-deftest eden-request-conversation-path-alist-test ()
   (should-not (eden-request-conversation-path-alist nil))
   (should
@@ -471,7 +440,6 @@
     (eden-request-conversation-path-alist ["uuid-foo" "uuid-bar" "uuid-baz"])
     '(("uuid-foo" . (("uuid-bar" . (("uuid-baz" . t)))))))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-perplexity-citations-test")))
 (ert-deftest eden-request-perplexity-citations-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
@@ -667,7 +635,33 @@
         "https://baz-1.com"
         "https://baz-2.com")))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-write-request-test")))
+(ert-deftest eden-request-timestamp-test ()
+  ;; `eden-request-write' function uses `time-to-seconds' function
+  ;; to write the timestamp file of a request so to be able to test
+  ;; `eden-request-timestamp', we temporary redefine `time-to-seconds'
+  ;; to return a constant number similar to the one it would normally return.
+
+  (cl-letf (((symbol-function 'time-to-seconds)
+             (lambda () 1733921715.2331347)))
+    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
+      (eden-request-write 'timestamp req "")
+      (sleep-for 0.1)
+      (should
+       (equal (eden-request-timestamp req) 1733921715.2331347)))))
+
+(ert-deftest eden-request-date-test ()
+  ;; `eden-request-write' function uses `time-to-seconds' function
+  ;; to write the timestamp file of a request so to be able to test
+  ;; `eden-request-date', we temporary redefine `time-to-seconds'
+  ;; to return a constant number similar to the one it would normally return.
+  (cl-letf (((symbol-function 'time-to-seconds)
+             (lambda () 1733921715.2331347)))
+    (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
+      (eden-request-write 'timestamp req "")
+      (sleep-for 0.1)
+      (should
+       (equal (eden-request-date req) "[2024-12-11 Wed]")))))
+
 (ert-deftest eden-write-request-test ()
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
@@ -772,7 +766,24 @@
      (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
         1))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-org-replace-perplexity-citations-test")))
+(defvar eden-api-key-someservice-name)
+
+(ert-deftest eden-request-command-test ()
+  (let* ((eden-api-key-someservice-name "secret-api-key")
+         (req '(:api (:service "someservice-name"
+                      :endpoint "https://someservice-endpoint")
+                :dir "/tmp/eden/"
+                :uuid "uuid-foo"))
+         (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
+                              "-H 'Authorization: Bearer %s' "
+                              "-H 'Content-Type: application/json' -d @%s"))
+         (request-file (eden-request-file 'request req)))
+    (should
+     (equal (eden-request-command req)
+            (list
+             (format command-fmt eden-api-key-someservice-name request-file)
+             (format command-fmt "<api-key>" request-file))))))
+
 (ert-deftest eden-org-replace-perplexity-citations-test ()
   (let ((org-str "Some content with a citation[1]. More citations [1][2].
 
@@ -827,7 +838,6 @@ arr[0]
 #+END_SRC
 "))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-write-response-test")))
 (ert-deftest eden-write-response-test ()
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -874,7 +884,6 @@ arr[0]
      :connection-type 'pipe
      :sentinel sentinel)))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-sentinel-test")))
 (ert-deftest eden-sentinel-test ()
   ;; we let-bind requests, callbacks and infos with the variables
   ;; `-req', `-callback' and `-info' to be sure that `eden-sentinel'
@@ -1256,25 +1265,9 @@ arr[0]
 ;; the first time we call it and ask the user to enter his
 ;; gpg passphrase to get the api key from ~/.authinfo.gpg file.
 ;; See `eden-api-key-symbol'.
-(defvar eden-api-key-someservice-name)
 
-(ert-deftest eden-request-command-test ()
-  (let* ((eden-api-key-someservice-name "secret-api-key")
-         (req '(:api (:service "someservice-name"
-                      :endpoint "https://someservice-endpoint")
-                :dir "/tmp/eden/"
-                :uuid "uuid-foo"))
-         (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
-                              "-H 'Authorization: Bearer %s' "
-                              "-H 'Content-Type: application/json' -d @%s"))
-         (request-file (eden-request-file 'request req)))
-    (should
-     (equal (eden-request-command req)
-            (list
-             (format command-fmt eden-api-key-someservice-name request-file)
-             (format command-fmt "<api-key>" request-file))))))
+;;; AI Assistant UI
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-history-requests-set-test")))
 (ert-deftest eden-history-requests-set-test ()
   ;; `eden-dir' doesn't exist
   (let* (eden-history-requests
@@ -1302,7 +1295,6 @@ arr[0]
     (should
      (equal eden-history-requests (list uuid-3 uuid-2 uuid-1 uuid-0)))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-org-to-markdown-test")))
 (ert-deftest eden-org-to-markdown-test ()
   (should
    (string=
@@ -1334,7 +1326,6 @@ foo bar baz
 
   )
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-test")))
 (ert-deftest eden-request-test ()
   ;; Test :uuid
   (should
@@ -1517,7 +1508,6 @@ foo bar baz
                    '(:service "openai-service"
                      :endpoint "https://openai-endpoint")))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-org-demote-test")))
 (ert-deftest eden-org-demote-test ()
   ;; headline top level is 1
   (should
@@ -1648,7 +1638,6 @@ foo bar baz
              (eden-request-dir req)
              (or timestamp 1734664733.06362)))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-insert-conversation-test")))
 (ert-deftest eden-insert-conversation-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
@@ -2054,7 +2043,6 @@ baz-assistant-content
 
 "))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-history-previous/next")))
 (ert-deftest eden-history-previous/next ()
   ;; default usage
   (should
@@ -2138,7 +2126,6 @@ baz-assistant-content
            [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
           [("bar") "foo" nil])))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-current-test")))
 (ert-deftest eden-prompt-current-test ()
   (let ((eden-prompt-history-state [("foo-uuid" "bar-uuid" "baz-uuid") nil nil]))
     (should-not (eden-prompt-current)))
@@ -2165,7 +2152,6 @@ baz-assistant-content
   (let ((eden-pending-requests nil))
     (should-not (eden-conversation-locked-p "conv-foo"))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-test")))
 (ert-deftest eden-conversation-test ()
 
   ;; Titles must be unique
@@ -2369,7 +2355,6 @@ baz-assistant-content
       (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
       `(:title "baz title" :action continue-from  :last-req-uuid ,foo-req-uuid)))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-update-test")))
 (ert-deftest eden-conversation-update-test ()
   (let ((eden-conversations
          '(("conversation-id-foo" .
@@ -2418,7 +2403,6 @@ baz-assistant-content
       (eden-conversation-title "conversation-id-bar")
       "bar title"))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-buffer-name-test")))
 (ert-deftest eden-conversation-buffer-name-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-buffer-name "conversation-id-foo"))
@@ -2437,7 +2421,6 @@ baz-assistant-content
       (eden-conversation-buffer-name "conversation-id-foo")
       "*eden<foo title>*"))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-action-test")))
 (ert-deftest eden-conversation-action-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-action "conversation-id-bar")))
@@ -2479,7 +2462,6 @@ baz-assistant-content
       (eden-conversation-last-req "conversation-id-baz")
       `(:uuid "baz-req-uuid" :dir "/tmp/eden/")))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exchanges-test")))
 (ert-deftest eden-conversation-exchanges-test ()
   (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
          (last-req
@@ -2562,7 +2544,6 @@ baz-assistant-content
       ))
     ))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-send-request-test")))
 (ert-deftest eden-send-request-test ()
   ;; We want to test that concurrent requests work as expected:
   ;;
@@ -2828,7 +2809,6 @@ baz-assistant-content
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-kill-last-request-test")))
 (ert-deftest eden-kill-last-request-test ()
   ;; See test `eden-send-request-test' for explanation about
   ;; redefining `eden-request-send'.
@@ -2872,8 +2852,6 @@ baz-assistant-content
     (should-not (memq pr-timer timer-list))
     (should-not global-mode-string)))
 
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-paths/conversations/requests-test")))
 (ert-deftest eden-paths/conversations/requests-test ()
 
   ;; ["uuid-req-1"]                           ;; not a conversation
