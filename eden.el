@@ -535,10 +535,58 @@ See `eden-system-prompt-set' command.")
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
 (defvar eden-pops-up-upon-receipt t "...")
+(defvar eden-prompt-buffer-name "*eden*" "...")
+
+;;;; Utils
 
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
+
+(defun eden-maybe-delete-window-prompt-buffer ()
+  (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
+    (when (and (equal (selected-window) prompt-buffer-window)
+               (> (length (window-list)) 1))
+      (delete-window))))
+
+(defun eden-org-to-markdown (org-str)
+  (let ((org-export-with-toc nil)
+        (org-md-headline-style 'atx))
+    ;; Default md backend uses `org-md-example-block' to export
+    ;; example blocks and source blocks and it prefers 4 leading
+    ;; spaces over triple backticks.  Here we redefine it to always
+    ;; use triple backticks and the language name of the block when
+    ;; there is one.
+    (cl-letf (((symbol-function 'org-md-example-block)
+               (lambda (block _contents info)
+                 (let ((lang (org-element-property :language block))
+                       (code (org-remove-indentation
+                              (org-export-format-code-default block info))))
+                   (format "```%s\n%s\n```" (or lang "") code)))))
+      (string-trim
+       (org-export-string-as org-str 'md nil)))))
+
+(defun eden-org-demote (org-str level)
+  "Demote ORG-STR `org-mode' string to LEVEL level.
+
+LEVEL must be 3 or 4."
+  (when (not (seq-contains-p '(3 4) level))
+    (error "`%S' not accepted.  `level' must be 3 or 4" level))
+  (with-temp-buffer
+    (org-mode)
+    (save-excursion (insert org-str))
+    (let ((headline-top-level
+           (cond
+            ((save-excursion (re-search-forward "^\\* .+" nil t)) 1)
+            ((save-excursion (re-search-forward "^\\*\\* .+" nil t)) 2)
+            ((save-excursion (re-search-forward "^\\*\\*\\* .+" nil t)) 3)
+            (t 4))))
+      (when (< headline-top-level 4)
+        (while (re-search-forward "^\\*+ " nil t)
+          (save-excursion
+            (goto-char (match-beginning 0))
+            (insert (make-string (- level headline-top-level) ?*))))))
+    (buffer-substring-no-properties (point-min) (point-max))))
 
 ;;;; Prompt and Request history
 
@@ -666,77 +714,6 @@ See `eden-system-prompt-set' command.")
   (eden-prompt-history 'next))
 
 ;;;; To organize
-
-(defun eden-org-to-markdown (org-str)
-  (let ((org-export-with-toc nil)
-        (org-md-headline-style 'atx))
-    ;; Default md backend uses `org-md-example-block' to export
-    ;; example blocks and source blocks and it prefers 4 leading
-    ;; spaces over triple backticks.  Here we redefine it to always
-    ;; use triple backticks and the language name of the block when
-    ;; there is one.
-    (cl-letf (((symbol-function 'org-md-example-block)
-               (lambda (block _contents info)
-                 (let ((lang (org-element-property :language block))
-                       (code (org-remove-indentation
-                              (org-export-format-code-default block info))))
-                   (format "```%s\n%s\n```" (or lang "") code)))))
-      (string-trim
-       (org-export-string-as org-str 'md nil)))))
-
-(cl-defun eden-request (&key prompt system-prompt exchanges
-                             stream model temperature
-                             api dir)
-  (when (null prompt)
-    (error "You must provide a prompt via `:prompt' key to build a request"))
-  (let* ((-system-prompt
-          (or system-prompt (cdr-safe eden-system-prompt) ""))
-         (-messages
-          `(,(when (not (string-empty-p -system-prompt))
-               `(:role "system" :content ,(eden-org-to-markdown -system-prompt)))
-            ,@(seq-reduce
-               (lambda (acc exchange)
-                 (append acc
-                         `((:role "user" :content ,(plist-get exchange :user))
-                           (:role "assistant" :content ,(plist-get exchange :assistant)))))
-               exchanges
-               '())
-            (:role "user" :content ,(eden-org-to-markdown prompt))))
-         (req-messages (apply 'vector (remq nil -messages))))
-    `(:req (:stream ,(or (and stream t) :false)
-            :model ,(or model eden-model)
-            :temperature ,(or temperature eden-temperature)
-            :messages ,req-messages)
-      :api ,(or api eden-api)
-      :prompt ,prompt
-      :system-prompt ,-system-prompt
-      :exchanges ,exchanges
-      :dir ,(or dir
-                eden-dir
-                (concat (temporary-file-directory) "eden/"))
-      :uuid ,(eden-uuid))))
-
-(defun eden-org-demote (org-str level)
-  "Demote ORG-STR `org-mode' string to LEVEL level.
-
-LEVEL must be 3 or 4."
-  (when (not (seq-contains-p '(3 4) level))
-    (error "`%S' not accepted.  `level' must be 3 or 4" level))
-  (with-temp-buffer
-    (org-mode)
-    (save-excursion (insert org-str))
-    (let ((headline-top-level
-           (cond
-            ((save-excursion (re-search-forward "^\\* .+" nil t)) 1)
-            ((save-excursion (re-search-forward "^\\*\\* .+" nil t)) 2)
-            ((save-excursion (re-search-forward "^\\*\\*\\* .+" nil t)) 3)
-            (t 4))))
-      (when (< headline-top-level 4)
-        (while (re-search-forward "^\\*+ " nil t)
-          (save-excursion
-            (goto-char (match-beginning 0))
-            (insert (make-string (- level headline-top-level) ?*))))))
-    (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun eden-insert-conversation (req title &optional append start-from)
   ""
@@ -899,7 +876,7 @@ See `eden-conversation' and `eden-conversations'."
       ('start-from (vector (aref conversation (1- (length conversation)))))
       ('continue-from conversation))))
 
-;;;; To organize
+;;;; Sending Requests
 
 (defvar eden-pending-requests nil "...")
 (defvar eden-pending-timer nil "...")
@@ -1018,6 +995,38 @@ like this:
         (push (plist-get req :uuid) eden-request-history)
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
+
+(cl-defun eden-request (&key prompt system-prompt exchanges
+                             stream model temperature
+                             api dir)
+  (when (null prompt)
+    (error "You must provide a prompt via `:prompt' key to build a request"))
+  (let* ((-system-prompt
+          (or system-prompt (cdr-safe eden-system-prompt) ""))
+         (-messages
+          `(,(when (not (string-empty-p -system-prompt))
+               `(:role "system" :content ,(eden-org-to-markdown -system-prompt)))
+            ,@(seq-reduce
+               (lambda (acc exchange)
+                 (append acc
+                         `((:role "user" :content ,(plist-get exchange :user))
+                           (:role "assistant" :content ,(plist-get exchange :assistant)))))
+               exchanges
+               '())
+            (:role "user" :content ,(eden-org-to-markdown prompt))))
+         (req-messages (apply 'vector (remq nil -messages))))
+    `(:req (:stream ,(or (and stream t) :false)
+            :model ,(or model eden-model)
+            :temperature ,(or temperature eden-temperature)
+            :messages ,req-messages)
+      :api ,(or api eden-api)
+      :prompt ,prompt
+      :system-prompt ,-system-prompt
+      :exchanges ,exchanges
+      :dir ,(or dir
+                eden-dir
+                (concat (temporary-file-directory) "eden/"))
+      :uuid ,(eden-uuid))))
 
 (defun eden-send ()
   ""
@@ -1380,14 +1389,6 @@ like this:
      mode-line-misc-info))
   (eden-request-history-set)
   (eden-prompt-history-state-set))
-
-(defvar eden-prompt-buffer-name "*eden*" "...")
-
-(defun eden-maybe-delete-window-prompt-buffer ()
-  (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
-    (when (and (equal (selected-window) prompt-buffer-window)
-               (> (length (window-list)) 1))
-      (delete-window))))
 
 (defun eden (&optional arg)
   ""
