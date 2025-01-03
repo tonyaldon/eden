@@ -536,14 +536,14 @@ just before signaling the error.  It takes 3 arguments:
   "Generate a random-based UUID using `uuidgen' linux utility."
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
 
-(defvar eden-history-requests nil "...")
+(defvar eden-request-history nil "...")
 
-(defun eden-history-requests-set ()
+(defun eden-request-history-set ()
   "..."
   (when (file-exists-p eden-dir)
     (let* ((timestamp-files
             (directory-files-recursively eden-dir "timestamp-.*")))
-      (setq eden-history-requests
+      (setq eden-request-history
             (thread-last
               timestamp-files
               (mapcar (lambda (f)
@@ -557,7 +557,7 @@ just before signaling the error.  It takes 3 arguments:
 
 (defun eden-prompt-history-state-set ()
   (setq eden-prompt-history-state
-        (vector eden-history-requests nil nil)))
+        (vector eden-request-history nil nil)))
 
 (defun eden-prompt-current-buffer ()
   (buffer-substring-no-properties (point-min) (point-max)))
@@ -941,7 +941,7 @@ like this:
                     :conversation-id conversation-id
                     :proc (eden-request-send req callback callback-error info))
               eden-pending-requests)
-        (push (plist-get req :uuid) eden-history-requests)
+        (push (plist-get req :uuid) eden-request-history)
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
 
@@ -1366,7 +1366,7 @@ See `eden-system-prompt-set' command.")
                        system-prompt-title 16 nil nil t))))
      " "
      mode-line-misc-info))
-  (eden-history-requests-set)
+  (eden-request-history-set)
   (eden-prompt-history-state-set))
 
 (defvar eden-prompt-buffer-name "*eden*" "...")

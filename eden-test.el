@@ -1268,15 +1268,15 @@ arr[0]
 
 ;;; AI Assistant UI
 
-(ert-deftest eden-history-requests-set-test ()
+(ert-deftest eden-request-history-set-test ()
   ;; `eden-dir' doesn't exist
-  (let* (eden-history-requests
+  (let* (eden-request-history
          (eden-dir (concat (make-temp-file "eden-" t) "/")))
     (delete-directory eden-dir)
-    (eden-history-requests-set)
-    (should-not eden-history-requests))
+    (eden-request-history-set)
+    (should-not eden-request-history))
   ;; `eden-dir' exist with request and timestamp files
-  (let* (eden-history-requests
+  (let* (eden-request-history
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
          (req-0 (eden-request :prompt "req-0"))
          (req-1 (eden-request :prompt "req-1"))
@@ -1291,9 +1291,9 @@ arr[0]
     (eden-write-request req-1)
     (eden-write-request req-2)
     (eden-write-request req-3)
-    (eden-history-requests-set)
+    (eden-request-history-set)
     (should
-     (equal eden-history-requests (list uuid-3 uuid-2 uuid-1 uuid-0)))))
+     (equal eden-request-history (list uuid-3 uuid-2 uuid-1 uuid-0)))))
 
 (ert-deftest eden-org-to-markdown-test ()
   (should
@@ -2551,7 +2551,7 @@ baz-assistant-content
   ;;   after the first request done,
   ;; - test `eden-pending-requests' value during all requests
   ;; - test that we can order responses according to their timestamp file
-  ;; - test that we update `eden-history-requests' variable
+  ;; - test that we update `eden-request-history' variable
 
   ;; NOTE:
   ;;
@@ -2579,7 +2579,7 @@ baz-assistant-content
                      (message "Response for request %s received"
                               (plist-get req :prompt))))
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         eden-history-requests
+         eden-request-history
          (conversation-id-foo "conversation-id-foo")
          (conversation-id-bar "conversation-id-bar")
          (eden-conversations
@@ -2751,7 +2751,7 @@ baz-assistant-content
       (should (equal responses
                      '("resp-foo" "resp-baz" "resp-bar")))
       (should
-       (equal eden-history-requests
+       (equal eden-request-history
               (list
                (plist-get req-baz :uuid)
                (plist-get req-bar :uuid)
