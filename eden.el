@@ -553,7 +553,7 @@ just before signaling the error.  It takes 3 arguments:
               (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
               (mapcar 'car))))))
 
-(defun eden-history-previous (state &optional prompt discard-current)
+(defun eden-prompt-history-previous (state &optional prompt discard-current)
   "..."
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
@@ -569,7 +569,7 @@ just before signaling the error.  It takes 3 arguments:
                            next-items)))
       state)))
 
-(defun eden-history-next (state &optional prompt discard-current)
+(defun eden-prompt-history-next (state &optional prompt discard-current)
   "..."
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
@@ -626,9 +626,9 @@ just before signaling the error.  It takes 3 arguments:
   (let (prompts f)
     (pcase direction
       ('previous (setq prompts (aref eden-prompt-history-state 0))
-                 (setq f 'eden-history-previous))
+                 (setq f 'eden-prompt-history-previous))
       ('next (setq prompts (aref eden-prompt-history-state 2))
-             (setq f 'eden-history-next)))
+             (setq f 'eden-prompt-history-next)))
     (cond
      ((null prompts)
       (message "No more requests or prompts in history."))

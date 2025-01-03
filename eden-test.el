@@ -2043,86 +2043,86 @@ baz-assistant-content
 
 "))))
 
-(ert-deftest eden-history-previous/next ()
+(ert-deftest eden-prompt-history-previous/next ()
   ;; default usage
   (should
-   (equal (eden-history-previous [("foo" "bar" "baz") nil nil])
+   (equal (eden-prompt-history-previous [("foo" "bar" "baz") nil nil])
           [("bar" "baz") "foo" nil]))
   (should
-   (equal (eden-history-previous [("bar" "baz") "foo" nil])
+   (equal (eden-prompt-history-previous [("bar" "baz") "foo" nil])
           [("baz") "bar" ("foo")]))
   (should
-   (equal (eden-history-previous [("baz") "bar" ("foo")])
+   (equal (eden-prompt-history-previous [("baz") "bar" ("foo")])
           [nil "baz" ("bar" "foo")]))
   (should
-   (equal (eden-history-previous [nil "baz" ("bar" "foo")])
+   (equal (eden-prompt-history-previous [nil "baz" ("bar" "foo")])
           [nil "baz" ("bar" "foo")]))
   (should
-   (equal (eden-history-next [nil "baz" ("bar" "foo")])
+   (equal (eden-prompt-history-next [nil "baz" ("bar" "foo")])
           [("baz") "bar" ("foo")]))
   (should
-   (equal (eden-history-next [("baz") "bar" ("foo")])
+   (equal (eden-prompt-history-next [("baz") "bar" ("foo")])
           [("bar" "baz") "foo" nil]))
   (should
-   (equal (eden-history-next [("bar" "baz") "foo" nil])
+   (equal (eden-prompt-history-next [("bar" "baz") "foo" nil])
           [("bar" "baz") "foo" nil]))
 
   ;; signal error if both `prompt' and `discard-current' optional
   ;; arguments are non nil
   ;; todo
   (should-error
-   (eden-history-previous
+   (eden-prompt-history-previous
     [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt") 'discard-current))
 
   (should-error
-   (eden-history-next
+   (eden-prompt-history-next
     [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt") 'discard-current))
 
   ;; with `prompt' optional argument
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt"))
           [("bar" "baz") "foo" ((:prompt "scratch prompt"))]))
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
           [("baz") "bar" ((:prompt "scratch prompt") "foo")]))
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
           [nil "baz" ((:prompt "scratch prompt") "bar" "foo")]))
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
           [nil "baz" ("bar" "foo")]))
   (should
-   (equal (eden-history-next
+   (equal (eden-prompt-history-next
            [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
           [((:prompt "scratch prompt") "baz") "bar" ("foo")]))
   (should
-   (equal (eden-history-next
+   (equal (eden-prompt-history-next
            [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
           [((:prompt "scratch prompt") "bar" "baz") "foo" nil]))
   (should
-   (equal (eden-history-next
+   (equal (eden-prompt-history-next
            [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
           [("bar" "baz") "foo" nil]))
 
   ;; with `discard-current' optional argument
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [("foo" "bar") "to-be-discarded" nil] nil 'discard-current)
           [("bar") "foo" nil]))
   (should
-   (equal (eden-history-previous
+   (equal (eden-prompt-history-previous
            [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
           [nil "bar" ("foo")]))
   (should
-   (equal (eden-history-next
+   (equal (eden-prompt-history-next
            [nil "to-be-discarded" ("bar" "foo")] nil 'discard-current)
           [nil "bar" ("foo")]))
   (should
-   (equal (eden-history-next
+   (equal (eden-prompt-history-next
            [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
           [("bar") "foo" nil])))
 
