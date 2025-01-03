@@ -527,14 +527,14 @@ just before signaling the error.  It takes 3 arguments:
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
 
-(defvar eden-pending-requests nil "...")
-(defvar eden-pending-timer nil "...")
 (defvar eden-conversations nil "...")
 (defvar eden-conversation-id nil "...")
 
 (defun eden-uuid ()
   "Generate a random-based UUID using `uuidgen' linux utility."
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
+
+;;;; Prompt and Request history
 
 (defvar eden-request-history nil "...")
 
@@ -659,6 +659,8 @@ just before signaling the error.  It takes 3 arguments:
   (interactive)
   (eden-prompt-history 'next))
 
+;;;; To organize
+
 (defun eden-org-to-markdown (org-str)
   (let ((org-export-with-toc nil)
         (org-md-headline-style 'atx))
@@ -770,6 +772,11 @@ LEVEL must be 3 or 4."
          ((looking-back "\n\n") nil)
          ((looking-back "\n") (insert "\n"))
          (t (insert "\n\n")))))))
+
+;;;; To organize
+
+(defvar eden-pending-requests nil "...")
+(defvar eden-pending-timer nil "...")
 
 (defun eden-pending-remove (req)
   "..."
