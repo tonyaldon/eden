@@ -627,7 +627,7 @@ LEVEL must be 3 or 4."
      ((consp current) (plist-get current :prompt))
      (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
 
-(defun eden-prompt-current-goto-req-dir ()
+(defun eden-prompt-current-goto ()
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req-dir (eden-request-dir
@@ -1265,7 +1265,7 @@ like this:
     ("l" "Show last conversations" eden-show-last-conversations)
     ("r" "Show last requests" eden-show-last-requests)
     ("k" "Kill last request" eden-kill-last-request)
-    ("g" "Go to current request in history" eden-prompt-current-goto-req-dir)]
+    ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["Model"
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
