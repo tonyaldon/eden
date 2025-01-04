@@ -792,6 +792,27 @@ See variables `eden-conversations' and `eden-dir'."
                 (remove (assoc conversation-id eden-conversations)
                         eden-conversations)))))
 
+(defun eden-conversation-rename-current ()
+  (interactive)
+  (if-let ((buff-name (eden-conversation-buffer-name eden-conversation-id)))
+      (let ((old-title (eden-conversation-title eden-conversation-id))
+            (new-title (read-string "Rename conversation (to new name): ")))
+        (if (string-empty-p new-title)
+            (message "Cannot rename current conversation with an empty title.  Please enter a non empty string.")
+          (eden-conversation-rename eden-conversation-id new-title)
+          (when (get-buffer buff-name)
+            (with-current-buffer buff-name
+              (save-excursion
+                (goto-char (point-min))
+                ;; This replacement works because when we insert a
+                ;; conversation in the first place with
+                ;; `eden-conversation-insert' we put the title
+                ;; on the first line of the buffer.
+                (when (search-forward old-title (line-end-position) t)
+                  (replace-match new-title t t)))
+              (rename-buffer (eden-conversation-buffer-name eden-conversation-id))))))
+    (message "Cannot rename current conversation which is not set.  Switch to an existing conversation first.")))
+
 (defun eden-conversation-update (info req)
   "...
 
@@ -876,6 +897,9 @@ See `eden-conversation' and `eden-conversations'."
           (replace-match uuid nil nil nil 1)
           (goto-char (point-max)))
       (insert
+       ;; If we change how we insert the title below, we may also
+       ;; have to change how we rename conversation title in
+       ;; `eden-conversation-rename-current' command.
        "** " (or title "Conversation") "\n"
        ":PROPERTIES:\n"
        ":" eden-org-property-date ": " (or (eden-request-date req) "")
@@ -1319,13 +1343,14 @@ like this:
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
+    ("r" "Rename current conversation" eden-conversation-rename-current)
     ("SPC" "Pause current conversation" eden-conversation-pause)
     ("TAB" "Switch conversation" eden-conversation-switch)]]
   [["Conversations and requests"
     ("v" "Show current conversation" eden-show-current-conversation)
     ("h" "Show current conversation in history" eden-show-current-conversation-in-req-history)
     ("l" "Show last conversations" eden-show-last-conversations)
-    ("r" "Show last requests" eden-show-last-requests)
+    ("L" "Show last requests" eden-show-last-requests)
     ("k" "Kill last request" eden-kill-last-request)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["Model"
@@ -1412,7 +1437,7 @@ like this:
   [["Conversation/Request at point"
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
-    ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
+    ("R" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
