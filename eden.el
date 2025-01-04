@@ -1458,20 +1458,17 @@ like this:
    mode-line-format
    '(" "
      (:propertize "%6b" face mode-line-buffer-id)
-     " "
-     (:eval (plist-get eden-api :service))
-     "/"
-     (:eval (truncate-string-to-width eden-model 16 nil nil t))
-     (:eval (when eden-temperature (format " %s" eden-temperature)))
-     (:eval (when eden-conversation-id
-              (format " <%s>"
-                      (truncate-string-to-width
-                       (eden-conversation-title eden-conversation-id)
-                       16 nil nil t))))
+     (:eval (format " %s/%s"
+                    (plist-get eden-api :service)
+                    (truncate-string-to-width eden-model 16 nil nil t)))
+     (:eval (when eden-temperature (format " <%s>" eden-temperature)))
      (:eval (when-let ((system-prompt-title (car-safe eden-system-prompt)))
-              (format " * %s"
+              (format " %s"
                       (truncate-string-to-width
-                       system-prompt-title 16 nil nil t))))
+                       system-prompt-title 24 nil nil t))))
+     (:propertize " *" face (:weight bold))
+     (:eval (when eden-conversation-id
+              (format " %s" (eden-conversation-title eden-conversation-id))))
      " "
      mode-line-misc-info))
   (eden-request-history-set)
