@@ -64,7 +64,14 @@ we get the following plist:
     (json-read)))
 
 (defun eden-request-dir (req)
-  "..."
+  "Return the directory where REQ's information is stored.
+
+For instance:
+
+    (eden-request-dir \\='(:dir \"/tmp/eden/\" :uuid \"foo-uuid\"))
+    ;; \"/tmp/eden/foo-uuid/\"
+
+Signal an error, if `:dir' or `:uuid' keys are missing in REQ."
   (let ((dir (plist-get req :dir))
         (uuid (plist-get req :uuid)))
     (when (or (not (stringp dir)) (not (stringp uuid)))
