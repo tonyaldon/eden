@@ -779,6 +779,19 @@ See variables `eden-conversations' and `eden-dir'."
       ('start-from (vector (aref conversation (1- (length conversation)))))
       ('continue-from conversation))))
 
+(defun eden-conversation-rename (conversation-id new-title)
+  (when (eden-conversation-with-title-exists-p new-title)
+    (error "Cannot rename conversation with `%s' which is already a title used by another conversation in `eden-conversations'"
+           new-title))
+  (when-let ((conversation-data
+              (seq-copy
+               (cdr (assoc conversation-id eden-conversations)))))
+    (setq eden-conversations
+          (cons (cons conversation-id
+                      (plist-put conversation-data :title new-title))
+                (remove (assoc conversation-id eden-conversations)
+                        eden-conversations)))))
+
 (defun eden-conversation-update (info req)
   "...
 

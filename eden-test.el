@@ -1929,6 +1929,43 @@ foo bar baz
       ))
     ))
 
+(ert-deftest eden-conversation-rename-test ()
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid")))))
+    (should-error (eden-conversation-rename "conversation-id-foo" "bar title")))
+
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (eden-conversation-rename "conversation-id-foo" "FOO")
+    (eden-conversation-rename "conversation-id-bar" "BAR")
+    (eden-conversation-rename "conversation-id-baz" "BAZ")
+    (eden-conversation-rename "not-in--eden-conversations" "foo bar baz")
+    (should
+     (equal
+      (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
+      '(:title "FOO" :action start :last-req-uuid nil)))
+    (should
+     (equal
+      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+      '(:title "BAR" :action start-from :last-req-uuid "bar-req-uuid")))
+    (should
+     (equal
+      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
+      '(:title "BAZ" :action continue-from :last-req-uuid "baz-req-uuid")))
+    (should
+     (seq-set-equal-p
+      (mapcar #'car eden-conversations)
+      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))
+    (should (= (length eden-conversations) 3))))
+
 (ert-deftest eden-conversation-update-test ()
   (let ((eden-conversations
          '(("conversation-id-foo" .
