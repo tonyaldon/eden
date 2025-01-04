@@ -976,10 +976,12 @@ See `eden-conversation' and `eden-conversations'."
                 (lambda ()
                   (progn
                     (setq global-mode-string
-                          `(:propertize
-                            ,(format "| Eden.%s"
-                                     (make-string (mod idx 3) ?.))
-                            face (:weight bold)))
+                          `(:eval
+                            ,(concat
+                              "| "
+                              (propertize
+                               (concat "Eden." (make-string (mod idx 3) ?.))
+                               'face '(:weight bold)))))
                     (force-mode-line-update 'all)
                     (cl-incf idx))))))))
     ('maybe-stop
