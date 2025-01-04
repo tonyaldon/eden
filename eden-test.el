@@ -1960,7 +1960,8 @@ foo bar baz
     (should
      (seq-set-equal-p
       (mapcar #'car eden-conversations)
-      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
+      '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))
+    (should (= (length eden-conversations) 3))))
 
 (ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'

@@ -786,12 +786,16 @@ See `eden-conversation' and `eden-conversations'."
   (let ((conversation-id (plist-get info :conversation-id))
         (req-uuid (plist-get req :uuid)))
     (when-let ((conversation-data
-                (cdr (assoc conversation-id eden-conversations))))
+                (seq-copy
+                 (cdr (assoc conversation-id eden-conversations)))))
       (let ((data (thread-first
                     conversation-data
                     (plist-put :action 'continue-from)
                     (plist-put :last-req-uuid req-uuid))))
-        (setf conversation-data data)))))
+        (setq eden-conversations
+              (cons (cons conversation-id data)
+                    (remove (assoc conversation-id eden-conversations)
+                            eden-conversations)))))))
 
 (defun eden-conversation-switch ()
   (interactive)
