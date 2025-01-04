@@ -728,8 +728,7 @@ LEVEL must be 3 or 4."
 
 See variables `eden-conversations' and `eden-dir'."
   (cond
-   ((seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
-              eden-conversations)
+   ((eden-conversation-with-title-exists-p title)
     (error "Conversation with title `%s' already exists in `eden-conversations'"
            title))
    ((not (seq-contains-p [start start-from continue-from] action))
