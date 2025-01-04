@@ -35,16 +35,28 @@
 ;;; API to send asynchronous requests to OpenAI and Perplexity
 
 (defun eden-json-encode (object)
-  "..."
-  ;; ...
+  "Return a JSON representation of OBJECT as a string.
+
+The JSON representation is pretty-printed."
   (let ((json-false :false)
         (json-encoding-pretty-print "  ")
         (json-encoding-pretty-print t))
     (json-encode object)))
 
 (defun eden-json-read ()
-  "..."
-  ;; ...
+  "Parse and return the JSON object following point.
+
+Advances point just past JSON object.
+
+If called with the following JSON after point
+
+    {\"a\": [1, 2, {\"c\": false}],
+     \"b\": \"foo\"}
+
+we get the following plist:
+
+    (:a [1 2 (:c :false)]
+     :b \"foo\")"
   (let ((json-false :false)
         (json-key-type 'keyword)
         (json-object-type 'plist)
