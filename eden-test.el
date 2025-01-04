@@ -1557,6 +1557,18 @@ foo bar baz
 
 ;;;; Conversations
 
+(ert-deftest eden-conversation-with-title-exists-p-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-with-title-exists-p "bar title")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+           ("conversation-id-baz" .
+            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
+    (should (eden-conversation-with-title-exists-p "bar title"))))
+
 (ert-deftest eden-conversation-test ()
 
   ;; Titles must be unique

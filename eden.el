@@ -719,6 +719,10 @@ LEVEL must be 3 or 4."
 (defvar eden-conversations nil "...")
 (defvar eden-conversation-id nil "...")
 
+(defun eden-conversation-with-title-exists-p (title)
+  (seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
+            eden-conversations))
+
 (defun eden-conversation (action title &optional req-uuid)
   "...
 
