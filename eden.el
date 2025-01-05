@@ -301,6 +301,17 @@ the following:
       (apply 'vector (append uuids last-uuid)))))
 
 (defun eden-request-conversation-path-alist (path)
+  "Convert PATH of a conversation in a nested alist.
+
+For instance, we have the following:
+
+    (eden-request-conversation-path-alist [\"uuid-foo\"])
+    ;; ((\"uuid-foo\" . t))
+
+    (eden-request-conversation-path-alist [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"])
+    ;; ((\"uuid-foo\" . ((\"uuid-bar\" . ((\"uuid-baz\" . t))))))
+
+See `eden-request-conversation-path' and `eden-last-conversations-keep'."
   (when path
     (let* ((tail (append (reverse path) '()))
            (alist (list (cons (pop tail) t))))
