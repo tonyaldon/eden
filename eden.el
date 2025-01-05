@@ -68,10 +68,10 @@ we get the following plist:
 
 For instance:
 
-    (eden-request-dir \\='(:dir \"/tmp/eden/\" :uuid \"foo-uuid\"))
-    ;; \"/tmp/eden/foo-uuid/\"
+    (eden-request-dir \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; \"/tmp/eden/foo/\"
 
-Signal an error, if `:dir' or `:uuid' keys are missing in REQ."
+Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
   (let ((dir (plist-get req :dir))
         (uuid (plist-get req :uuid)))
     (when (or (not (stringp dir)) (not (stringp uuid)))
@@ -80,7 +80,18 @@ Signal an error, if `:dir' or `:uuid' keys are missing in REQ."
     (concat (file-name-as-directory dir) uuid "/")))
 
 (defun eden-request-file (file req)
-  "..."
+  "Return full path of FILE type for REQ request.
+
+Signal an error if FILE is not one of the following symbols: error,
+response, response-org, request, api, prompt, system-prompt, exchanges,
+command.
+
+For instance
+
+    (eden-request-file \\='request \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; \"/tmp/eden/foo/request.json\"
+    (eden-request-file \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; \"/tmp/eden/foo/prompt.org\""
   (let* ((filenames '((error         . "error.json")
                       (response      . "response.json")
                       (response-org  . "response.org")
