@@ -283,6 +283,17 @@ gives use the following conversation:
     (apply 'vector (append exchanges last-exchange))))
 
 (defun eden-request-conversation-path (req)
+  "Return the path of the conversation whose last request is REQ.
+
+Return nil if REQ doesn't pass `eden-request-check' check.
+
+For instance, assuming \"uuid-baz\" is the uuid of the last request
+of a conversation whose previous exchanges are the requests whose
+uuids are \"uuid-foo\" and \"uuid-bar\" in that order, we have
+the following:
+
+    (eden-request-conversation-path \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
+    ;; [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"]"
   (when (condition-case nil (eden-request-check req) (error nil))
     (let* ((uuids (mapcar (lambda (exchange) (plist-get exchange :uuid))
                           (eden-request-read 'exchanges req)))
