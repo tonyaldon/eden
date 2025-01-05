@@ -231,6 +231,45 @@ Signal an error in the following cases:
      (t t))))
 
 (defun eden-request-conversation (req)
+  "Return all exchanges of the conversation whose last request is REQ.
+
+The return value is a vector of plists (exchanges) containing the
+following keys:
+
+- :uuid      - uuid of the request for that exchange
+- :prompt    - prompt of that exchange (`org-mode' string)
+- :user      - prompt of that exchange sent to OpenAI (markdown string)
+- :assitant  - content message of the response of that exchange
+               received from OpenAI (markdown string)
+- :response  - content message of the response of that exchange
+               received from OpenAI converted to Org (`org-mode' string)
+
+Signal an error if REQ doesn't pass `eden-request-check' check.
+
+For instance, assuming \"uuid-baz\" is the uuid of the last request
+of a conversation whose previous exchanges are the requests whose
+uuids are \"uuid-foo\" and \"uuid-bar\" in that order, the following
+function call
+
+    (eden-request-conversation \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
+
+gives use the following conversation:
+
+    [(:uuid \"uuid-foo\"
+      :prompt \"foo prompt\"
+      :user \"foo user\"
+      :assistant \"foo assistant\"
+      :response \"foo assistant\")
+     (:uuid \"uuid-bar\"
+      :prompt \"bar prompt\"
+      :user \"bar user\"
+      :assistant \"bar assistant\"
+      :response \"bar assistant\")
+     (:uuid \"uuid-baz\"
+      :prompt \"baz user prompt\"
+      :user \"baz user\"
+      :assistant \"baz assistant\"
+      :response \"baz assistant\")]"
   (eden-request-check req)
   (let* ((exchanges (eden-request-read 'exchanges req))
          (last-exchange
