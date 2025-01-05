@@ -367,6 +367,20 @@ See `eden-req-at-point-show-perplexity-citations'."
      '())))
 
 (defun eden-request-timestamp (req)
+  "Return the timestamp (a float) of the moment REQ request was sent to OpenAI.
+
+Just before we send a request to OpenAI, we store the information
+related to the request using `eden-write-request' function.  One
+of the file we write to disk is a timestamp file whose filename
+relative to the request's directory is of the form
+
+    timestamp-<timestamp>
+
+where <timestamp> is the float number of seconds since the epoch
+at the moment we write it to disk.
+
+The function `eden-request-timestamp' returns this <timestamp> as a
+float for REQ request."
   (when-let ((filename
               (car (directory-files
                     (eden-request-dir req) nil "timestamp-.*"))))
