@@ -320,6 +320,39 @@ See `eden-request-conversation-path' and `eden-last-conversations-keep'."
       alist)))
 
 (defun eden-request-perplexity-citations (req)
+  "Return the list of Perplexity citations of the conversation REQ.
+
+More precisely of the conversation whose last request is REQ.
+
+When using Perplexity API, the JSON response to a request may
+contain citations (urls).  These citations are accessible
+under the key \"citations\" represented as an array.
+
+The function `eden-request-perplexity-citations' returns the
+concatenation of all these citations for the conversation
+whose last request is REQ.
+
+For instance, assuming \"uuid-baz\" is the uuid of the third and
+last request of a conversation whose first conversation has the
+citations
+
+    [\"https://foo-1.com\" \"https://foo-2.com\" \"https://foo-3.com\"]
+
+the second request contains no citations at all and the third
+request has the citations
+
+    [\"https://baz-1.com\" \"https://baz-2.com\"]
+
+then the following function call
+
+    (eden-request-perplexity-citations \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
+
+gives use the following citations:
+
+    (\"https://foo-1.com\" \"https://foo-2.com\" \"https://foo-3.com\"
+     \"https://baz-1.com\" \"https://baz-2.com\")
+
+See `eden-req-at-point-show-perplexity-citations'."
   (let ((dir (plist-get req :dir)))
     (seq-reduce
      (lambda (acc exchange)
