@@ -158,7 +158,22 @@ user prompt was \"foo bar baz\") we get something like this:
           (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun eden-request-assistant-content (resp)
-  "..."
+  "Return the first message in RESP response from OpenAI API.
+
+For instance (with some keys omitted from a real response from
+OpenAI API) we have:
+
+    (let ((resp \\='(:id \"chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8\"
+                  :object \"chat.completion\"
+                  :model \"gpt-4o-mini-2024-07-18\"
+                  :choices [(:index 0
+                             :message (:role \"assistant\"
+                                       :content \"foo assistant\"
+                                       :refusal nil)
+                             :logprobs nil
+                             :finish_reason \"stop\")])))
+      (eden-request-assistant-content resp))
+    ;; \"foo assistant\""
   (eden-get-in resp [:choices 0 :message :content]))
 
 (defun eden-request-user-content (request)
@@ -170,11 +185,11 @@ user prompt was \"foo bar baz\") we get something like this:
 (defun eden-request-check (req)
   "Return t if REQ did complete.
 
-Raise an error in the following cases:
+Signal an error in the following cases:
 
 - the request doesn't exist,
 - the request has failed in a prior attempt (so `error.json' file exists),
-- the request in incomplete, specificaly when at least one of the following
+- the request is incomplete, specifically when at least one of the following
   files is missing:
 
   - prompt.org
