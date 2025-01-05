@@ -177,7 +177,21 @@ OpenAI API) we have:
   (eden-get-in resp [:choices 0 :message :content]))
 
 (defun eden-request-user-content (request)
-  "..."
+  "Return the last message of REQUEST, an OpenAI API comliant request.
+
+For instance we have:
+
+    (let* ((request \\='(:stream :false
+                      :model \"gpt-4o-mini\"
+                      :temperature 1
+                      :messages [(:role \"system\" :content \"baz system\")
+                                 (:role \"user\" :content \"foo user\")
+                                 (:role \"assistant\" :content \"foo assistant\")
+                                 (:role \"user\" :content \"bar prompt\")
+                                 (:role \"assistant\" :content \"bar assistant\")
+                                 (:role \"user\" :content \"baz user\")])))
+      (eden-request-user-content request))
+    ;; \"baz user\""
   (let* ((messages (plist-get request :messages))
          (last-message (aref messages (1- (length messages)))))
     (plist-get last-message :content)))
