@@ -80,11 +80,12 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
     (concat (file-name-as-directory dir) uuid "/")))
 
 (defun eden-request-file (file req)
-  "Return full path of FILE type for REQ request.
+  "Return full path of FILE type of REQ's directory.
 
-Signal an error if FILE is not one of the following symbols: error,
-response, response-org, request, api, prompt, system-prompt, exchanges,
-command.
+Signal an error if FILE is not one of the following symbols:
+
+    error, response, response-org, request, api, prompt,
+    system-prompt, exchanges, command.
 
 For instance
 
@@ -108,7 +109,45 @@ For instance
              (mapcar #'car filenames) file))))
 
 (defun eden-request-read (file req)
-  "..."
+  "Return file content of FILE type in REQ's directory as string or object.
+
+If file extension is \".json\", return an object (that may be
+a string).  If not, return a string.
+Accepted symbols for FILE are described in `eden-request-file'.
+
+Signal an error if the file is missing.
+
+For instance if the file \"request.json\" of the request
+`(:dir \"/tmp/eden/\" :uuid \"foo\")' contains
+
+    {
+      \"stream\": false,
+      \"model\": \"gpt-4o-mini\",
+      \"temperature\": null,
+      \"messages\": [
+        {
+          \"role\": \"user\",
+          \"content\": \"foo bar baz\"
+        }
+      ]
+    }
+
+we have the following:
+
+    (eden-request-read \\='request \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; (:stream :false
+    ;;  :model \"gpt-4o-mini\"
+    ;;  :temperature nil
+    ;;  :messages [(:role \"user\" :content \"foo bar baz\")])
+
+And for a non JSON file like the file \"prompt.org\" (assuming the
+user prompt was \"foo bar baz\") we get something like this:
+
+    (eden-request-read \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; \"foo bar baz\""
+
+
+
   (let* ((-file (eden-request-file file req)))
     (if (not (file-exists-p -file))
         (error "Missing `%s' file." -file)
