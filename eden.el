@@ -79,10 +79,10 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
              req))
     (concat (file-name-as-directory dir) uuid "/")))
 
-(defun eden-request-file (file req)
-  "Return full path of FILE type of REQ's directory.
+(defun eden-request-file (file-type req)
+  "Return full path of file of FILE-TYPE of REQ request.
 
-Signal an error if FILE is not one of the following symbols:
+Signal an error if FILE-TYPE is not one of the following symbols:
 
     error, response, response-org, request, api, prompt,
     system-prompt, exchanges, command.
@@ -102,18 +102,18 @@ For instance
                       (system-prompt . "system-prompt.org")
                       (exchanges     . "exchanges.json")
                       (command       . "command")))
-         (filename (alist-get file filenames)))
+         (filename (alist-get file-type filenames)))
     (if filename
         (concat (eden-request-dir req) filename)
-      (error "`file' argument must be one of %s, not `%s'"
-             (mapcar #'car filenames) file))))
+      (error "`file-type' argument must be one of %s, not `%s'"
+             (mapcar #'car filenames) file-type))))
 
-(defun eden-request-read (file req)
-  "Return file content of FILE type in REQ's directory as string or object.
+(defun eden-request-read (file-type req)
+  "Return file content of FILE-TYPE of REQ request as string or object.
 
 If file extension is \".json\", return an object (that may be
 a string).  If not, return a string.
-Accepted symbols for FILE are described in `eden-request-file'.
+Accepted symbols for FILE-TYPE are described in `eden-request-file'.
 
 Signal an error if the file is missing.
 
@@ -148,11 +148,11 @@ user prompt was \"foo bar baz\") we get something like this:
 
 
 
-  (let* ((-file (eden-request-file file req)))
+  (let* ((-file (eden-request-file file-type req)))
     (if (not (file-exists-p -file))
         (error "Missing `%s' file." -file)
       (with-temp-buffer
-        (insert-file-contents (eden-request-file file req))
+        (insert-file-contents (eden-request-file file-type req))
         (if (string= (file-name-extension -file) "json")
             (eden-json-read)
           (buffer-substring-no-properties (point-min) (point-max)))))))
@@ -401,13 +401,13 @@ See `eden-request-timestamp'."
   (when-let ((timestamp (eden-request-timestamp req)))
     (format-time-string "[%Y-%m-%d %a]" (seconds-to-time (floor timestamp)))))
 
-(defun eden-request-write (file req content)
+(defun eden-request-write (file-type req content)
   (let ((inhibit-message t)
         (message-log-max nil)
-        (file-path (if (eq file 'timestamp)
+        (file-path (if (eq file-type 'timestamp)
                        (format "%stimestamp-%s"
                                (eden-request-dir req) (time-to-seconds))
-                     (eden-request-file file req))))
+                     (eden-request-file file-type req))))
     (make-directory (eden-request-dir req) 'parents)
     (with-temp-buffer
       (insert content)
