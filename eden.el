@@ -494,7 +494,11 @@ the moment we evaluate that expression):
 (defun eden-api-key-symbol (service)
   "Return the symbol we use for holding api key for SERVICE service.
 
-It is used in `eden-request-command'.
+Precisely, return `eden-api-key-SERVICE' symbol as in the following
+example:
+
+    (eden-api-key-symbol \"openai\")
+    ;; eden-api-key-openai
 
 When we want to use `eden-request-send' programmatically without
 asking the user (and so gpg) for the encrytped key in ~/.authinfo.gpg
@@ -504,31 +508,40 @@ assumming SERVICE is \"openai\":
     (let ((api-key-symbol (eden-api-key-symbol \"openai\")))
       (defvar-1 api-key-symbol nil)
       (set api-key-symbol \"secret-api-key\")
+      ;; call `eden-request-send' here
       nil)"
   (intern (format "eden-api-key-%s" service)))
 
 (defun eden-request-command (req)
-  "Return list of commands (command command-no-api-key).
+  "Return curl command we use to send REQ request to OpenAI API.
 
-`command' contains the real api key and `command-no-api-key' does not.
-This way we can use the latter for logging.
+More precisely, return a list whose
 
-req must have the following keys as in this example
+1) first element is the command line with OpenAI API key that
+   we actually use to send REQ and
+2) second element is the same command line as in 1) but with
+   the API key replaced with the placeholder <api-key> such
+   that we can use it safely for logging.
 
-    (:api (:service \"openai-service\"
+REQ requires `:api', `:dir' and `:uuid' keys as in the following
+example:
+
+    (:api (:service \"openai\"
            :endpoint \"https://openai-endpoint\")
      :dir \"/tmp/eden/\"
      :uuid \"uuid-foo\")
 
-Also set AI api key (the first time) from `~/.authinfo.gpg'
-file (encrypted with gpg) or `~/.authinfo' file
+The function `eden-request-command' not only produces these command
+lines but also
 
-    machine openai-service password <foo-bar-baz>
+1) retrieves OpenAI API key from `~/.authinfo.gpg' (encrypted
+   with gpg) or `~/.authinfo' file looking for a line like this
 
-where `openai-service' is :service key of :api key of REQ request.
+       machine openai password <openai-api-key>
 
-The AI api key is stored in `eden-api-key-<service-name>' which
-is in our case `eden-api-key-openai-service'."
+   where `openai' is found under [:api :service] path in REQ.
+
+2) and keeps it in a variable determined by `eden-api-key-symbol'."
   (let* ((endpoint (eden-get-in req [:api :endpoint]))
          (service (eden-get-in req [:api :service]))
          (api-key-symbol (eden-api-key-symbol service))
