@@ -387,6 +387,17 @@ float for REQ request."
     (string-to-number (string-trim-left filename "timestamp-"))))
 
 (defun eden-request-date (req)
+  "Return the date in `org-mode' format of when REQ request was sent.
+
+For instance if the some request with \"foo\" uuid logged in
+\"/tmp/eden/\" directory has the timestamp file
+\"timestamp-1733921715.2331347\" in its directory, then we
+have the following:
+
+    (eden-request-timestamp (:dir \"/tmp/eden/\" :uuid \"foo\"))
+    ;; [2024-12-11 Wed]
+
+See `eden-request-timestamp'."
   (when-let ((timestamp (eden-request-timestamp req)))
     (format-time-string "[%Y-%m-%d %a]" (seconds-to-time (floor timestamp)))))
 
