@@ -409,7 +409,7 @@ symbol, are listed in `eden-request-file', along with the
 file where the content is saved.
 
 If FILE-TYPE is equal to `timestamp' symbol, a timestamp file is written
-to disk.  See `eden-request-timestamp' for more detail on that file."
+to disk.  See `eden-request-timestamp' for more details on that file."
   (let ((inhibit-message t)
         (message-log-max nil)
         (file-path (if (eq file-type 'timestamp)
@@ -422,7 +422,63 @@ to disk.  See `eden-request-timestamp' for more detail on that file."
       (write-file file-path))))
 
 (defun eden-write-request (req)
-  "..."
+  "Write REQ's information in several files in REQ's directory.
+
+Specifically, 6 files are written to disk:
+
+- a `timestamp' file     - see `eden-request-timestamp' for more details
+                           on that file,
+- a `request' file       - a JSON file with content being the value
+                           under `:req' key of REQ plist,
+- an `api' file          - a JSON file with content being the value
+                           under `:api' key of REQ plist,
+- a `prompt' file        - an `org-mode' file with content being the value
+                           under `:prompt' key,
+- a `system-prompt' file - an `org-mode' file with content being the value
+                           under `:system-prompt' key,
+- an `exchanges' file    - a JSON file with content being the value
+                           under `:exchanges' key of REQ plist.
+
+Here an example with a typical request (third of a conversation)
+that we would send to OpenAI API.  Evaluating the following
+expression
+
+    (let ((req \\='(:req (:stream :false
+                       :model \"gpt-4o-mini\"
+                       :temperature 1
+                       :messages [(:role \"system\" :content \"baz system prompt\")
+                                  (:role \"user\" :content \"foo user\")
+                                  (:role \"assistant\" :content \"foo assistant\")
+                                  (:role \"user\" :content \"bar prompt\")
+                                  (:role \"assistant\" :content \"bar assistant\")
+                                  (:role \"user\" :content \"baz user prompt\")])
+                 :api (:service \"openai\"
+                       :endpoint \"https://api.openai.com/v1/chat/completions\")
+                 :prompt \"baz user prompt\"
+                 :system-prompt \"baz system prompt\"
+                 :exchanges [(:uuid \"uuid-foo\"
+                              :prompt \"foo prompt\"
+                              :user \"foo user\"
+                              :assistant \"foo assistant\"
+                              :response \"foo response\")
+                             (:uuid \"uuid-bar\"
+                              :prompt \"bar prompt\"
+                              :user \"bar user\"
+                              :assistant \"bar assistant\"
+                              :response \"bar response\")]
+                 :dir \"/tmp/eden/\"
+                 :uuid \"uuid-baz\")))
+      (eden-write-request req))
+
+produces the following files (with timestamp file depending on
+the moment we evaluate that expression):
+
+- /tmp/eden/uuid-baz/api.json
+- /tmp/eden/uuid-baz/exchanges.json
+- /tmp/eden/uuid-baz/prompt.org
+- /tmp/eden/uuid-baz/request.json
+- /tmp/eden/uuid-baz/system-prompt.org
+- /tmp/eden/uuid-baz/timestamp-1736137516.050655"
   (let ((request (eden-json-encode (plist-get req :req)))
         (api (eden-json-encode (plist-get req :api)))
         (prompt (plist-get req :prompt))
