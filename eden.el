@@ -607,6 +607,14 @@ end")
       (buffer-string))))
 
 (defun eden-org-replace-perplexity-citations (org-str citations)
+  "Replace `[idx]' occurences in ORG-STR with corresponding urls in CITATIONS.
+
+It's maybe clearer with an example:
+
+    (eden-org-replace-perplexity-citations
+     \"replace citation[1] and citations [1][2] but not inline code =arr[1]=\"
+     [\"https://foo.com\" \"https://bar.com\"])
+    ;; \"replace citation[[[https://foo.com][1]]] and citations [[[https://foo.com][1]]][[[https://bar.com][2]]] but not inline code =arr[1]=\""
   (let* ((citations-len (length citations)))
     (with-temp-buffer
       (org-mode)
