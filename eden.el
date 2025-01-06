@@ -568,7 +568,9 @@ lines but also
      (format command-fmt endpoint "<api-key>" request-file))))
 
 (defun eden-write-command (command-no-api-key req)
-  "..."
+  "Write COMMAND-NO-API-KEY in file of type `command' in REQ's directory.
+
+See `eden-request-file' and `eden-request-command'."
   (message "%s" command-no-api-key)
   (eden-request-write 'command req command-no-api-key))
 
