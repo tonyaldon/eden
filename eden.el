@@ -402,6 +402,14 @@ See `eden-request-timestamp'."
     (format-time-string "[%Y-%m-%d %a]" (seconds-to-time (floor timestamp)))))
 
 (defun eden-request-write (file-type req content)
+  "Write CONTENT string in file of FILE-TYPE in REQ's directory.
+
+All accepted symbols for FILE-TYPE, except for the `timestamp'
+symbol, are listed in `eden-request-file', along with the
+file where the content is saved.
+
+If FILE-TYPE is equal to `timestamp' symbol, a timestamp file is written
+to disk.  See `eden-request-timestamp' for more detail on that file."
   (let ((inhibit-message t)
         (message-log-max nil)
         (file-path (if (eq file-type 'timestamp)
