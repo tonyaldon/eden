@@ -439,7 +439,7 @@ Specifically, 6 files are written to disk:
 - an `exchanges' file    - a JSON file with content being the value
                            under `:exchanges' key of REQ plist.
 
-Here an example with a typical request (third of a conversation)
+Here's an example with a typical request (third of a conversation)
 that we would send to OpenAI API.  Evaluating the following
 expression
 
@@ -954,10 +954,48 @@ REQ request is a plist with the following keys:
                          :assistant \"bar response markdown\"
                          :response \"bar response org-mode\")]
 
+Here's an example of a REQ request using OpenAI API, with no system
+prompt and no previous exchanges:
 
-... examples without and with exchanges/system-prompt.
+    (:req (:stream :false
+           :model \"gpt-4o-mini\"
+           :temperature 1
+           :messages [(:role \"user\" :content \"foo bar baz\")])
+     :api (:service \"openai\"
+           :endpoint \"https://api.openai.com/v1/chat/completions\")
+     :prompt \"foo bar baz\"
+     :dir \"/tmp/eden/\"
+     :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
 
-"
+Here's an example of a REQ request (third of a conversation), using
+Perplexity API and a system prompt:
+
+
+    (:req (:stream :false
+           :model \"gpt-4o-mini\"
+           :temperature 1
+           :messages [(:role \"system\" :content \"baz system prompt\")
+                      (:role \"user\" :content \"foo user\")
+                      (:role \"assistant\" :content \"foo assistant\")
+                      (:role \"user\" :content \"bar prompt\")
+                      (:role \"assistant\" :content \"bar assistant\")
+                      (:role \"user\" :content \"baz user prompt\")])
+     :api (:service \"perplexity\"
+           :endpoint \"https://api.perplexity.ai/chat/completions\")
+     :prompt \"baz user prompt\"
+     :system-prompt \"baz system prompt\"
+     :exchanges [(:uuid \"uuid-foo\"
+                  :prompt \"foo prompt\"
+                  :user \"foo user\"
+                  :assistant \"foo assistant\"
+                  :response \"foo response\")
+                 (:uuid \"uuid-bar\"
+                  :prompt \"bar prompt\"
+                  :user \"bar user\"
+                  :assistant \"bar assistant\"
+                  :response \"bar response\")]
+     :dir \"/tmp/eden/\"
+     :uuid \"uuid-baz\")"
   (seq-let (command command-no-api-key) (eden-request-command req)
     (eden-write-request req)
     (eden-write-command command-no-api-key req)
