@@ -637,7 +637,19 @@ It's maybe clearer with an example:
       (buffer-substring-no-properties (point-min) (point-max)))))
 
 (defun eden-write-response (resp-str resp req)
-  "..."
+  "Write response files of REQ request.
+
+RESP-STR is used for the content of `response' file type.
+
+The markdown content from RESP response is converted to `org-mode'
+format, replacing citation references with actual citations when using
+Perplexity API, and then saved as `response-org' file type.
+
+Note that RESP is just the object representation of the JSON string
+RESP-STR.
+
+See `eden-request-file', `eden-markdown-to-org' and
+`eden-org-replace-perplexity-citations'."
   (eden-request-write 'response req resp-str)
   (let* ((assistant-content (eden-request-assistant-content resp))
          (response-org (eden-markdown-to-org assistant-content))
