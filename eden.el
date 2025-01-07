@@ -676,15 +676,79 @@ See `eden-request-file'."
     (eden-error-callback-error . "Error while calling callback-error function when signaling an error in sentinel")
     (eden-error-json-read . "Error while parsing JSON in process buffer")
     (eden-error-process . "The process did not finished correctly")
-    (eden-error-process-buffer . "The process buffer got killed while processing the request")))
+    (eden-error-process-buffer . "The process buffer got killed while processing the request"))
+  "Alist of error types and their messages.
+
+See `eden-error-log-and-signal'.")
 
 (dolist (err eden-errors)
   (define-error (car err) (cdr err)))
 
+let*: API error: :type, "eden-error-api",
+:message, "API error"
+, :directory, "/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/",
+:request,
+(:stream :false
+ :model "gpt-4o-mini"
+ :temperature nil
+ :messages [(:role "user" :content "foo bar baz")]),
+:error, (:message "Incorrect API key provided: eesk-pro***uieu. You can find your API key at https://platform.openai.com/account/api-keys." :type "invalid_request_error" :param nil :code "invalid_api_key")
+Insight mode enabled in current buffer
+
+
+"(:type \"eden-error-api\"
+ :message \"API error\"
+ :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
+ :request (:stream :false
+           :model \"gpt-4o-mini\"
+           :temperature nil
+           :messages [(:role \"user\" :content \"foo bar baz\")])
+ :error (:message \"Incorrect API key provided: eesk-pro***WmEA. You can find your API key at https://platform.openai.com/account/api-keys.\"
+         :type \"invalid_request_error\"
+         :param nil
+         :code \"invalid_api_key\"))"
+
 (cl-defun eden-error-log-and-signal (type req process
-                                             &key error event process-stdout
-                                             callback-error info)
-  ""
+                                          &key error event process-stdout
+                                          callback-error info)
+  "Signal error of TYPE type that happened when sending REQ request.
+
+Before signaling the error:
+
+1) PROCESS process is killed,
+2) produce the error data,
+2) CALLBACK-ERROR function is called with 3 arguments: REQ,
+   the error data and INFO,
+3) the error data (maybe modified by CALLBACK-ERROR) is logged
+   to REQ's directory in an error file type.
+
+The error data is a plist with the following keys:
+
+- :type                   - TYPE (see `eden-errors')
+- :message                - see `eden-errors'
+- :directory              - REQ's directory
+- :request                - the request we sent to OpenAI
+- :error                  - (optional) ERROR
+- :process-event          - (optional) EVENT
+- :process-buffer-content - (optional) stdout of the curl request
+- :original-error         - (optional) the error data before calling
+                            CALLBACK-ERROR function.  This happens only
+                            when CALLBACK-ERROR signals an error.
+
+For instance if we provide a wrong API key to OpenAI the error data
+looks like this:
+
+    (:type \"eden-error-api\"
+     :message \"API error\"
+     :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
+     :request (:stream :false
+               :model \"gpt-4o-mini\"
+               :temperature nil
+               :messages [(:role \"user\" :content \"foo bar baz\")])
+     :error (:message \"Incorrect API key provided: eesk-pro***WmEA. You can find your API key at https://platform.openai.com/account/api-keys.\"
+             :type \"invalid_request_error\"
+             :param nil
+             :code \"invalid_api_key\"))"
   (let* ((error-function
           (lambda (type req error event process-stdout original-error)
             (delq nil
