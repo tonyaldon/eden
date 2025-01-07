@@ -782,36 +782,36 @@ and `event' as described in `make-process'.
 When no error occurs during execution of the sentinel, CALLBACK function
 is called.  It takes 3 arguments
 
-- req   - plist of information about the request where :req
-          complies with openai API
+- REQ   - plist of information about the request where :req
+          complies with openai API.  For instance:
 
               (:req (:stream :false
                      :model \"gpt-4o-mini\"
                      :temperature 1
                      :messages [(:role \"user\" :content \"foo bar baz\")])
-               :api (:service \"chatgpt\"
+               :api (:service \"openai\"
                      :endpoint \"https://api.openai.com/v1/chat/completions\")
-               :prompt \"prompt in org mode\"
-               :system-prompt \"system prompt in org mode\"
-               :attachments [\"path-to-file\" \"path-to-directory/\" \"...\"])
+               :prompt \"foo bar baz\"
+               :dir \"/tmp/eden/\"
+               :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
 
 - resp  - plist of the response received from openai
-- info  - plist of data to act on, can be nil.
+- INFO  - plist of additional data, can be nil
 
 and must be use for side effects.
 
 When an error occurs, CALLBACK-ERROR function (if not nil) is called
 just before signaling the error.  It takes 3 arguments:
 
-- req  - the same as decscribed above,
-- err  - plist describing the error wich is also the data that is
+- REQ  - the same as decscribed above,
+- err  - plist describing the error which is also the data that is
          associated with error when signaled with `signal' function
-         in `eden-error-log-and-signal'.  For instance if we provid
+         in `eden-error-log-and-signal'.  For instance if we provide
          OpenAI with a wrong API key `err' looks like this:
 
              (:type \"eden-error-api\"
               :message \"API error\"
-              :directory \"/tmp/eden-VKTqOa/uuid-foo/\"
+              :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
               :request (:stream :false
                         :model \"gpt-4o-mini\"
                         :temperature 1
@@ -827,7 +827,7 @@ just before signaling the error.  It takes 3 arguments:
          type of error.
 
          See `eden-errors' and `eden-error-log-and-signal'.
-- info  - plist of data to act on, can be nil."
+- INFO  - plist of additional data, can be nil"
   `(lambda (process event)
      (let ((stdout (lambda (process)
                      (with-current-buffer (process-buffer process)
