@@ -661,7 +661,12 @@ See `eden-request-file', `eden-markdown-to-org' and
     (eden-request-write 'response-org req response-org)))
 
 (defun eden-write-error (err req)
-  "..."
+  "Write ERR error in REQ's directory.
+
+ERR is non string object that we encode to JSON format
+and saved as error file type in REQ's directory.
+
+See `eden-request-file'."
   (eden-request-write 'error req (eden-json-encode err)))
 
 (defvar eden-errors
