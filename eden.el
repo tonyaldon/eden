@@ -776,7 +776,7 @@ looks like this:
 (defmacro eden-sentinel (req callback callback-error info)
   "Return a sentinel to be used in `eden-request-send'.
 
-The return sentinel is a function that takes two argument `process'
+The return sentinel is a function that takes two arguments `process'
 and `event' as described in `make-process'.
 
 When no error occurs during execution of the sentinel, CALLBACK function
@@ -873,7 +873,91 @@ just before signaling the error.  It takes 3 arguments:
             :info ,info))))))
 
 (defun eden-request-send (req callback &optional callback-error info)
-  "..."
+  "Send REQ request asynchronously to OpenAI API using `make-process'.
+
+If the request succeed, CALLBACK function is called in the sentinel.
+If the request failed or there's an error in the sentinel, CALLBACK-ERROR
+function is called.  In both cases, INFO, plist of additional data, is
+passed as last argument to these functions.  See `eden-sentinel'.
+
+For the request to have a chance to succeed, OpenAI API key must
+be set correctly beforehand.  See `eden-request-command' and
+`eden-api-key-symbol'.
+
+Before sending REQ request:
+
+1) Information about the request is saved in several files in
+   REQ's directory.  See `eden-write-request'.
+2) The curl command line issued to send the request is saved in
+   REQ's directory.  See `eden-write-command'.
+
+And upon receipt of OpenAI response, we either save the response
+or an error in REQ's directory.  See `eden-write-response' and
+`eden-write-error'.
+
+See also `eden-request-dir' and `eden-request-file'.
+
+REQ request is a plist with the following keys:
+
+- :req           - The request that we send to OpenAI API or a compatible
+                   API like Perplexity.  See:
+
+                   - https://platform.openai.com/docs/guides/text-generation/,
+                   - https://platform.openai.com/docs/api-reference/chat and
+                   - https://docs.perplexity.ai/api-reference/chat-completions.
+
+                   As we don't support streaming API, value for `:stream'
+                   key must always be `:false'.  Here's an example:
+
+                       (:stream :false
+                        :model \"gpt-4o-mini\"
+                        :temperature 1
+                        :messages [(:role \"user\" :content \"foo bar baz\")])
+
+- :api           - A plist describing the service and endpoint to use
+                   for the creation of the curl command we use to send
+                   the request, including where to find the API key.  Here's
+                   an example
+
+                       (:service \"openai\"
+                        :endpoint \"https://api.openai.com/v1/chat/completions\")
+
+                   which expects the API key to be in `~/.authinfo.gpg'
+                   or `~/.authinfo' file on a line like this
+
+                       machine openai password <openai-api-key>
+
+                   See `eden-request-command'.
+
+- :prompt        - The prompt of the request in `org-mode' format.
+- :dir           - A directory (absolute path) where we log all the
+                   requests.
+- :uuid          - A unique id (a string) which is the subdirectory of
+                   `:dir' in which we kept information about REQ.  See
+                   `eden-request-dir'.
+- :system-prompt - (optional) The system prompt of the request in `org-mode'
+                   format.
+- :exchanges     - (optional) If REQ is the last exchange in a conversation,
+                   this key must be a vector of the previous exchanges, where
+                   each exchange is defined with a plist containing the
+                   following keys: `:uuid', `:prompt', `:user', `:assistant'
+                   and `:response'.  Here's an example:
+
+                       [(:uuid \"uuid-foo\"
+                         :prompt \"foo prompt org-mode\"
+                         :user \"foo prompt markdown\"
+                         :assistant \"foo response markdown\"
+                         :response \"foo response org-mode\")
+                        (:uuid \"uuid-bar\"
+                         :prompt \"bar prompt org-mode\"
+                         :user \"bar prompt markdown\"
+                         :assistant \"bar response markdown\"
+                         :response \"bar response org-mode\")]
+
+
+... examples without and with exchanges/system-prompt.
+
+"
   (seq-let (command command-no-api-key) (eden-request-command req)
     (eden-write-request req)
     (eden-write-command command-no-api-key req)
