@@ -77,7 +77,7 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
     (when (or (not (stringp dir)) (not (stringp uuid)))
       (error "Request mal formed.  `req' must contain `:dir' and `:uuid' keys and their value must be strings: %S"
              req))
-    (concat (file-name-as-directory dir) uuid "/")))
+    (concat (file-name-as-directory (expand-file-name dir)) uuid "/")))
 
 (defun eden-request-file (file-type req)
   "Return full path of file of FILE-TYPE of REQ request.

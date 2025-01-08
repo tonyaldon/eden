@@ -128,7 +128,13 @@
             "/tmp/eden/foo-uuid/"))
   (should
    (string= (eden-request-dir '(:dir "/tmp/eden" :uuid "foo-uuid"))
-            "/tmp/eden/foo-uuid/")))
+            "/tmp/eden/foo-uuid/"))
+  (should
+   (string=
+    (eden-request-dir '(:dir "~/eden" :uuid "foo-uuid"))
+    (concat (file-name-as-directory
+             (expand-file-name (getenv "HOME")))
+            "eden/foo-uuid/"))))
 
 (ert-deftest eden-request-read-test ()
   (let* ((request '(:stream :false
