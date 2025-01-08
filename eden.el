@@ -624,8 +624,6 @@ It's maybe clearer with an example:
         (let* ((citation-number-str (match-string 1))
                (citation-idx (1- (string-to-number citation-number-str)))
                (citation-faces (get-text-property (match-beginning 1) 'face)))
-          (message "%s" citation-number-str)
-          (message "%S" citation-faces)
           (when (and (not (seq-contains-p citation-faces 'org-code))
                      (not (seq-contains-p citation-faces 'org-verbatim))
                      (not (seq-contains-p citation-faces 'org-block)))
