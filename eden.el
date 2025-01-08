@@ -684,30 +684,6 @@ See `eden-error-log-and-signal'.")
 (dolist (err eden-errors)
   (define-error (car err) (cdr err)))
 
-let*: API error: :type, "eden-error-api",
-:message, "API error"
-, :directory, "/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/",
-:request,
-(:stream :false
- :model "gpt-4o-mini"
- :temperature nil
- :messages [(:role "user" :content "foo bar baz")]),
-:error, (:message "Incorrect API key provided: eesk-pro***uieu. You can find your API key at https://platform.openai.com/account/api-keys." :type "invalid_request_error" :param nil :code "invalid_api_key")
-Insight mode enabled in current buffer
-
-
-"(:type \"eden-error-api\"
- :message \"API error\"
- :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
- :request (:stream :false
-           :model \"gpt-4o-mini\"
-           :temperature nil
-           :messages [(:role \"user\" :content \"foo bar baz\")])
- :error (:message \"Incorrect API key provided: eesk-pro***WmEA. You can find your API key at https://platform.openai.com/account/api-keys.\"
-         :type \"invalid_request_error\"
-         :param nil
-         :code \"invalid_api_key\"))"
-
 (cl-defun eden-error-log-and-signal (type req process
                                           &key error event process-stdout
                                           callback-error info)
