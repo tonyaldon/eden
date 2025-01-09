@@ -1942,7 +1942,7 @@ like this:
   [["Conversation/Request at point"
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
-    ("R" "Show requests of conversation at point" eden-req-at-point-show-requests)
+    ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("p" "Show system prompt of request at point" eden-req-at-point-show-system-prompt)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
