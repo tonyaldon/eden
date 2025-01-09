@@ -210,7 +210,8 @@ Signal an error in the following cases:
   - request.json
   - response.json
   - response.org
-  - exchanges.json"
+  - exchanges.json
+  - timestamp-<timestamp> where <timestamp> is a timestamp."
   (let ((req-dir (eden-request-dir req)))
     (cond
      ((not (file-exists-p (eden-request-dir req)))
@@ -228,6 +229,8 @@ Signal an error in the following cases:
       (error "Missing `%s' file" (eden-request-file 'response-org req)))
      ((not (file-exists-p (eden-request-file 'exchanges req)))
       (error "Missing `%s' file" (eden-request-file 'exchanges req)))
+     ((null (directory-files req-dir nil "timestamp-.*"))
+      (error "Missing timestamp file in `%s' request." req-dir))
      (t t))))
 
 (defun eden-request-conversation (req)

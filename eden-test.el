@@ -210,23 +210,10 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-error (eden-request-check req)))
 
-  ;; Signal error when the request in incomplete, specificaly
-  ;; when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
@@ -240,6 +227,8 @@
     (eden-request-write 'exchanges req "")
     (eden-request-write 'response req "")
     (eden-request-write 'response-org req "")
+    (with-temp-buffer
+      (write-file (concat (eden-request-dir req) "timestamp-1234")))
     (should (eden-request-check req))))
 
 (ert-deftest eden-request-conversation-test ()
