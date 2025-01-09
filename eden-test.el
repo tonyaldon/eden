@@ -834,6 +834,8 @@ this [foo-bar] are not citations.
 the citation array we are using to replace citations.  Citation from
 perplexity.ai starts at 1 in the response they return.
 
+* citation on a heading [4] and another array ~arr[1]~
+
 We access elements in a python array in a code block:
 
 #+BEGIN_SRC python
@@ -863,6 +865,8 @@ this [foo-bar] are not citations.
 [0] and [8] seem to be a valid citations but they are out of range of
 the citation array we are using to replace citations.  Citation from
 perplexity.ai starts at 1 in the response they return.
+
+* citation on a heading [[[https://baz.org][4]]] and another array ~arr[1]~
 
 We access elements in a python array in a code block:
 

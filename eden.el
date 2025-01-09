@@ -623,10 +623,14 @@ It's maybe clearer with an example:
       (while (re-search-forward "\\[\\([0-9]+\\)\\]" nil t)
         (let* ((citation-number-str (match-string 1))
                (citation-idx (1- (string-to-number citation-number-str)))
-               (citation-faces (get-text-property (match-beginning 1) 'face)))
-          (when (and (not (seq-contains-p citation-faces 'org-code))
-                     (not (seq-contains-p citation-faces 'org-verbatim))
-                     (not (seq-contains-p citation-faces 'org-block)))
+               (face-or-faces (get-text-property (match-beginning 0) 'face))
+               (faces (and face-or-faces
+                           (if (consp face-or-faces)
+                               face-or-faces
+                             (list face-or-faces)))))
+          (when (and (not (seq-contains-p faces 'org-code))
+                     (not (seq-contains-p faces 'org-verbatim))
+                     (not (seq-contains-p faces 'org-block)))
             (if (<= 0 citation-idx citations-len)
                 (replace-match (format "[[%s][%s]]"
                                        (aref citations citation-idx)
