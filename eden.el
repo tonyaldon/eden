@@ -148,12 +148,12 @@ user prompt was \"foo bar baz\") we get something like this:
 
 
 
-  (let* ((-file (eden-request-file file-type req)))
-    (if (not (file-exists-p -file))
-        (error "Missing `%s' file." -file)
+  (let* ((file (eden-request-file file-type req)))
+    (if (not (file-exists-p file))
+        (error "Missing `%s' file." file)
       (with-temp-buffer
         (insert-file-contents (eden-request-file file-type req))
-        (if (string= (file-name-extension -file) "json")
+        (if (string= (file-name-extension file) "json")
             (eden-json-read)
           (buffer-substring-no-properties (point-min) (point-max)))))))
 
