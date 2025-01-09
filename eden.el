@@ -576,13 +576,19 @@ See `eden-request-file' and `eden-request-command'."
 
 (defun eden-markdown-to-org (markdown-str)
   "Return MARKDOWN-STR markdown string converted into org-mode string."
-  (let ((file-markdown (concat (make-temp-file "ai-response-") ".md"))
-        (file-org (concat (make-temp-file "ai-response-") ".org"))
-        (file-lua-filter (concat (make-temp-file "ai-lua-filter-") ".lua"))
+  (let* ((tmp-dir (concat (temporary-file-directory) "eden-tmp/"))
+         (_ (make-directory tmp-dir 'parent))
+         (file-markdown (make-temp-file tmp-dir nil ".md" markdown-str))
+         (file-org (make-temp-file tmp-dir nil ".org"))
+         (file-pandoc-filter (concat tmp-dir "pandoc-filter.lua"))
+         (inhibit-message t))
+    (when (not (file-exists-p file-pandoc-filter))
+      (with-temp-buffer
+        ;; Pandoc filter
         ;; 1) Remove org properties added by pandoc org backend.  Specifically,
         ;;    a CUSTOM_ID property is added to all headings which is annoying.
         ;; 2) Don't use example blocks, only source blocks with language name
-        (lua-filter "function Header(el)
+        (insert "function Header(el)
     return pandoc.Header(el.level, el.content, pandoc.Attr())
 end
 
@@ -593,15 +599,9 @@ function CodeBlock(block)
     return pandoc.RawBlock('org', string.format(\"#+BEGIN_SRC text\\n%s\\n#+END_SRC\\n\\n\", block.text))
   end
 end")
-        (inhibit-message t))
-    (with-temp-buffer
-      (insert markdown-str)
-      (write-file file-markdown))
-    (with-temp-buffer
-      (insert lua-filter)
-      (write-file file-lua-filter))
+        (write-file file-pandoc-filter)))
     (call-process "pandoc" nil nil nil file-markdown "-o" file-org
-                  (format "--lua-filter=%s" file-lua-filter))
+                  (format "--lua-filter=%s" file-pandoc-filter))
     (with-temp-buffer
       (insert-file-contents file-org)
       (buffer-string))))
