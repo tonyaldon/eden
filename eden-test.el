@@ -241,23 +241,10 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-error (eden-request-conversation req)))
 
-  ;; Signal error when the request in incomplete, specificaly
-  ;; when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
@@ -361,23 +348,10 @@
   ;; nil when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-not (eden-request-conversation-path req)))
 
-  ;; nil when the request in incomplete, specificaly
-  ;; when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; nil when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
@@ -473,23 +447,10 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-error (eden-request-perplexity-citations req)))
 
-  ;; Signal error when the request in incomplete, specificaly
-  ;; when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
@@ -1633,24 +1594,11 @@ foo bar baz
   (let* ((eden-conversations nil)
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
          (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-error
      (eden-conversation 'start-from "foo title" "foo-req-uuid")))
 
-  ;; error - when req associated with req-uuid is in incomplete,
-  ;; specificaly when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; error - when req associated with req-uuid is in incomplete
   (let* ((eden-conversations nil)
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
          (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
@@ -2009,23 +1957,10 @@ foo bar baz
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
-
     (eden-request-write 'error req "")
     (should-error (eden-conversation-insert req "title")))
 
-  ;; Signal error when the request in incomplete, specificaly
-  ;; when the following files are missing:
-  ;;
-  ;; - prompt.org
-  ;; - request.json
-  ;; - response.json
-  ;; - response.org
-  ;; - exchanges.json
+  ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
