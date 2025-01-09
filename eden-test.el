@@ -2082,11 +2082,11 @@ foo bar baz
 :EDEN_DATE: [2024-12-20 Fri]
 :EDEN_REQ: uuid
 :END:
-*** prompt
+*** Prompt
 
 foo bar baz
 
-*** response
+*** Response
 
 foo bar baz assistant response
 
@@ -2121,7 +2121,7 @@ foo bar baz assistant response
 :EDEN_DATE: [2024-12-20 Fri]
 :EDEN_REQ: uuid
 :END:
-*** prompt
+*** Prompt
 
 **** title-1
 ***** foo
@@ -2133,7 +2133,7 @@ bar baz
 
 bar baz
 
-*** response
+*** Response
 
 **** assistant title-1
 
@@ -2186,42 +2186,42 @@ bar baz
 :EDEN_DATE: [2024-12-20 Fri]
 :EDEN_REQ: uuid-baz
 :END:
-*** prompt
+*** Prompt
 
 **** foo-heading-1
 ***** foo-heading-2
 
 foo-content
 
-*** response
+*** Response
 
 **** foo-assistant-heading-3
 ***** foo-assistant-heading-4
 
 foo-assistant-content
 
-*** prompt
+*** Prompt
 
 **** bar-heading-1
 ***** bar-heading-2
 
 bar-content
 
-*** response
+*** Response
 
 **** bar-assistant-heading-3
 ***** bar-assistant-heading-4
 
 bar-assistant-content
 
-*** prompt
+*** Prompt
 
 **** baz-heading-1
 ***** baz-heading-2
 
 baz-content
 
-*** response
+*** Response
 
 **** baz-assistant-heading-3
 
@@ -2267,14 +2267,14 @@ baz-assistant-content
 :EDEN_DATE: [date]
 :EDEN_REQ: uuid-bar
 :END:
-*** prompt
+*** Prompt
 
 **** foo-heading-1
 ***** foo-heading-2
 
 foo-content
 
-*** response
+*** Response
 
 **** foo-assistant-heading-3
 
@@ -2282,14 +2282,14 @@ foo-content
 
 foo-assistant-content
 
-*** prompt
+*** Prompt
 
 **** bar-heading-1
 ***** bar-heading-2
 
 bar-content
 
-*** response
+*** Response
 
 **** bar-assistant-heading-3
 
@@ -2307,14 +2307,14 @@ bar-assistant-content
 :EDEN_DATE: [date]
 :EDEN_REQ: uuid-baz
 :END:
-*** prompt
+*** Prompt
 
 **** foo-heading-1
 ***** foo-heading-2
 
 foo-content
 
-*** response
+*** Response
 
 **** foo-assistant-heading-3
 
@@ -2322,14 +2322,14 @@ foo-content
 
 foo-assistant-content
 
-*** prompt
+*** Prompt
 
 **** bar-heading-1
 ***** bar-heading-2
 
 bar-content
 
-*** response
+*** Response
 
 **** bar-assistant-heading-3
 
@@ -2337,14 +2337,14 @@ bar-content
 
 bar-assistant-content
 
-*** prompt
+*** Prompt
 
 **** baz-heading-1
 ***** baz-heading-2
 
 baz-content
 
-*** response
+*** Response
 
 **** baz-assistant-heading-3
 
@@ -2394,14 +2394,14 @@ baz-assistant-content
 :EDEN_DATE: [2024-12-20 Fri]
 :EDEN_REQ: uuid
 :END:
-*** prompt
+*** Prompt
 
 **** baz-heading-1
 ***** baz-heading-2
 
 baz-content
 
-*** response
+*** Response
 
 **** baz-assistant-heading-3
 

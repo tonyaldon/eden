@@ -1389,12 +1389,12 @@ See `eden-conversation' and `eden-conversations'."
        ":END:\n"))
     (dolist (exchange conversation)
       (seq-let (prompt response) exchange
-        (insert "*** prompt\n\n" prompt)
+        (insert "*** Prompt\n\n" prompt)
         (cond
          ((looking-back "\n\n" nil) nil)
          ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))
-        (insert "*** response\n\n" response)
+        (insert "*** Response\n\n" response)
         (cond
          ((looking-back "\n\n" nil) nil)
          ((looking-back "\n" nil) (insert "\n"))
@@ -1946,12 +1946,13 @@ like this:
                     (truncate-string-to-width eden-model 16 nil nil t)))
      (:eval (when eden-temperature (format " <%s>" eden-temperature)))
      (:eval (when-let ((system-prompt-title (car-safe eden-system-prompt)))
-              (format " %s"
-                      (truncate-string-to-width
-                       system-prompt-title 24 nil nil t))))
+              (concat (propertize " > " 'face '(:weight bold))
+                      (format "%s"
+                              (truncate-string-to-width
+                               system-prompt-title 24 nil nil t)))))
      (:eval (when eden-conversation-id
-              (concat (propertize " *" 'face '(:weight bold))
-                      (format " %s" (eden-conversation-title eden-conversation-id)))))
+              (concat (propertize " ** " 'face '(:weight bold))
+                      (format "%s" (eden-conversation-title eden-conversation-id)))))
      " "
      mode-line-misc-info))
   (eden-request-history-set)
