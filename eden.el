@@ -1897,6 +1897,21 @@ like this:
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
+(defun eden-req-at-point-show-system-prompt ()
+  (interactive)
+  (when-let* ((req-uuid (eden-req-at-point-uuid))
+              (req `(:dir ,eden-dir :uuid ,req-uuid)))
+    (let ((system-prompt (eden-request-read 'system-prompt req)))
+      (if (string-empty-p system-prompt)
+          (message "No system prompt for `%s' request." (eden-request-dir req))
+        (let ((buff (get-buffer-create (eden-buffer-name "system prompt"))))
+          (with-current-buffer buff
+            (erase-buffer)
+            (org-mode)
+            (save-excursion (insert system-prompt)))
+          (select-window
+           (display-buffer buff '(display-buffer-reuse-window))))))))
+
 (defun eden-req-at-point-show-perplexity-citations ()
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
@@ -1928,6 +1943,7 @@ like this:
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("R" "Show requests of conversation at point" eden-req-at-point-show-requests)
+    ("p" "Show system prompt of request at point" eden-req-at-point-show-system-prompt)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
