@@ -995,7 +995,35 @@ Perplexity API and a system prompt:
     :endpoint "https://api.openai.com/v1/chat/completions"
     :default-model "gpt-4o-mini"
     :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
-  "...")
+  "Plist describing the OpenAI-compatible API to use.
+
+Accepted keys includes:
+
+- :service       - The service name (string) that identifies the API key
+                   in `~/.authinfo.gpg' (or `~/.authinfo') file used with
+                   `:endpoint'.  See `eden-request-command'.
+- :endpoint      - The URL for the API endpoint corresponding to `:service'.
+- :default-model - (optional) The default model's name (string) for
+                   `:service'.  While not actively utilized, it's
+                   included for consistency with `eden-apis' list.
+- :models        - (optional) A list of model names (strings) available
+                   for selection when using `eden-model-set' command
+                   to switch models for `:service'.
+
+Example for OpenAI API configuration:
+
+    (:service \"openai\"
+     :endpoint \"https://api.openai.com/v1/chat/completions\"
+     :default-model \"gpt-4o-mini\"
+     :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
+
+In that case, ensure that the API key, <openai-api-key>, for the
+endpoint \"https://api.openai.com/v1/chat/completions\" is stored
+in `~/.authinfo.gpg' (encrypted with gpg) or `~/.authinfo' file,
+formatted as:
+
+    machine openai password <openai-api-key>")
+
 (defvar eden-apis
   '((:service "openai"
      :endpoint "https://api.openai.com/v1/chat/completions"
