@@ -1535,11 +1535,16 @@ like this:
                              api dir)
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request"))
-  (let* ((-system-prompt
+  (let* ((-model (or model eden-model))
+         (-system-prompt
           (or system-prompt (cdr-safe eden-system-prompt) ""))
          (-messages
           `(,(when (not (string-empty-p -system-prompt))
-               `(:role "system" :content ,(eden-org-to-markdown -system-prompt)))
+               `(:role ,(if (seq-contains-p eden-system-prompt->developer-for-models
+                                            -model)
+                            "developer"
+                          "system")
+                 :content ,(eden-org-to-markdown -system-prompt)))
             ,@(seq-reduce
                (lambda (acc exchange)
                  (append acc
@@ -1550,7 +1555,7 @@ like this:
             (:role "user" :content ,(eden-org-to-markdown prompt))))
          (req-messages (apply 'vector (remq nil -messages))))
     `(:req (:stream ,(or (and stream t) :false)
-            :model ,(or model eden-model)
+            :model ,-model
             :temperature ,(or temperature eden-temperature)
             :messages ,req-messages)
       :api ,(or api eden-api)

@@ -2701,14 +2701,18 @@ baz-assistant-content
     (should (string= (plist-get req :system-prompt) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "foo prompt")])))
-  (let* ((req (eden-request :prompt "foo prompt"
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (eden-model "gpt-4o-mini")
+         (req (eden-request :prompt "foo prompt"
                             :system-prompt "foo system")))
     (should (string= (plist-get req :system-prompt) "foo system"))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "foo system")
                     (:role "user" :content "foo prompt")])))
   ;; :prompt, :system-prompt and :exchanges
-  (let* ((exchanges [(:uuid "uuid-foo"
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (eden-model "gpt-4o-mini")
+         (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
                       :user "foo user"
                       :assistant "foo assistant"
@@ -2739,14 +2743,18 @@ baz-assistant-content
     (should (string= (plist-get req :system-prompt) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((req (eden-request :prompt "* prompt h1\n** prompt h2"
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (eden-model "gpt-4o-mini")
+         (req (eden-request :prompt "* prompt h1\n** prompt h2"
                             :system-prompt "* system h1\n** system h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "# system h1\n\n\n## system h2")
                     (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((exchanges [(:uuid "uuid-foo"
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (eden-model "gpt-4o-mini")
+         (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
                       :user "foo user"
                       :assistant "foo assistant")
@@ -2788,7 +2796,23 @@ baz-assistant-content
       (plist-get (eden-request :prompt "foo prompt")
                  :system-prompt))
     "bar system prompt"))
-
+  ;; :system-prompt and :model and the variables
+  ;; `eden-model' and `eden-system-prompt->developer-for-models'
+  ;; in that case :role of first message in messages must be "developer"
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (req (eden-request :prompt "foo prompt"
+                            :system-prompt "foo system"
+                            :model "o1")))
+    (should (equal (eden-get-in req [:req :messages])
+                   [(:role "developer" :content "foo system")
+                    (:role "user" :content "foo prompt")])))
+  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+         (eden-model "o1")
+         (req (eden-request :prompt "foo prompt"
+                            :system-prompt "foo system")))
+    (should (equal (eden-get-in req [:req :messages])
+                   [(:role "developer" :content "foo system")
+                    (:role "user" :content "foo prompt")])))
 
   ;; Test :stream
   (let ((req (eden-request :prompt "foo prompt")))
