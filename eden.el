@@ -1020,6 +1020,7 @@ For instance we can set `eden-system-prompts' to:
      (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))
 
 See `eden-system-prompt-set' command.")
+(defvar eden-system-prompt->developer-for-models '("o1-mini" "o1"))
 (defvar eden-dir (concat user-emacs-directory "eden/") "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
