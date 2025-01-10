@@ -1035,7 +1035,26 @@ formatted as:
      :models ("llama-3.1-sonar-small-128k-online"
               "llama-3.1-sonar-large-128k-online"
               "llama-3.1-sonar-huge-128k-online")))
-  "...")
+  "List of OpenAI-compatible APIs available for selection when using `eden-api-set'.
+
+See `eden-api', for detailed descriptions of each element.
+
+Moreover, when we set `eden-api' with `eden-api-set', if API's
+`:default-value' is non-nil, it becomes the value of `eden-model'.
+
+Example listing OpenAI API and Perplexity configurations:
+
+    ((:service \"openai\"
+      :endpoint \"https://api.openai.com/v1/chat/completions\"
+      :default-model \"gpt-4o-mini\"
+      :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
+     (:service \"perplexity\"
+      :endpoint \"https://api.perplexity.ai/chat/completions\"
+      :default-model \"llama-3.1-sonar-small-128k-online\"
+      :models (\"llama-3.1-sonar-small-128k-online\"
+               \"llama-3.1-sonar-large-128k-online\"
+               \"llama-3.1-sonar-huge-128k-online\")))")
+
 (defvar eden-model "gpt-4o-mini" "...")
 (defvar eden-temperature nil "...")
 (defvar eden-system-prompt nil "...")
