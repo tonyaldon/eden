@@ -2696,16 +2696,15 @@ baz-assistant-content
   (should-error (eden-request))
   ;; :prompt and :system-prompt
   (let* ((eden-system-prompt nil)
-         (req (eden-request :prompt "foo prompt"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
+         (req (eden-request :prompt "foo prompt")))
     (should (string= (plist-get req :prompt) "foo prompt"))
     (should (string= (plist-get req :system-prompt) ""))
-    (should (equal req-messages [(:role "user" :content "foo prompt")])))
+    (should (equal (eden-get-in req [:req :messages])
+                   [(:role "user" :content "foo prompt")])))
   (let* ((req (eden-request :prompt "foo prompt"
-                            :system-prompt "foo system"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
+                            :system-prompt "foo system")))
     (should (string= (plist-get req :system-prompt) "foo system"))
-    (should (equal req-messages
+    (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "foo system")
                     (:role "user" :content "foo prompt")])))
   ;; :prompt, :system-prompt and :exchanges
@@ -2722,11 +2721,10 @@ baz-assistant-content
          (req (eden-request
                :prompt "baz prompt"
                :system-prompt "baz system"
-               :exchanges exchanges))
-         (req-messages (plist-get (plist-get req :req) :messages)))
+               :exchanges exchanges)))
     (should (string= (plist-get req :system-prompt) "baz system"))
     (should (equal (plist-get req :exchanges) exchanges))
-    (should (equal req-messages
+    (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "baz system")
                     (:role "user" :content "foo user")
                     (:role "assistant" :content "foo assistant")
@@ -2736,18 +2734,16 @@ baz-assistant-content
   ;; :prompt and :system-prompt
   ;; both converted from org-mode to markdown
   (let* ((eden-system-prompt nil)
-         (req (eden-request :prompt "* prompt h1\n** prompt h2"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
+         (req (eden-request :prompt "* prompt h1\n** prompt h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-prompt) ""))
-    (should (equal req-messages
+    (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
   (let* ((req (eden-request :prompt "* prompt h1\n** prompt h2"
-                            :system-prompt "* system h1\n** system h2"))
-         (req-messages (plist-get (plist-get req :req) :messages)))
+                            :system-prompt "* system h1\n** system h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
-    (should (equal req-messages
+    (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "# system h1\n\n\n## system h2")
                     (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
   (let* ((exchanges [(:uuid "uuid-foo"
@@ -2761,9 +2757,8 @@ baz-assistant-content
          (req (eden-request
                :prompt "* prompt h1\n** prompt h2"
                :system-prompt "* system h1\n** system h2"
-               :exchanges exchanges))
-         (req-messages (plist-get (plist-get req :req) :messages)))
-    (should (equal req-messages
+               :exchanges exchanges)))
+    (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "# system h1\n\n\n## system h2")
                     (:role "user" :content "foo user")
                     (:role "assistant" :content "foo assistant")
