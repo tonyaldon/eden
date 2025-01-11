@@ -1144,6 +1144,7 @@ See `eden-send'.")
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
 
 (defun eden-maybe-delete-window-prompt-buffer ()
+  "Delete prompt buffer window if selected and not the only live window."
   (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
     (when (and (equal (selected-window) prompt-buffer-window)
                (> (length (window-list)) 1))
