@@ -1083,7 +1083,9 @@ will omit the initial system prompt.
 command, selecting prompts from `eden-system-prompts' variable.")
 
 (defvar eden-system-prompts nil
-  "Alist of (\"title\" . \"system prompt\") to choose from.
+  "Alist of system prompts available for selection when using `eden-system-prompt-set'.
+
+See `eden-system-prompt', for detailed descriptions of system prompts.
 
 For instance we can set `eden-system-prompts' to:
 
