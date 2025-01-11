@@ -1055,9 +1055,33 @@ Example listing OpenAI API and Perplexity configurations:
                \"llama-3.1-sonar-large-128k-online\"
                \"llama-3.1-sonar-huge-128k-online\")))")
 
-(defvar eden-model "gpt-4o-mini" "...")
-(defvar eden-temperature nil "...")
-(defvar eden-system-prompt nil "...")
+(defvar eden-model "gpt-4o-mini"
+  "Model used by `eden-send' to send requests to `eden-api'.
+
+Examples of valid model for OpenAI API: \"gpt-4o-mini\", \"gpt-4o\",
+\"o1-mini\", \"o1\". ")
+
+(defvar eden-temperature nil
+  "Temperature used by `eden-send' to send requests to `eden-api'.
+
+It can be a float between 0 and 2 or nil.")
+
+(defvar eden-system-prompt nil
+  "System prompt used by `eden-send' to send requests to `eden-api'.
+
+It is a cons cell (\"title\" . \"system prompt\"), where \"system prompt\"
+serves as `:content' of the first message in request's `:messages'.
+
+And if `eden-model' belongs to `eden-system-prompt->developer-for-models',
+`:role' of this first message is \"developer\"; otherwise it defaults
+to \"system\".
+
+Additionally,`eden-system-prompt' may be nil, in which case `:messages'
+will omit the initial system prompt.
+
+`eden-system-prompt' is typically set through `eden-system-prompt-set'
+command, selecting prompts from `eden-system-prompts' variable.")
+
 (defvar eden-system-prompts nil
   "Alist of (\"title\" . \"system prompt\") to choose from.
 
