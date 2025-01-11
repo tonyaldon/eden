@@ -1080,7 +1080,11 @@ Additionally,`eden-system-prompt' may be nil, in which case `:messages'
 will omit the initial system prompt.
 
 `eden-system-prompt' is typically set through `eden-system-prompt-set'
-command, selecting prompts from `eden-system-prompts' variable.")
+command, selecting prompts from `eden-system-prompts' variable.
+
+According to OpenAI API documentation, a system prompt consists of
+\"Developer-provided instructions that the model should follow,
+regardless of messages sent by the user.\"")
 
 (defvar eden-system-prompts nil
   "Alist of system prompts available for selection when using `eden-system-prompt-set'.
