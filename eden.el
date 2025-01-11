@@ -1113,8 +1113,22 @@ data.
 See `eden-write-request', `eden-write-command', `eden-write-response'
 and `eden-write-error'.")
 
-(defvar eden-org-property-date "EDEN_DATE" "...")
-(defvar eden-org-property-req "EDEN_REQ" "...")
+(defvar eden-org-property-date "EDEN_DATE"
+  "Org property used for the date a request has been issued.
+
+This is used when inserting requests/conversations into buffers.
+
+See `eden-conversation-insert'.")
+
+(defvar eden-org-property-req "EDEN_REQ"
+  "Org property used for request's uuid.
+
+This is used when inserting requests or conversations into buffers
+and is relevant for any command that operates on requests at point
+such as `eden-req-at-point-goto'.
+
+See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
+
 (defvar eden-pops-up-upon-receipt t "...")
 (defvar eden-prompt-buffer-name "*eden*" "...")
 
