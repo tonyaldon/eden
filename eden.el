@@ -1129,8 +1129,13 @@ such as `eden-req-at-point-goto'.
 
 See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 
-(defvar eden-pops-up-upon-receipt t "...")
-(defvar eden-prompt-buffer-name "*eden*" "...")
+(defvar eden-pops-up-upon-receipt t
+  "If t, the response's buffer pops up upon receipt from OpenAI.
+
+See `eden-send'.")
+
+(defvar eden-prompt-buffer-name "*eden*"
+  "Name of the buffer used for user prompt input.")
 
 ;;;; Utils
 
