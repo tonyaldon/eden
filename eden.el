@@ -1198,7 +1198,16 @@ For instance:
 
 ;;;; Prompt and Request history
 
-(defvar eden-request-history nil "...")
+(defvar eden-request-history nil
+  "List of request's uuid where the latest request is listed first.
+
+When we call `eden' for the first time, `eden-request-history-set'
+initializes `eden-request-history' with existing requests in `eden-dir'.
+
+Then, each invocation of `eden-send' command updates `eden-request-history'
+variable.
+
+See `eden-send-request'.")
 
 (defun eden-request-history-set ()
   "..."
