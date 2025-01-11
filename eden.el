@@ -1090,9 +1090,8 @@ See `eden-system-prompt', for detailed descriptions of system prompts.
 For instance we can set `eden-system-prompts' to:
 
     ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
-     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))
+     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
 
-See `eden-system-prompt-set' command.")
 (defvar eden-system-prompt->developer-for-models '("o1-mini" "o1"))
 (defvar eden-dir (concat user-emacs-directory "eden/") "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
