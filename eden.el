@@ -1102,7 +1102,17 @@ For instance we can set `eden-system-prompts' to:
 According to OpenAI API documentation, \"With o1 models and newer,
 developer messages replace the previous system messages.\"")
 
-(defvar eden-dir (concat user-emacs-directory "eden/") "...")
+(defvar eden-dir (concat user-emacs-directory "eden/")
+  "Directory where all requests sent by `eden-send' are stored.
+
+Each request is organized in a unique subdirectory within `eden-dir`,
+containing comprehensive details such as the request itself, the
+corresponding response, and any errors encountered, among other relevant
+data.
+
+See `eden-write-request', `eden-write-command', `eden-write-response'
+and `eden-write-error'.")
+
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
 (defvar eden-pops-up-upon-receipt t "...")
