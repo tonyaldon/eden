@@ -1096,7 +1096,12 @@ For instance we can set `eden-system-prompts' to:
     ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
      (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
 
-(defvar eden-system-prompt->developer-for-models '("o1-mini" "o1"))
+(defvar eden-system-prompt->developer-for-models '("o1-mini" "o1")
+  "List of models that use \"developer\" prompts instead of \"system\" prompts.
+
+According to OpenAI API documentation, \"With o1 models and newer,
+developer messages replace the previous system messages.\"")
+
 (defvar eden-dir (concat user-emacs-directory "eden/") "...")
 (defvar eden-org-property-date "EDEN_DATE" "...")
 (defvar eden-org-property-req "EDEN_REQ" "...")
