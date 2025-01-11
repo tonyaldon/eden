@@ -1151,6 +1151,7 @@ See `eden-send'.")
       (delete-window))))
 
 (defun eden-org-to-markdown (org-str)
+  "Convert ORG-STR `org-mode' string to a markdown string."
   (let ((org-export-with-toc nil)
         (org-md-headline-style 'atx))
     ;; Default md backend uses `org-md-example-block' to export
@@ -1167,10 +1168,16 @@ See `eden-send'.")
       (string-trim
        (org-export-string-as org-str 'md nil)))))
 
+"(eden-org-demote \"* heading\" 3) ;; \"*** heading\""
+
 (defun eden-org-demote (org-str level)
   "Demote ORG-STR `org-mode' string to LEVEL level.
 
-LEVEL must be 3 or 4."
+LEVEL must be 3 or 4.
+
+For instance:
+
+    (eden-org-demote \"* heading\" 3) ;; \"*** heading\""
   (when (not (seq-contains-p '(3 4) level))
     (error "`%S' not accepted.  `level' must be 3 or 4" level))
   (with-temp-buffer
