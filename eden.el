@@ -1229,7 +1229,26 @@ See `eden-request-timestamp'."
               (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
               (mapcar 'car))))))
 
-(defvar eden-prompt-history-state [nil nil nil] "...")
+(defvar eden-prompt-history-state [nil nil nil]
+  "State of the prompt history.
+
+- Set by `eden-prompt-history-state-set' in `eden-mode',
+- Reset with each call to `eden-send' and
+- Updated on calling `eden-prompt-previous' and `eden-prompt-next'.
+
+The variable is a vector of three elements:
+
+1) The first element holds the list of previous prompts, which can be:
+
+   - nil,
+   - uuids of existing requests in `eden-dir' or
+   - temporary prompts entered in `eden-prompt-buffer-name' buffer
+     formatted as (:prompt \"foo bar baz\")
+
+2) The second element holds the current prompt, which may be nil, a
+   uuid or a temporary prompt as described in 1),
+3) The Third element holds the list of next prompts which can also be
+   nil, uuids or a temporary prompts as described in 1).")
 
 (defun eden-prompt-history-state-set ()
   (setq eden-prompt-history-state
