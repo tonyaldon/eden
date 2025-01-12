@@ -1468,9 +1468,11 @@ For instance `eden-conversations' can be:
        :action continue-from
        :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))")
 
-(defvar eden-conversation-id nil "...")
+(defvar eden-conversation-id nil
+  "uuid of the current conversation if any.")
 
 (defun eden-conversation-with-title-exists-p (title)
+  "Return t if a conversation with TITLE exists in `eden-conversations'."
   (seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
             eden-conversations))
 
