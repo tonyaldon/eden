@@ -1269,6 +1269,7 @@ If the current prompt is temporary with no corresponding request, return nil."
     (when (not (consp current)) current)))
 
 (defun eden-prompt-current ()
+  "Return current prompt in `eden-prompt-history-state' if any or nil."
   (let ((current (aref eden-prompt-history-state 1)))
     (cond
      ((null current) nil)
@@ -1276,6 +1277,10 @@ If the current prompt is temporary with no corresponding request, return nil."
      (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
 
 (defun eden-prompt-current-goto ()
+  "Go to request's directory of current prompt in `eden-prompt-history-state'.
+
+If the current prompt is temporary with no corresponding request, message
+the user about it."
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req-dir (eden-request-dir
