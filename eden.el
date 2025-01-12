@@ -1432,7 +1432,42 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
 
 ;;;; Conversations
 
-(defvar eden-conversations nil "...")
+(("213940f6-fa87-4c27-9aa5-30d6ba3d2724" .
+  (:title "foo title" :action start :last-req-uuid nil))
+ ("bcb3f6ee-1b85-4c92-904a-f8ae8f536f7c" .
+  (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
+ ("09b95117-ae13-41dc-aa76-53f63576b771" .
+  (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))
+
+(defvar eden-conversations nil
+  "Alist of conversations.
+
+A conversation is a cons cells whose
+
+- car is a uuid and
+- cdr is a plists with the following keys:
+
+  - :title         - The title of the conversation
+  - :action        - The symbol `start', `start-from' or `continue-from'
+                     depending on the state of the conversation
+  - :last-req-uuid - The uuid of the last request in the conversation
+                     which can be nil if `:action' is `start'
+
+For instance `eden-conversations' can be:
+
+    ((\"213940f6-fa87-4c27-9aa5-30d6ba3d2724\" .
+      (:title \"foo title\"
+       :action start
+       :last-req-uuid nil))
+     (\"bcb3f6ee-1b85-4c92-904a-f8ae8f536f7c\" .
+      (:title \"bar title\"
+       :action start-from
+       :last-req-uuid \"04397cda-f623-425b-9a7d-c29caea3511f\"))
+     (\"09b95117-ae13-41dc-aa76-53f63576b771\" .
+      (:title \"baz title\"
+       :action continue-from
+       :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))")
+
 (defvar eden-conversation-id nil "...")
 
 (defun eden-conversation-with-title-exists-p (title)
