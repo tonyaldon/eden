@@ -1334,7 +1334,22 @@ For instance:
       state)))
 
 (defun eden-prompt-history-next (state &optional prompt discard-current)
-  "..."
+  "Return a new state of STATE with next prompt set as current prompt.
+
+Similar to `eden-prompt-history-previous'.
+
+For instance:
+
+    (eden-prompt-history-next [nil \"baz\" (\"bar\" \"foo\")])
+    ;; [(\"baz\") \"bar\" (\"foo\")]
+
+    (eden-prompt-history-next
+     [(\"baz\") \"bar\" (\"foo\")] '(:prompt \"scratch prompt\"))
+    ;; [((:prompt \"scratch prompt\") \"bar\" \"baz\") \"foo\" nil]
+
+    (eden-prompt-history-next
+     [nil \"to-be-discarded\" (\"bar\" \"foo\")] nil 'discard-current)
+    ;; [nil \"bar\" (\"foo\")]"
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
                    prompt discard-current)))
