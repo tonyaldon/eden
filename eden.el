@@ -1256,6 +1256,9 @@ The variable is a vector of three elements:
         (vector eden-request-history nil nil)))
 
 (defun eden-prompt-current-buffer ()
+  "Return current buffer content as string with no text properties.
+
+It is meant to be called in `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun eden-prompt-current-req-uuid ()
