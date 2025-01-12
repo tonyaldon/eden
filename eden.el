@@ -1432,13 +1432,6 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
 
 ;;;; Conversations
 
-(("213940f6-fa87-4c27-9aa5-30d6ba3d2724" .
-  (:title "foo title" :action start :last-req-uuid nil))
- ("bcb3f6ee-1b85-4c92-904a-f8ae8f536f7c" .
-  (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
- ("09b95117-ae13-41dc-aa76-53f63576b771" .
-  (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))
-
 (defvar eden-conversations nil
   "Alist of conversations.
 
