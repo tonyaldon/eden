@@ -1413,12 +1413,20 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
             (insert (or (eden-prompt-current) ""))))))))
 
 (defun eden-prompt-previous ()
-  "..."
+  "Replace current buffer content with previous prompt.
+
+See `eden-prompt-history-state' and `eden-prompt-history'.
+
+This function is meant to be called in `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-prompt-history 'previous))
 
 (defun eden-prompt-next ()
-  "..."
+  "Replace current buffer content with next prompt.
+
+See `eden-prompt-history-state' and `eden-prompt-history'.
+
+This function is meant to be called in `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-prompt-history 'next))
 
