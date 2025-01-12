@@ -1251,6 +1251,7 @@ The variable is a vector of three elements:
    nil, uuids or a temporary prompts as described in 1).")
 
 (defun eden-prompt-history-state-set ()
+  "Set `eden-prompt-history-state' with `eden-request-history'."
   (setq eden-prompt-history-state
         (vector eden-request-history nil nil)))
 
