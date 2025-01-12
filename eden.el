@@ -1293,7 +1293,32 @@ the user about it."
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-prompt-history-previous (state &optional prompt discard-current)
-  "..."
+  "Return a new state of STATE with previous prompt set as current prompt.
+
+STATE follows the structure defined in `eden-prompt-history-state'.
+
+If PROMPT is non-nil, both PROMPT and the current prompt are pushed onto
+the stack of next prompts.
+
+If DISCARD-CURRENT is non-nil, the current prompt will not be pushed
+onto the stack of next prompts, accommodating requests in
+`eden-request-history' that may fail `eden-request-check' and should
+be omitted from `eden-prompt-history-state' while navigating it.
+
+Signal an error if both PROMPT and DISCARD-CURRENT are non-nil.
+
+For instance:
+
+    (eden-prompt-history-previous [(\"bar\" \"baz\") \"foo\" nil])
+    ;; [(\"baz\") \"bar\" (\"foo\")]
+
+    (eden-prompt-history-previous
+     [(\"bar\" \"baz\") \"foo\" nil] \\='(:prompt \"scratch prompt\"))
+    ;; [(\"baz\") \"bar\" ((:prompt \"scratch prompt\") \"foo\")]
+
+    (eden-prompt-history-previous
+     [(\"foo\" \"bar\") \"to-be-discarded\" nil] nil \\='discard-current)
+    ;; [(\"bar\") \"foo\" nil]"
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
                    prompt discard-current)))
