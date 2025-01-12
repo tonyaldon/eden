@@ -1210,7 +1210,12 @@ variable.
 See `eden-send-request'.")
 
 (defun eden-request-history-set ()
-  "..."
+  "Set `eden-request-history' with uuids of existing requests in `eden-dir'.
+
+They are sorted by their timestamp file with the latest request appearing
+first.
+
+See `eden-request-timestamp'."
   (when (file-exists-p eden-dir)
     (let* ((timestamp-files
             (directory-files-recursively eden-dir "timestamp-.*")))
