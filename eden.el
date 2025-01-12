@@ -1365,6 +1365,9 @@ For instance:
       state)))
 
 (defun eden-prompt-discard-current-p ()
+  "Return t if current prompt is associated to a request failing `eden-request-check'.
+
+See `eden-prompt-history-state'."
   (let ((current (aref eden-prompt-history-state 1)))
     (when (not (or (null current) (consp current)))
       (let ((req `(:dir ,eden-dir :uuid ,current)))
