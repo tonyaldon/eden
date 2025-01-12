@@ -1437,7 +1437,7 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
 
 A conversation is a cons cells whose
 
-- car is a uuid and
+- car is an id and
 - cdr is a plists with the following keys:
 
   - :title         - The title of the conversation
@@ -1508,15 +1508,36 @@ Signal an error if the conversation cannot be added."
     (setq eden-conversation-id conversation-id)))
 
 (defun eden-conversation-title (conversation-id)
-  "..."
+  "Return title of conversation with CONVERSATION-ID in `eden-conversations'.
+
+If no conversation with CONVERSATION-ID can be found in `eden-conversations',
+return nil."
   (eden-get-in eden-conversations `(,conversation-id :title)))
 
 (defun eden-conversation-action (conversation-id)
-  "..."
+  "Return action of conversation with CONVERSATION-ID in `eden-conversations'.
+
+If no conversation with CONVERSATION-ID can be found in `eden-conversations',
+return nil."
   (eden-get-in eden-conversations `(,conversation-id :action)))
 
 (defun eden-conversation-last-req (conversation-id)
-  "..."
+  "Return last request of conversation with CONVERSATION-ID in `eden-conversations'.
+
+If no conversation with CONVERSATION-ID can be found in `eden-conversations',
+return nil.
+
+For instance:
+
+    (let ((eden-dir \"/tmp/eden/\")
+          (eden-conversations
+           \\='((\"09b95117-ae13-41dc-aa76-53f63576b771\" .
+              (:title \"baz title\"
+               :action continue-from
+               :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))))
+      (eden-conversation-last-req \"09b95117-ae13-41dc-aa76-53f63576b771\"))
+    ;; (:uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\"
+    ;;  :dir \"/tmp/eden/\")"
   (when-let ((uuid (eden-get-in
                     eden-conversations `(,conversation-id :last-req-uuid))))
     `(:uuid ,uuid :dir ,eden-dir)))
@@ -1625,7 +1646,7 @@ See `eden-conversation' and `eden-conversations'."
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-conversation-pause ()
-  "..."
+  "Pause the current conversation by setting `eden-conversation-id' to nil."
   (interactive)
   (setq eden-conversation-id nil))
 
