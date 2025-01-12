@@ -1258,7 +1258,7 @@ The variable is a vector of three elements:
 (defun eden-prompt-current-buffer ()
   "Return current buffer content as string with no text properties.
 
-It is meant to be called in `eden-prompt-buffer-name' buffer."
+This function is meant to be called in `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun eden-prompt-current-req-uuid ()
@@ -1375,6 +1375,19 @@ See `eden-prompt-history-state'."
             t)))))
 
 (defun eden-prompt-history (direction)
+  "Replace current buffer content with previous or next prompt based on DIRECTION.
+
+DIRECTION can be either `previous' or `next'.
+
+Also update `eden-prompt-history-state' accordingly.  See
+`eden-prompt-history-previous' and `eden-prompt-history-next'.
+
+If the content of `eden-prompt-buffer-name' buffer differs from
+the current prompt in `eden-prompt-history-state', it is pushed
+onto the respective stack of previous or next prompts based on
+DIRECTION.
+
+This function is meant to be called in `eden-prompt-buffer-name' buffer."
   (let (prompts f)
     (pcase direction
       ('previous (setq prompts (aref eden-prompt-history-state 0))
