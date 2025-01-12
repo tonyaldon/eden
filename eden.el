@@ -1470,9 +1470,17 @@ For instance `eden-conversations' can be:
             eden-conversations))
 
 (defun eden-conversation (action title &optional req-uuid)
-  "...
+  "Add a conversation to `eden-conversations' with a specied ACTION and TITLE.
 
-See variables `eden-conversations' and `eden-dir'."
+Valid ACTION values include:
+
+- `start'         - Initiates a new conversation.
+- `start-from'    - Begins a conversation from a request requiring its
+                    uuid specified by REQ-UUID.
+- `continue-from' - Resumes a conversation from a request requiring its
+                    uuid specified by REQ-UUID
+
+Signal an error if the conversation cannot be added."
   (cond
    ((eden-conversation-with-title-exists-p title)
     (error "Conversation with title `%s' already exists in `eden-conversations'"
