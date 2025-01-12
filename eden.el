@@ -1262,6 +1262,9 @@ It is meant to be called in `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun eden-prompt-current-req-uuid ()
+  "Return request's uuid of current prompt in `eden-prompt-history-state'.
+
+If the current prompt is temporary with no corresponding request, return nil."
   (when-let ((current (aref eden-prompt-history-state 1)))
     (when (not (consp current)) current)))
 
