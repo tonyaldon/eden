@@ -1636,6 +1636,9 @@ See `eden-conversations', `eden-send-request' and `eden-send'."
                             eden-conversations)))))))
 
 (defun eden-conversation-switch ()
+  "Switch current conversation based on user's selection from `eden-conversations'.
+
+See `eden-conversation-id'."
   (interactive)
   (if (null eden-conversations)
       (message "No conversation to switch to yet.")
