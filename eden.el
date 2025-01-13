@@ -1987,7 +1987,9 @@ To prevent automatic display, set `eden-pops-up-upon-receipt' to nil.
 
 To modify or inspect Eden's settings, use `eden-menu' command.
 
-This function should be called from `eden-prompt-buffer-name' buffer."
+This function should be called from `eden-prompt-buffer-name' buffer.
+
+See `eden-send-request'."
   (interactive)
   (eden-send-request
    :req (eden-request
@@ -2035,9 +2037,13 @@ This function should be called from `eden-prompt-buffer-name' buffer."
 ;;;; Main menu
 
 (defun eden-buffer-name (&optional title)
+  "Return a formatted buffer name optionally using TITLE."
   (if title (format "*eden[%s]*" title) "*eden*"))
 
 (defun eden-show-current-conversation ()
+  "Display current conversation.
+
+See `eden-conversations' and `eden-conversation-id'."
   (interactive)
   (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
         (title (eden-conversation-title eden-conversation-id))
@@ -2057,6 +2063,10 @@ This function should be called from `eden-prompt-buffer-name' buffer."
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
 (defun eden-show-current-conversation-in-req-history ()
+  "Show conversation of current request in history.
+
+See `eden-prompt-current-req-uuid' and `eden-prompt-history-state'."
+
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req `(:dir ,eden-dir :uuid ,req-uuid)))
