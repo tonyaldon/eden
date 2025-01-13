@@ -294,7 +294,7 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "baz user prompt\n"
-                :system-prompt "baz system prompt\n"
+                :system-message "baz system message\n"
                 :exchanges [(:uuid "uuid-foo"
                              :prompt "foo prompt\n"
                              :user "foo user"
@@ -397,7 +397,7 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "baz user prompt\n"
-                :system-prompt "baz system prompt\n"
+                :system-message "baz system message\n"
                 :exchanges [(:uuid "uuid-foo"
                              :prompt "foo prompt"
                              :user "foo user"
@@ -574,7 +574,7 @@
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
                     :prompt "baz user prompt\n"
-                    :system-prompt "baz system prompt\n"
+                    :system-message "baz system message\n"
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "foo prompt"
                                  :user "foo user"
@@ -679,7 +679,7 @@
     (should
      (equal
       (with-temp-buffer
-        (insert-file-contents (eden-request-file 'system-prompt req))
+        (insert-file-contents (eden-request-file 'system-message req))
         (buffer-substring-no-properties (point-min) (point-max)))
       ""))
     (should-not
@@ -692,7 +692,7 @@
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
                       :temperature 1
-                      :messages [(:role "system" :content "system prompt\n")
+                      :messages [(:role "system" :content "system message\n")
                                  (:role "user" :content "bar user")
                                  (:role "assistant" :content "bar assistant")
                                  (:role "user" :content "baz prompt")
@@ -701,7 +701,7 @@
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "user prompt\n"
-                :system-prompt "system prompt\n"
+                :system-message "system message\n"
                 :exchanges [(:uuid "uuid-bar"
                              :prompt "bar prompt"
                              :user "bar user"
@@ -737,9 +737,9 @@
     (should
      (equal
       (with-temp-buffer
-        (insert-file-contents (eden-request-file 'system-prompt req))
+        (insert-file-contents (eden-request-file 'system-message req))
         (buffer-substring-no-properties (point-min) (point-max)))
-      (plist-get req :system-prompt)))
+      (plist-get req :system-message)))
     (should
      (equal
       (with-temp-buffer
@@ -1809,7 +1809,7 @@ foo bar baz
             :api (:service "chatgpt"
                   :endpoint "https://api.openai.com/v1/chat/completions")
             :prompt "baz prompt\n"
-            :system-prompt "baz system prompt\n"
+            :system-message "baz system message\n"
             :exchanges [(:uuid "uuid-foo"
                          :prompt "foo prompt\n"
                          :user "foo user"
@@ -2690,27 +2690,27 @@ baz-assistant-content
                  :dir))
     "/tmp/bar/"))
 
-  ;; Check :prompt, :system-prompt, :exchanges
+  ;; Check :prompt, :system-message, :exchanges
   ;;
   ;; :prompt argument is mandatory
   (should-error (eden-request))
-  ;; :prompt and :system-prompt
-  (let* ((eden-system-prompt nil)
+  ;; :prompt and :system-message
+  (let* ((eden-system-message nil)
          (req (eden-request :prompt "foo prompt")))
     (should (string= (plist-get req :prompt) "foo prompt"))
-    (should (string= (plist-get req :system-prompt) ""))
+    (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "foo prompt")])))
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-model "gpt-4o-mini")
          (req (eden-request :prompt "foo prompt"
-                            :system-prompt "foo system")))
-    (should (string= (plist-get req :system-prompt) "foo system"))
+                            :system-message "foo system")))
+    (should (string= (plist-get req :system-message) "foo system"))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "foo system")
                     (:role "user" :content "foo prompt")])))
-  ;; :prompt, :system-prompt and :exchanges
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  ;; :prompt, :system-message and :exchanges
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-model "gpt-4o-mini")
          (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
@@ -2724,9 +2724,9 @@ baz-assistant-content
                       :response "bar response")])
          (req (eden-request
                :prompt "baz prompt"
-               :system-prompt "baz system"
+               :system-message "baz system"
                :exchanges exchanges)))
-    (should (string= (plist-get req :system-prompt) "baz system"))
+    (should (string= (plist-get req :system-message) "baz system"))
     (should (equal (plist-get req :exchanges) exchanges))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "baz system")
@@ -2735,24 +2735,24 @@ baz-assistant-content
                     (:role "user" :content "bar user")
                     (:role "assistant" :content "bar assistant")
                     (:role "user" :content "baz prompt")])))
-  ;; :prompt and :system-prompt
+  ;; :prompt and :system-message
   ;; both converted from org-mode to markdown
-  (let* ((eden-system-prompt nil)
+  (let* ((eden-system-message nil)
          (req (eden-request :prompt "* prompt h1\n** prompt h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-prompt) ""))
+    (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-model "gpt-4o-mini")
          (req (eden-request :prompt "* prompt h1\n** prompt h2"
-                            :system-prompt "* system h1\n** system h2")))
+                            :system-message "* system h1\n** system h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-prompt) "* system h1\n** system h2"))
+    (should (string= (plist-get req :system-message) "* system h1\n** system h2"))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "# system h1\n\n\n## system h2")
                     (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-model "gpt-4o-mini")
          (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
@@ -2764,7 +2764,7 @@ baz-assistant-content
                       :assistant "bar assistant")])
          (req (eden-request
                :prompt "* prompt h1\n** prompt h2"
-               :system-prompt "* system h1\n** system h2"
+               :system-message "* system h1\n** system h2"
                :exchanges exchanges)))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "# system h1\n\n\n## system h2")
@@ -2773,43 +2773,43 @@ baz-assistant-content
                     (:role "user" :content "bar user")
                     (:role "assistant" :content "bar assistant")
                     (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  ;; :system-prompt and default `eden-system-prompt'
+  ;; :system-message and default `eden-system-message'
   (should
    (string=
-    (let ((eden-system-prompt nil))
+    (let ((eden-system-message nil))
       (plist-get (eden-request :prompt "foo prompt")
-                 :system-prompt))
+                 :system-message))
     ""))
   (should
    (string=
-    (let ((eden-system-prompt
-           '("bar system prompt title" . "bar system prompt") ))
+    (let ((eden-system-message
+           '("bar system message title" . "bar system message") ))
       (plist-get
        (eden-request :prompt "foo prompt"
-                     :system-prompt "foo system prompt")
-       :system-prompt))
-    "foo system prompt"))
+                     :system-message "foo system message")
+       :system-message))
+    "foo system message"))
   (should
    (string=
-    (let ((eden-system-prompt
-           '("bar system prompt title" . "bar system prompt") ))
+    (let ((eden-system-message
+           '("bar system message title" . "bar system message") ))
       (plist-get (eden-request :prompt "foo prompt")
-                 :system-prompt))
-    "bar system prompt"))
-  ;; :system-prompt and :model and the variables
-  ;; `eden-model' and `eden-system-prompt->developer-for-models'
+                 :system-message))
+    "bar system message"))
+  ;; :system-message and :model and the variables
+  ;; `eden-model' and `eden-system-message->developer-for-models'
   ;; in that case :role of first message in messages must be "developer"
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (req (eden-request :prompt "foo prompt"
-                            :system-prompt "foo system"
+                            :system-message "foo system"
                             :model "o1")))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "developer" :content "foo system")
                     (:role "user" :content "foo prompt")])))
-  (let* ((eden-system-prompt->developer-for-models '("o1" "o1-mini"))
+  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-model "o1")
          (req (eden-request :prompt "foo prompt"
-                            :system-prompt "foo system")))
+                            :system-message "foo system")))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "developer" :content "foo system")
                     (:role "user" :content "foo prompt")])))

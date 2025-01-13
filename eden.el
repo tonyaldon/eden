@@ -85,7 +85,7 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
 Signal an error if FILE-TYPE is not one of the following symbols:
 
     error, response, response-org, request, api, prompt,
-    system-prompt, exchanges, command.
+    system-message, exchanges, command.
 
 For instance
 
@@ -93,15 +93,15 @@ For instance
     ;; \"/tmp/eden/foo/request.json\"
     (eden-request-file \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
     ;; \"/tmp/eden/foo/prompt.org\""
-  (let* ((filenames '((error         . "error.json")
-                      (response      . "response.json")
-                      (response-org  . "response.org")
-                      (request       . "request.json")
-                      (api           . "api.json")
-                      (prompt        . "prompt.org")
-                      (system-prompt . "system-prompt.org")
-                      (exchanges     . "exchanges.json")
-                      (command       . "command")))
+  (let* ((filenames '((error          . "error.json")
+                      (response       . "response.json")
+                      (response-org   . "response.org")
+                      (request        . "request.json")
+                      (api            . "api.json")
+                      (prompt         . "prompt.org")
+                      (system-message . "system-message.org")
+                      (exchanges      . "exchanges.json")
+                      (command        . "command")))
          (filename (alist-get file-type filenames)))
     (if filename
         (concat (eden-request-dir req) filename)
@@ -429,18 +429,18 @@ to disk.  See `eden-request-timestamp' for more details on that file."
 
 Specifically, 6 files are written to disk:
 
-- a `timestamp' file     - see `eden-request-timestamp' for more details
-                           on that file,
-- a `request' file       - a JSON file with content being the value
-                           under `:req' key of REQ plist,
-- an `api' file          - a JSON file with content being the value
-                           under `:api' key of REQ plist,
-- a `prompt' file        - an `org-mode' file with content being the value
-                           under `:prompt' key,
-- a `system-prompt' file - an `org-mode' file with content being the value
-                           under `:system-prompt' key,
-- an `exchanges' file    - a JSON file with content being the value
-                           under `:exchanges' key of REQ plist.
+- a `timestamp' file      - see `eden-request-timestamp' for more details
+                            on that file,
+- a `request' file        - a JSON file with content being the value
+                            under `:req' key of REQ plist,
+- an `api' file           - a JSON file with content being the value
+                            under `:api' key of REQ plist,
+- a `prompt' file         - an `org-mode' file with content being the value
+                            under `:prompt' key,
+- a `system-message' file - an `org-mode' file with content being the value
+                            under `:system-message' key,
+- an `exchanges' file     - a JSON file with content being the value
+                            under `:exchanges' key of REQ plist.
 
 Here's an example with a typical request (third of a conversation)
 that we would send to OpenAI API.  Evaluating the following
@@ -449,7 +449,7 @@ expression
     (let ((req \\='(:req (:stream :false
                        :model \"gpt-4o-mini\"
                        :temperature 1
-                       :messages [(:role \"system\" :content \"baz system prompt\")
+                       :messages [(:role \"system\" :content \"baz system message\")
                                   (:role \"user\" :content \"foo user\")
                                   (:role \"assistant\" :content \"foo assistant\")
                                   (:role \"user\" :content \"bar prompt\")
@@ -458,7 +458,7 @@ expression
                  :api (:service \"openai\"
                        :endpoint \"https://api.openai.com/v1/chat/completions\")
                  :prompt \"baz user prompt\"
-                 :system-prompt \"baz system prompt\"
+                 :system-message \"baz system message\"
                  :exchanges [(:uuid \"uuid-foo\"
                               :prompt \"foo prompt\"
                               :user \"foo user\"
@@ -480,18 +480,18 @@ the moment we evaluate that expression):
 - /tmp/eden/uuid-baz/exchanges.json
 - /tmp/eden/uuid-baz/prompt.org
 - /tmp/eden/uuid-baz/request.json
-- /tmp/eden/uuid-baz/system-prompt.org
+- /tmp/eden/uuid-baz/system-message.org
 - /tmp/eden/uuid-baz/timestamp-1736137516.050655"
   (let ((request (eden-json-encode (plist-get req :req)))
         (api (eden-json-encode (plist-get req :api)))
         (prompt (plist-get req :prompt))
-        (system-prompt (or (plist-get req :system-prompt) ""))
+        (system-message (or (plist-get req :system-message) ""))
         (exchanges (eden-json-encode (plist-get req :exchanges))))
     (eden-request-write 'timestamp req "")
     (eden-request-write 'request req request)
     (eden-request-write 'api req api)
     (eden-request-write 'prompt req prompt)
-    (eden-request-write 'system-prompt req system-prompt)
+    (eden-request-write 'system-message req system-message)
     (eden-request-write 'exchanges req exchanges)))
 
 (defun eden-api-key-symbol (service)
@@ -882,63 +882,63 @@ See also `eden-request-dir' and `eden-request-file'.
 
 REQ request is a plist with the following keys:
 
-- :req           - The request that we send to OpenAI API or a compatible
-                   API like Perplexity.  See:
+- :req            - The request that we send to OpenAI API or a compatible
+                    API like Perplexity.  See:
 
-                   - https://platform.openai.com/docs/guides/text-generation/,
-                   - https://platform.openai.com/docs/api-reference/chat and
-                   - https://docs.perplexity.ai/api-reference/chat-completions.
+                    - https://platform.openai.com/docs/guides/text-generation/,
+                    - https://platform.openai.com/docs/api-reference/chat and
+                    - https://docs.perplexity.ai/api-reference/chat-completions.
 
-                   As we don't support streaming API, value for `:stream'
-                   key must always be `:false'.  Here's an example:
+                    As we don't support streaming API, value for `:stream'
+                    key must always be `:false'.  Here's an example:
 
-                       (:stream :false
-                        :model \"gpt-4o-mini\"
-                        :temperature 1
-                        :messages [(:role \"user\" :content \"foo bar baz\")])
+                        (:stream :false
+                         :model \"gpt-4o-mini\"
+                         :temperature 1
+                         :messages [(:role \"user\" :content \"foo bar baz\")])
 
-- :api           - A plist describing the service and endpoint to use
-                   for the creation of the curl command we use to send
-                   the request, including where to find the API key.  Here's
-                   an example
+- :api            - A plist describing the service and endpoint to use
+                    for the creation of the curl command we use to send
+                    the request, including where to find the API key.  Here's
+                    an example
 
-                       (:service \"openai\"
-                        :endpoint \"https://api.openai.com/v1/chat/completions\")
+                        (:service \"openai\"
+                         :endpoint \"https://api.openai.com/v1/chat/completions\")
 
-                   which expects the API key to be in `~/.authinfo.gpg'
-                   or `~/.authinfo' file on a line like this
+                    which expects the API key to be in `~/.authinfo.gpg'
+                    or `~/.authinfo' file on a line like this
 
-                       machine openai password <openai-api-key>
+                        machine openai password <openai-api-key>
 
-                   See `eden-request-command'.
+                    See `eden-request-command'.
 
-- :prompt        - The prompt of the request in `org-mode' format.
-- :dir           - A directory (absolute path) where we log all the
-                   requests.
-- :uuid          - A unique id (a string) which is the subdirectory of
-                   `:dir' in which we kept information about REQ.  See
-                   `eden-request-dir'.
-- :system-prompt - (optional) The system prompt of the request in `org-mode'
-                   format.
-- :exchanges     - (optional) If REQ is the last exchange in a conversation,
-                   this key must be a vector of the previous exchanges, where
-                   each exchange is defined with a plist containing the
-                   following keys: `:uuid', `:prompt', `:user', `:assistant'
-                   and `:response'.  Here's an example:
+- :prompt         - The prompt of the request in `org-mode' format.
+- :dir            - A directory (absolute path) where we log all the
+                    requests.
+- :uuid           - A unique id (a string) which is the subdirectory of
+                    `:dir' in which we kept information about REQ.  See
+                    `eden-request-dir'.
+- :system-message - (optional) The system message of the request in `org-mode'
+                    format.
+- :exchanges      - (optional) If REQ is the last exchange in a conversation,
+                    this key must be a vector of the previous exchanges, where
+                    each exchange is defined with a plist containing the
+                    following keys: `:uuid', `:prompt', `:user', `:assistant'
+                    and `:response'.  Here's an example:
 
-                       [(:uuid \"uuid-foo\"
-                         :prompt \"foo prompt org-mode\"
-                         :user \"foo prompt markdown\"
-                         :assistant \"foo response markdown\"
-                         :response \"foo response org-mode\")
-                        (:uuid \"uuid-bar\"
-                         :prompt \"bar prompt org-mode\"
-                         :user \"bar prompt markdown\"
-                         :assistant \"bar response markdown\"
-                         :response \"bar response org-mode\")]
+                        [(:uuid \"uuid-foo\"
+                          :prompt \"foo prompt org-mode\"
+                          :user \"foo prompt markdown\"
+                          :assistant \"foo response markdown\"
+                          :response \"foo response org-mode\")
+                         (:uuid \"uuid-bar\"
+                          :prompt \"bar prompt org-mode\"
+                          :user \"bar prompt markdown\"
+                          :assistant \"bar response markdown\"
+                          :response \"bar response org-mode\")]
 
 Here's an example of a REQ request using OpenAI API, with no system
-prompt and no previous exchanges:
+message and no previous exchanges:
 
     (:req (:stream :false
            :model \"gpt-4o-mini\"
@@ -951,13 +951,13 @@ prompt and no previous exchanges:
      :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
 
 Here's an example of a REQ request (third of a conversation), using
-Perplexity API and a system prompt:
+Perplexity API and a system message:
 
 
     (:req (:stream :false
            :model \"gpt-4o-mini\"
            :temperature 1
-           :messages [(:role \"system\" :content \"baz system prompt\")
+           :messages [(:role \"system\" :content \"baz system message\")
                       (:role \"user\" :content \"foo user\")
                       (:role \"assistant\" :content \"foo assistant\")
                       (:role \"user\" :content \"bar prompt\")
@@ -966,7 +966,7 @@ Perplexity API and a system prompt:
      :api (:service \"perplexity\"
            :endpoint \"https://api.perplexity.ai/chat/completions\")
      :prompt \"baz user prompt\"
-     :system-prompt \"baz system prompt\"
+     :system-message \"baz system message\"
      :exchanges [(:uuid \"uuid-foo\"
                   :prompt \"foo prompt\"
                   :user \"foo user\"
@@ -1068,38 +1068,38 @@ Examples of valid model for OpenAI API: \"gpt-4o-mini\", \"gpt-4o\",
 
 It can be a float between 0 and 2 or nil.")
 
-(defvar eden-system-prompt nil
-  "System prompt used by `eden-send' to send requests to `eden-api'.
+(defvar eden-system-message nil
+  "System message used by `eden-send' to send requests to `eden-api'.
 
-It is a cons cell (\"title\" . \"system prompt\"), where \"system prompt\"
+It is a cons cell (\"title\" . \"system message\"), where \"system message\"
 serves as `:content' of the first message in request's `:messages'.
 
-And if `eden-model' belongs to `eden-system-prompt->developer-for-models',
+And if `eden-model' belongs to `eden-system-message->developer-for-models',
 `:role' of this first message is \"developer\"; otherwise it defaults
 to \"system\".
 
-Additionally,`eden-system-prompt' may be nil, in which case `:messages'
-will omit the initial system prompt.
+Additionally,`eden-system-message' may be nil, in which case `:messages'
+will omit the initial system message.
 
-`eden-system-prompt' is typically set through `eden-system-prompt-set'
-command, selecting prompts from `eden-system-prompts' variable.
+`eden-system-message' is typically set through `eden-system-message-set'
+command, selecting from `eden-system-messages'.
 
-According to OpenAI API documentation, a system prompt consists of
+According to OpenAI API documentation, a system message consists of
 \"Developer-provided instructions that the model should follow,
 regardless of messages sent by the user.\"")
 
-(defvar eden-system-prompts nil
-  "Alist of system prompts available for selection when using `eden-system-prompt-set'.
+(defvar eden-system-messages nil
+  "Alist of system messages available for selection when using `eden-system-message-set'.
 
-See `eden-system-prompt', for detailed descriptions of system prompts.
+See `eden-system-message', for detailed descriptions of system messages.
 
-For instance we can set `eden-system-prompts' to:
+For instance we can set `eden-system-messages' to:
 
     ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
      (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
 
-(defvar eden-system-prompt->developer-for-models '("o1-mini" "o1")
-  "List of models that use \"developer\" prompts instead of \"system\" prompts.
+(defvar eden-system-message->developer-for-models '("o1-mini" "o1")
+  "List of models that use \"developer\" message instead of \"system\" message.
 
 According to OpenAI API documentation, \"With o1 models and newer,
 developer messages replace the previous system messages.\"")
@@ -1940,22 +1940,22 @@ conversation, INFO argument must be structured as:
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
 
-(cl-defun eden-request (&key prompt system-prompt exchanges
+(cl-defun eden-request (&key prompt system-message exchanges
                              stream model temperature
                              api dir)
   "..."
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request"))
   (let* ((-model (or model eden-model))
-         (-system-prompt
-          (or system-prompt (cdr-safe eden-system-prompt) ""))
+         (-system-message
+          (or system-message (cdr-safe eden-system-message) ""))
          (-messages
-          `(,(when (not (string-empty-p -system-prompt))
-               `(:role ,(if (seq-contains-p eden-system-prompt->developer-for-models
+          `(,(when (not (string-empty-p -system-message))
+               `(:role ,(if (seq-contains-p eden-system-message->developer-for-models
                                             -model)
                             "developer"
                           "system")
-                 :content ,(eden-org-to-markdown -system-prompt)))
+                 :content ,(eden-org-to-markdown -system-message)))
             ,@(seq-reduce
                (lambda (acc exchange)
                  (append acc
@@ -1971,7 +1971,7 @@ conversation, INFO argument must be structured as:
             :messages ,req-messages)
       :api ,(or api eden-api)
       :prompt ,prompt
-      :system-prompt ,-system-prompt
+      :system-message ,-system-message
       :exchanges ,exchanges
       :dir ,(or dir
                 eden-dir
@@ -2216,7 +2216,7 @@ See `eden-last-request'."
   "Show current settings.
 
 This incudes informations about `eden-api', `eden-model',
-`eden-temperature', `eden-system-prompt' and the current
+`eden-temperature', `eden-system-message' and the current
 conversation (`eden-conversation-id' and `eden-conversations')"
   (interactive)
   (let ((buff (get-buffer-create (eden-buffer-name "current settings")))
@@ -2224,20 +2224,20 @@ conversation (`eden-conversation-id' and `eden-conversations')"
         (endpoint (plist-get eden-api :endpoint))
         (model eden-model)
         (temperature (or eden-temperature ""))
-        (system-prompt (or eden-system-prompt ""))
+        (system-message (or eden-system-message ""))
         (conversation (or (assoc eden-conversation-id eden-conversations) "")))
     (with-current-buffer buff
       (save-excursion
         (erase-buffer)
         (insert
          (format
-          (concat "      service: %s\n"
-                  "     endpoint: %s\n"
-                  "        model: %s\n"
-                  "  temperature: %s\n"
-                  " conversation: %s\n"
-                  "system prompt: %s\n")
-          service endpoint model temperature conversation system-prompt))))
+          (concat "       service: %s\n"
+                  "      endpoint: %s\n"
+                  "         model: %s\n"
+                  "   temperature: %s\n"
+                  "  conversation: %s\n"
+                  "system message: %s\n")
+          service endpoint model temperature conversation system-message))))
     (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
@@ -2295,26 +2295,26 @@ it becomes the value of `eden-model'."
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
 
-(defun eden-system-prompt-set ()
-  "Set `eden-system-prompt' selecting from `eden-system-prompts'."
+(defun eden-system-message-set ()
+  "Set `eden-system-message' selecting from `eden-system-messages'."
   (interactive)
   (let ((err
          (format
-          (concat "`eden-system-prompts' variable must be nil or an alist like this\n\n"
+          (concat "`eden-system-messages' variable must be nil or an alist like this\n\n"
                   "((\"writer\" . \"You're a good writer who only writes in Italian.\")
  (\"programmer\" . \"You're a programmer who only answers with code snippets.\"))\n\n"
                   "not `%S'")
-          eden-system-prompts)))
+          eden-system-messages)))
     (cond
-     ((null eden-system-prompts)
-      (message "There's no system prompt to select from `eden-system-prompts' variable which is nil."))
-     ((not (listp eden-system-prompts)) (error err))
-     (t (if-let* ((system-prompt-titles
-                   (delq nil (mapcar 'car-safe eden-system-prompts))))
+     ((null eden-system-messages)
+      (message "There's no system message to select from `eden-system-messages' variable which is nil."))
+     ((not (listp eden-system-messages)) (error err))
+     (t (if-let* ((system-message-titles
+                   (delq nil (mapcar 'car-safe eden-system-messages))))
             (let ((title (completing-read
-                          "System prompt title (leave blank for none): "
-                          system-prompt-titles)))
-              (setq eden-system-prompt (assoc title eden-system-prompts)))
+                          "System message title (leave blank for none): "
+                          system-message-titles)))
+              (setq eden-system-message (assoc title eden-system-messages)))
           (error err))))))
 
 (transient-define-prefix eden-menu ()
@@ -2338,7 +2338,7 @@ it becomes the value of `eden-model'."
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
-  - `eden-system-prompt-set'
+  - `eden-system-message-set'
   - `eden-show-current-settings'"
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
@@ -2358,7 +2358,7 @@ it becomes the value of `eden-model'."
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("p" "Set system prompt" eden-system-prompt-set)
+    ("p" "Set system message" eden-system-message-set)
     ("S" "Show current settings" eden-show-current-settings)]])
 
 ;;;; Request at point menu
@@ -2408,18 +2408,18 @@ it becomes the value of `eden-model'."
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
-(defun eden-req-at-point-show-system-prompt ()
+(defun eden-req-at-point-show-system-message ()
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
-    (let ((system-prompt (eden-request-read 'system-prompt req)))
-      (if (string-empty-p system-prompt)
-          (message "No system prompt for `%s' request." (eden-request-dir req))
-        (let ((buff (get-buffer-create (eden-buffer-name "system prompt"))))
+    (let ((system-message (eden-request-read 'system-message req)))
+      (if (string-empty-p system-message)
+          (message "No system message for `%s' request." (eden-request-dir req))
+        (let ((buff (get-buffer-create (eden-buffer-name "system message"))))
           (with-current-buffer buff
             (erase-buffer)
             (org-mode)
-            (save-excursion (insert system-prompt)))
+            (save-excursion (insert system-message)))
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))))))
 
@@ -2454,7 +2454,7 @@ it becomes the value of `eden-model'."
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
-    ("p" "Show system prompt of request at point" eden-req-at-point-show-system-prompt)
+    ("p" "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
@@ -2479,11 +2479,11 @@ it becomes the value of `eden-model'."
                     (plist-get eden-api :service)
                     (truncate-string-to-width eden-model 16 nil nil t)))
      (:eval (when eden-temperature (format " <%s>" eden-temperature)))
-     (:eval (when-let ((system-prompt-title (car-safe eden-system-prompt)))
+     (:eval (when-let ((system-message-title (car-safe eden-system-message)))
               (concat (propertize " > " 'face '(:weight bold))
                       (format "%s"
                               (truncate-string-to-width
-                               system-prompt-title 24 nil nil t)))))
+                               system-message-title 24 nil nil t)))))
      (:eval (when eden-conversation-id
               (concat (propertize " ** " 'face '(:weight bold))
                       (format "%s" (eden-conversation-title eden-conversation-id)))))
