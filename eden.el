@@ -2009,7 +2009,7 @@ See `eden-send-request'."
                  (with-current-buffer buff
                    (save-excursion
                      (widen)
-                     (org-mode)
+                     (when (not buff-already-exist-p) (org-mode))
                      (goto-char (point-max))
                      ;; If `buff' has been newly created we are at
                      ;; the beginning of buffer and `append' is nil such
