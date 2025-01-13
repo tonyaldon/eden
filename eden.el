@@ -2287,7 +2287,7 @@ it becomes the value of `eden-model'."
     (setq eden-model model)))
 
 (defun eden-temperature-set ()
-  "..."
+  "Set `eden-temperature' interactively."
   (interactive)
   (let ((temperature
          (read-string "Enter a float number [0-2] or (leave blank for none) to set model temperature: ")))
