@@ -2296,6 +2296,7 @@ it becomes the value of `eden-model'."
             (string-to-number temperature)))))
 
 (defun eden-system-prompt-set ()
+  "Set `eden-system-prompt' selecting from `eden-system-prompts'."
   (interactive)
   (let ((err
          (format
