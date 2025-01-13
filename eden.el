@@ -1260,7 +1260,7 @@ The variable is a vector of three elements:
 (defun eden-prompt-current-buffer ()
   "Return current buffer content as string with no text properties.
 
-This function is meant to be called in `eden-prompt-buffer-name' buffer."
+This function should be called from `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun eden-prompt-current-req-uuid ()
@@ -1389,7 +1389,7 @@ the current prompt in `eden-prompt-history-state', it is pushed
 onto the respective stack of previous or next prompts based on
 DIRECTION.
 
-This function is meant to be called in `eden-prompt-buffer-name' buffer."
+This function should be called from `eden-prompt-buffer-name' buffer."
   (let (prompts f)
     (pcase direction
       ('previous (setq prompts (aref eden-prompt-history-state 0))
@@ -1419,7 +1419,7 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
 
 See `eden-prompt-history-state' and `eden-prompt-history'.
 
-This function is meant to be called in `eden-prompt-buffer-name' buffer."
+This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-prompt-history 'previous))
 
@@ -1428,7 +1428,7 @@ This function is meant to be called in `eden-prompt-buffer-name' buffer."
 
 See `eden-prompt-history-state' and `eden-prompt-history'.
 
-This function is meant to be called in `eden-prompt-buffer-name' buffer."
+This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-prompt-history 'next))
 
@@ -1892,7 +1892,7 @@ function is called:
       (eden-pending-remove req)
       (eden-mode-line-waiting \\='maybe-stop))
 
-Upon a success request, the CALLBACK function is executed within the
+If the request succeeds, the CALLBACK function is executed within the
 sentinel and must call these three functions in this specific order:
 
 1) `eden-pending-remove',
@@ -1943,6 +1943,7 @@ conversation, INFO argument must be structured as:
 (cl-defun eden-request (&key prompt system-prompt exchanges
                              stream model temperature
                              api dir)
+  "..."
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request"))
   (let* ((-model (or model eden-model))
@@ -1978,7 +1979,15 @@ conversation, INFO argument must be structured as:
       :uuid ,(eden-uuid))))
 
 (defun eden-send ()
-  ""
+  "Send current prompt to OpenAI-compatible API respecting current API and model settings.
+
+If the request succeeds, the response will be displayed in a buffer
+named by `eden-buffer-name' and formatted with `eden-conversation-insert'.
+To prevent automatic display, set `eden-pops-up-upon-receipt' to nil.
+
+To modify or inspect Eden's settings, use `eden-menu' command.
+
+This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-send-request
    :req (eden-request
