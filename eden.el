@@ -2243,7 +2243,10 @@ conversation (`eden-conversation-id' and `eden-conversations')"
      (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-api-set ()
-  "..."
+  "Set `eden-api' selecting from `eden-apis' OpenAI-compatible APIs.
+
+Moreover, if `:default-value' key of the selected API is non-nil,
+it becomes the value of `eden-model'."
   (interactive)
   (if-let* ((services
              (mapcar (lambda (api) (plist-get api :service)) eden-apis)))
