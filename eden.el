@@ -1547,6 +1547,13 @@ For instance:
     (format "*eden<%s>*" title)))
 
 (defun eden-conversation-exchanges (conversation-id)
+  "Return exchanges of the conversation with CONVERSATION-ID.
+
+Return nil if conversation's `:action' is `start'.
+Return only the last exchange if conversation's `:action' is `start-from'.
+Return all the exchanges if conversation's `:action' is `start-continue'.
+
+See `eden-conversations' and `eden-request-conversation'."
   (when-let ((last-req (eden-conversation-last-req
                         conversation-id))
              (conversation (eden-request-conversation last-req)))
