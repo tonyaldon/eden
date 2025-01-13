@@ -856,6 +856,8 @@ just before signaling the error.  It takes 3 arguments:
 (defun eden-request-send (req callback &optional callback-error info)
   "Send REQ request asynchronously to OpenAI API using `make-process'.
 
+Return the process handling the request.
+
 If the request succeed, CALLBACK function is called in the sentinel.
 If the request failed or there's an error in the sentinel, CALLBACK-ERROR
 function is called.  In both cases, INFO, plist of additional data, is
@@ -1776,7 +1778,20 @@ See `eden-request-conversation'."
 
 ;;;; Sending Requests
 
-(defvar eden-pending-requests nil "...")
+(defvar eden-pending-requests nil
+  "List of pending requests sent with `eden-send-request'.
+
+Each element is a plist with the following keys:
+
+- :req             - A request created with `eden-request'.
+- :conversation-id - The id for the conversation if `:req' is part of an
+                     ongoing conversation in `eden-conversations';  nil
+                     if not part of a conversation.
+- :proc            - The process object handling `:req', as returned by
+                     `eden-request-send'.
+
+The latest submitted request is listed first.")
+
 (defvar eden-pending-timer nil "...")
 
 (defun eden-pending-remove (req)
