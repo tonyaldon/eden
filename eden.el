@@ -2318,7 +2318,28 @@ it becomes the value of `eden-model'."
           (error err))))))
 
 (transient-define-prefix eden-menu ()
-  "Insert menu"
+  "Transient command to manage conversations, requests and Eden's settings.
+
+- Conversations:
+  - `eden-conversation-start'
+  - `eden-conversation-start-from-req-history'
+  - `eden-conversation-continue-from-req-history'
+  - `eden-conversation-rename-current'
+  - `eden-conversation-pause'
+  - `eden-conversation-switch'
+- Conversations and requests
+  - `eden-show-current-conversation'
+  - `eden-show-current-conversation-in-req-history'
+  - `eden-show-last-conversations'
+  - `eden-show-last-requests'
+  - `eden-kill-last-request'
+  - `eden-prompt-current-goto'
+- Settings
+  - `eden-api-set'
+  - `eden-model-set'
+  - `eden-temperature-set'
+  - `eden-system-prompt-set'
+  - `eden-show-current-settings'"
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
@@ -2333,7 +2354,7 @@ it becomes the value of `eden-model'."
     ("L" "Show last requests" eden-show-last-requests)
     ("k" "Kill last request" eden-kill-last-request)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
-   ["Model"
+   ["Settings"
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
