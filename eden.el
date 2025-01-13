@@ -1876,40 +1876,51 @@ See `eden-conversations'."
    eden-pending-requests))
 
 (cl-defun eden-send-request (&key req callback info)
-  "...
+  "Send REQ request asynchronously to OpenAI API.
 
-The CALLBACK function must call the following three functions
+This function wraps around `eden-request-send', and performs the
+following actions:
 
-- `eden-pending-remove',
-- `eden-conversation-update' and
-- `eden-mode-line-waiting'
+- Manages `eden-conversations',
+- Updates `eden-prompt-history-state',
+- Optionally activates the waiting widget (`eden-mode-line-waiting').
 
-with `eden-pending-remove' being called first.
+In case of an error during sentinel execution, the following callback-error
+function is called:
 
-Here's a valid CALLBACK function that appends responses
-in the buffer \"*Eden*\":
+    (lambda (req _err _info)
+      (eden-pending-remove req)
+      (eden-mode-line-waiting \\='maybe-stop))
+
+Upon a success request, the CALLBACK function is executed within the
+sentinel and must call these three functions in this specific order:
+
+1) `eden-pending-remove',
+2) `eden-conversation-update' and
+3) `eden-mode-line-waiting'.
+
+Here's a valid CALLBACK function which appends responses in the
+buffer \"*eden[requests]*\":
 
     (lambda (req resp info)
-        (with-current-buffer (get-buffer-create \"*Eden*\")
-          (org-mode)
-          (save-excursion
-            (widen)
-            (goto-char (point-max))
-            (eden-conversation-insert req \"Request\")
-            (save-buffer)))
-        (eden-pending-remove req)
-        (eden-conversation-update info req)
-        (eden-mode-line-waiting \\='maybe-stop)
-        (message \"Eden received a response\"))
+      (with-current-buffer (get-buffer-create \"*eden[requests]*\")
+        (org-mode)
+        (save-excursion
+          (widen)
+          (goto-char (point-max))
+          (eden-conversation-insert req \"Request\")
+          (save-buffer)))
+      (eden-pending-remove req)
+      (eden-conversation-update info req)
+      (eden-mode-line-waiting \\='maybe-stop)
+      (message \"Eden received a response\"))
 
-If REQ is part of a conversation present in `eden-conversations',
-the conversation id must be specified in INFO argument as value of
-`:conversation-id' key.
+If REQ belongs to a conversation present in `eden-conversations', we
+must include its conversation id in INFO argument using `:conversation-id'
+key.
 
-For instance, if \"conversation-id-foo\" is the id of the some
-conversation and REQ is part of that conversation (the next request
-in the conversation), INFO argument must be a plist that looks
-like this:
+For instance, if \"conversation-id-foo\" is the id for an ongoing
+conversation, INFO argument must be structured as:
 
     (:conversation-id \"conversation-id-foo\" ...)"
   (let ((conversation-id (plist-get info :conversation-id)))
