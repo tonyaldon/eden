@@ -2277,7 +2277,7 @@ it becomes the value of `eden-model'."
       eden-apis))))
 
 (defun eden-model-set ()
-  "..."
+  "Set `eden-model' selecting from `:models' of `eden-api'."
   (interactive)
   (let* ((service (plist-get eden-api :service))
          (models (plist-get eden-api :models))
