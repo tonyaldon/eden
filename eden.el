@@ -2120,6 +2120,12 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
       (delq nil))))
 
 (defun eden-last-requests (num-of-days)
+  "Return the list of requests from `eden-dir' for the last NUM-OF-DAYS days.
+
+The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
+representing today and yesterday, and so on.
+
+The latest request is listed first (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
           (eden-last-paths num-of-days)))
 
