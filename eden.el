@@ -1688,8 +1688,50 @@ See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'.
   (interactive)
   (setq eden-conversation-id nil))
 
+"(eden-conversation-insert '(:dir \"/tmp/eden/\" :uuid \"foo-uuid\")
+                          \"Foo Title\")"
+
 (defun eden-conversation-insert (req title &optional append start-from)
-  ""
+  "Format and insert the conversation whose last request is REQ into current buffer.
+
+Set TITLE as the first heading.
+
+If APPEND is non-nil, only append the last exchange of the conversation.
+
+If START-FROM is non-nil, do not include previous conversation messages,
+only the last one being REQ itself.
+
+Signal an error if REQ fails `eden-request-check'.
+Signal an error if TITLE and APPEND are both non-nil.
+
+The `org-mode' properties used for the date of the conversation and
+REQ's uuid are defined respectively by the variables `eden-org-property-date'
+and `eden-org-property-req'.
+
+For instance, given a valid request with \"foo-uuid\" in `/tmp/eden/'
+directory, with a prompt \"foo bar baz\" and the response
+\"foo bar baz assistant response\", dated Friday, December 20, 2024,
+evaluating the following expression
+
+    (eden-conversation-insert '(:dir \"/tmp/eden/\" :uuid \"foo-uuid\")
+                              \"Foo Title\")
+
+inserts the following in the current buffer
+
+    ** Foo Title
+    :PROPERTIES:
+    :EDEN_DATE: [2024-12-20 Fri]
+    :EDEN_REQ: foo-uuid
+    :END:
+    *** Prompt
+
+    foo bar baz
+
+    *** Response
+
+    foo bar baz assistant response
+
+See `eden-request-conversation'."
   (eden-request-check req)
   (when (and (null title) (null append))
     (error "`title' argument can be nil only when `append' argument is non-nil"))
@@ -1803,13 +1845,12 @@ See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'.
   "...
 
 The CALLBACK function must call the following three functions
-in that order
 
-- `eden-pending-requests',
+- `eden-pending-remove',
 - `eden-conversation-update' and
 - `eden-mode-line-waiting'
 
-with `eden-pending-requests' being called first.
+with `eden-pending-remove' being called first.
 
 Here's a valid CALLBACK function that appends responses
 in the buffer \"*Eden*\":
