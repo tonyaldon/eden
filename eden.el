@@ -1993,7 +1993,7 @@ See `eden-send-request'."
   (interactive)
   (eden-send-request
    :req (eden-request
-         :prompt (buffer-substring-no-properties (point-min) (point-max))
+         :prompt (eden-prompt-current-buffer)
          :exchanges (eden-conversation-exchanges eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id)
    :callback (lambda (req _resp info)
