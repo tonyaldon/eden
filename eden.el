@@ -1602,9 +1602,25 @@ See `eden-conversation-id' and `eden-conversation-rename'."
     (message "Cannot rename current conversation which is not set.  Switch to an existing conversation first.")))
 
 (defun eden-conversation-update (info req)
-  "...
+  "Update last request uuid of conversation specified by INFO to REQ's uuid.
 
-See `eden-conversation' and `eden-conversations'."
+INFO plist must include a `:conversation-id' key while REQ must contain
+a `:uuid' key.
+
+Additionally, conversation's `:action' key is set to `continue-from'.
+
+For instance:
+
+    (let ((eden-conversations
+           \\='((\"conversation-id-foo\" .
+              (:title \"foo title\" :action start :last-req-uuid nil)))))
+      (eden-conversation-update \\='(:conversation-id \"conversation-id-foo\")
+                                \\='(:uuid \"new-foo-req-uuid\"))
+      eden-conversations)
+    ;; ((\"conversation-id-foo\" .
+    ;;   (:title \"foo title\" :action continue-from :last-req-uuid \"new-foo-req-uuid\")))
+
+See `eden-conversations', `eden-send-request' and `eden-send'."
   (let ((conversation-id (plist-get info :conversation-id))
         (req-uuid (plist-get req :uuid)))
     (when-let ((conversation-data
