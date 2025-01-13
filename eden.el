@@ -1652,7 +1652,9 @@ See `eden-conversation-id'."
             (alist-get title conversations nil nil #'string=)))))
 
 (defun eden-conversation-start ()
-  "..."
+  "Start a new conversation with title based on user's input.
+
+See `eden-conversation'."
   (interactive)
   (eden-conversation
    'start (read-string "Enter a conversation title: ")))
