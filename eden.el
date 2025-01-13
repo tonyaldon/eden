@@ -2155,9 +2155,18 @@ For instance:
             kept)))
 
 (defun eden-last-conversations (num-of-days)
+  "Return the latest requests of conversations in `eden-dir' for the last NUM-OF-DAYS days."
   (eden-last-conversations-keep (eden-last-paths num-of-days)))
 
 (defun eden-show-last-conversations ()
+  "Show last conversations for a period of time entered in the minibuffer.
+
+Timing can be 1 (indicating today), 2 representing today and yesterday,
+and so on.
+
+Conversations are ordered chronologically.
+
+See `eden-last-conversations'."
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
          (conversations (eden-last-conversations num-of-days))
