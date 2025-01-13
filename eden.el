@@ -1795,7 +1795,7 @@ The latest submitted request is listed first.")
 (defvar eden-pending-timer nil "...")
 
 (defun eden-pending-remove (req)
-  "..."
+  "Remove REQ from `eden-pending-requests'."
   (setq eden-pending-requests
         (seq-remove (lambda (p)
                       (string=
@@ -1804,7 +1804,7 @@ The latest submitted request is listed first.")
                     eden-pending-requests)))
 
 (defun eden-running-p ()
-  ""
+  "Return t if one of `eden-pending-requests' is still running."
   (when-let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
     (and (processp proc) (buffer-name (process-buffer proc)) t)))
 
