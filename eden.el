@@ -1792,7 +1792,10 @@ Each element is a plist with the following keys:
 
 The latest submitted request is listed first.")
 
-(defvar eden-pending-timer nil "...")
+(defvar eden-pending-timer nil
+  "Timer responsible to refresh waiting widget.
+
+See `eden-mode-line-waiting'.")
 
 (defun eden-pending-remove (req)
   "Remove REQ from `eden-pending-requests'."
