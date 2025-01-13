@@ -1578,6 +1578,9 @@ Signal an error if NEW-TITLE is already used by another conversation."
                         eden-conversations)))))
 
 (defun eden-conversation-rename-current ()
+  "Rename current conversation and its associated buffer based on user's input.
+
+See `eden-conversation-id' and `eden-conversation-rename'."
   (interactive)
   (if-let ((buff-name (eden-conversation-buffer-name eden-conversation-id)))
       (let ((old-title (eden-conversation-title eden-conversation-id))
