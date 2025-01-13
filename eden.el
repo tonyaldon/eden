@@ -1562,8 +1562,11 @@ See `eden-conversations' and `eden-request-conversation'."
       ('continue-from conversation))))
 
 (defun eden-conversation-rename (conversation-id new-title)
+  "Rename conversation with CONVERSATION-ID to NEW-TITLE in `eden-conversations'.
+
+Signal an error if NEW-TITLE is already used by another conversation."
   (when (eden-conversation-with-title-exists-p new-title)
-    (error "Cannot rename conversation with `%s' which is already a title used by another conversation in `eden-conversations'"
+    (error "Cannot rename conversation with `%s' which is already used by another conversation in `eden-conversations'"
            new-title))
   (when-let ((conversation-data
               (seq-copy
