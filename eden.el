@@ -1809,7 +1809,9 @@ The latest submitted request is listed first.")
     (and (processp proc) (buffer-name (process-buffer proc)) t)))
 
 (defun eden-kill-last-request ()
-  ""
+  "Kill last request sent with `eden-send'.
+
+See `eden-pending-requests' and `eden-send-request'."
   (interactive)
   (when (eden-running-p)
     (message "Killing last request")
@@ -1850,6 +1852,12 @@ The latest submitted request is listed first.")
        (force-mode-line-update 'all)))))
 
 (defun eden-pending-conversation-p (conversation-id)
+  "Return t if conversation with CONVERSATION-ID is pending.
+
+A conversation is considered pending if an entry in `eden-pending-requests'
+exists with `:conversation-id' key matching CONVERSATION-ID.
+
+See `eden-conversations'."
   (seq-some
    (lambda (r)
      (when-let ((id (plist-get r :conversation-id)))
