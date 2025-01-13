@@ -2089,6 +2089,14 @@ See `eden-prompt-current-req-uuid' and `eden-prompt-history-state'."
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-last-paths (num-of-days)
+  "Return the list of request paths from `eden-dir' for the last NUM-OF-DAYS days.
+
+The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
+representing today and yesterday, and so on.
+
+The latest request path is listed first.
+
+See `eden-request-conversation-path' and `eden-request-timestamp'."
   (let* ((today (calendar-current-date))
          (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
          (timestamp-start
