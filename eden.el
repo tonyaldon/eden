@@ -2094,7 +2094,7 @@ See `eden-prompt-current-req-uuid' and `eden-prompt-history-state'."
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
-The latest request path is listed first.
+Request paths are ordered chronologically.
 
 See `eden-request-conversation-path' and `eden-request-timestamp'."
   (let* ((today (calendar-current-date))
@@ -2125,7 +2125,7 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
-The latest request is listed first (see `eden-request-timestamp')."
+Request are ordered chronologically (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
           (eden-last-paths num-of-days)))
 
@@ -2155,7 +2155,12 @@ For instance:
             kept)))
 
 (defun eden-last-conversations (num-of-days)
-  "Return the latest requests of conversations in `eden-dir' for the last NUM-OF-DAYS days."
+  "Return the latest requests of conversations in `eden-dir' for the last NUM-OF-DAYS days.
+
+The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
+representing today and yesterday, and so on.
+
+Latest request of conversations are ordered chronologically."
   (eden-last-conversations-keep (eden-last-paths num-of-days)))
 
 (defun eden-show-last-conversations ()
