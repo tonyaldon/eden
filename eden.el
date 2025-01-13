@@ -1654,13 +1654,15 @@ See `eden-conversation-id'."
 (defun eden-conversation-start ()
   "Start a new conversation with title based on user's input.
 
-See `eden-conversation'."
+See `eden-conversation' and `eden-conversation-id'."
   (interactive)
   (eden-conversation
    'start (read-string "Enter a conversation title: ")))
 
 (defun eden-conversation-start-from-req-history ()
-  "..."
+  "Start a conversation from current request in history excluding previous exchanges.
+
+See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'."
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
       (eden-conversation
@@ -1670,7 +1672,9 @@ See `eden-conversation'."
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-conversation-continue-from-req-history ()
-  "..."
+  "Start a conversation from current request in history including all previous exchanges.
+
+See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'."
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
       (eden-conversation
