@@ -2124,6 +2124,17 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
           (eden-last-paths num-of-days)))
 
 (defun eden-last-conversations-keep (paths)
+  "Return last entry of paths in PATHS that are maximal.
+
+For instance:
+
+    (let ((paths \\='([\"uuid-req-1\"]
+                   [\"uuid-req-1\" \"uuid-req-2\"]
+                   [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
+                   [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
+                   [\"uuid-req-2\" \"uuid-req-5\"])))
+      (eden-last-conversations-keep paths))
+    ;; (\"uuid-req-3\" \"uuid-req-4\" \"uuid-req-5\")"
   (let ((tail (reverse paths))
         alist-paths-of-kept
         kept)
