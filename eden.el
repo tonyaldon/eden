@@ -2213,7 +2213,11 @@ See `eden-last-request'."
      (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-show-current-settings ()
-  "..."
+  "Show current settings.
+
+This incudes informations about `eden-api', `eden-model',
+`eden-temperature', `eden-system-prompt' and the current
+conversation (`eden-conversation-id' and `eden-conversations')"
   (interactive)
   (let ((buff (get-buffer-create (eden-buffer-name "current settings")))
         (service (plist-get eden-api :service))
