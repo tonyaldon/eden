@@ -1825,7 +1825,15 @@ See `eden-pending-requests' and `eden-send-request'."
   (run-at-time 0.2 nil (lambda () (setq inhibit-message nil))))
 
 (defun eden-mode-line-waiting (action)
-  "..."
+  "Maybe start or stop a waiting widget in mode line.
+
+The following two actions are accepted:
+
+- `maybe-start' - If no waiting widget is active, start `eden-pending-timer'
+                  to display and refresh one such widget in all mode lines,
+                  indicating that Eden is running (see `eden-running-p').
+- `maybe-stop'  - If Eden has stopped, cancel `eden-pending-timer' to
+                  stop displaying the waiting widget."
   (pcase action
     ('maybe-start
      (when (null eden-pending-timer)
