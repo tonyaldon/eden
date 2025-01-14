@@ -1792,7 +1792,7 @@ foo bar baz
     (should
      (string=
       (eden-conversation-buffer-name "conversation-id-foo")
-      "*eden<foo title>*"))))
+      (eden-buffer-name "foo title")))))
 
 (ert-deftest eden-conversation-exchanges-test ()
   (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))

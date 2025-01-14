@@ -1145,6 +1145,10 @@ See `eden-send'.")
   "Generate a random-based UUID using `uuidgen' linux utility."
   (string-remove-suffix "\n" (shell-command-to-string "uuidgen")))
 
+(defun eden-buffer-name (&optional title)
+  "Return a formatted buffer name optionally using TITLE."
+  (if title (format "*eden[%s]*" title) "*eden*"))
+
 (defun eden-maybe-delete-window-prompt-buffer ()
   "Delete prompt buffer window if selected and not the only live window."
   (when-let ((prompt-buffer-window (get-buffer-window eden-prompt-buffer-name)))
@@ -1546,7 +1550,7 @@ For instance:
 
 (defun eden-conversation-buffer-name (conversation-id)
   (when-let ((title (eden-conversation-title conversation-id)))
-    (format "*eden<%s>*" title)))
+    (eden-buffer-name title)))
 
 (defun eden-conversation-exchanges (conversation-id)
   "Return exchanges of the conversation with CONVERSATION-ID.
@@ -2035,10 +2039,6 @@ See `eden-send-request'."
            (plist-get eden-api :service)))
 
 ;;;; Main menu
-
-(defun eden-buffer-name (&optional title)
-  "Return a formatted buffer name optionally using TITLE."
-  (if title (format "*eden[%s]*" title) "*eden*"))
 
 (defun eden-show-current-conversation ()
   "Display current conversation.
