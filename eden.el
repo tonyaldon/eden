@@ -2514,7 +2514,23 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
   "Keymap for `eden-mode'.")
 
 (define-derived-mode eden-mode org-mode "Eden"
-  "Eden AI assitant mode."
+  "Eden mode.
+
+Upon activation, this mode sets `mode-line-format' and calls
+`eden-request-history-set' and `eden-prompt-history-state-set'
+functions.
+
+It is used within `eden-prompt-buffer-name' for user prompt input.
+
+Derived from `org-mode', this mode maintains most keybindings from
+`org-mode', with the following exceptions in `eden-mode-map':
+
+- `M-p'     -  `eden-prompt-previous',
+- `M-n'     -  `eden-prompt-next',
+- `C-c C-c' -  `eden-send'.
+
+Overall, you can use most `org-mode' features alongside these
+mode-specific capabilities."
   (setq
    mode-line-format
    '(" "
