@@ -2326,8 +2326,8 @@ it becomes the value of `eden-model'."
   "the response’s buffer pops up upon receipt from OpenAI"
   (setq eden-pops-up-upon-receipt (not eden-pops-up-upon-receipt))
   (if eden-pops-up-upon-receipt
-      (message "In next calls to OpenAI, the response's buffer will pop up.")
-    (message "In next calls to OpenAI, the response's buffer will not pop up.")))
+      (message "The response's buffer will pop up in next calls to OpenAI.")
+    (message "The response's buffer won't pop up in next calls to OpenAI.")))
 
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
