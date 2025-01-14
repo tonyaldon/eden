@@ -2033,8 +2033,8 @@ See `eden-send-request'."
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
-                 (message "Eden received a response from %s service"
-                          (plist-get eden-api :service)))))
+                 (message "Eden received a response from %s service.  See `%s' buffer."
+                          (plist-get eden-api :service) buff-name))))
   (erase-buffer)
   (eden-maybe-delete-window-prompt-buffer)
   (message "Eden sent a request to %s service"
