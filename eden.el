@@ -1286,7 +1286,9 @@ If the current prompt is temporary with no corresponding request, return nil."
   "Go to request's directory of current prompt in `eden-prompt-history-state'.
 
 If the current prompt is temporary with no corresponding request, message
-the user about it."
+the user about it.
+
+See `eden-request-dir'."
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid))
             (req-dir (eden-request-dir
@@ -2481,6 +2483,9 @@ See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
                (eden-request-dir req)))))
 
 (defun eden-req-at-point-goto ()
+  "Go to the directory of the request at point.
+
+See `eden-req-at-point-uuid' and `eden-request-dir'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid))
              (req-dir (eden-request-dir
