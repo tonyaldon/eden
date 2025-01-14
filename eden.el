@@ -2379,6 +2379,13 @@ it becomes the value of `eden-model'."
 ;;;; Request at point menu
 
 (defun eden-req-at-point-uuid ()
+  "Return the uuid of the request at point.
+
+To find a request a point, the point must be on an `org-mode'
+heading which includes the property `eden-org-property-req'.
+
+Signal an error either if there is no request at point, or if
+the request cannot be found in `eden-dir'."
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
             (req-dir (eden-request-dir
                       `(:dir ,eden-dir :uuid ,req-uuid))))
