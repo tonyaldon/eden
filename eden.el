@@ -2480,7 +2480,8 @@ it becomes the value of `eden-model'."
      (:eval (format " %s/%s"
                     (plist-get eden-api :service)
                     (truncate-string-to-width eden-model 16 nil nil t)))
-     (:eval (when eden-temperature (format " <%s>" eden-temperature)))
+     (:eval (format " %s" (file-name-base (directory-file-name eden-dir))))
+     (:eval (when eden-temperature (format " -%s-" eden-temperature)))
      (:eval (when-let ((system-message-title (car-safe eden-system-message)))
               (concat (propertize " > " 'face '(:weight bold))
                       (format "%s"
