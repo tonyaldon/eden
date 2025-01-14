@@ -2021,14 +2021,14 @@ See `eden-send-request'."
                      ;; that we insert the conversation completly
                      (eden-conversation-insert req title append)))
                  (when (not (equal (window-buffer (selected-window)) buff))
+                   (with-current-buffer buff
+                     (goto-char (point-max))
+                     (re-search-backward "^\\*\\*\\* Response" nil t))
                    (when-let ((w (or (and eden-pops-up-upon-receipt
                                           (display-buffer
                                            buff '(display-buffer-reuse-window)))
                                      (get-buffer-window buff))))
-                     (with-selected-window w
-                       (goto-char (point-max))
-                       (when (re-search-backward "^\\*\\*\\* response" nil t)
-                         (recenter-top-bottom 0)))
+                     (with-selected-window w (recenter-top-bottom 0))
                      (when winner-mode (winner-save-old-configurations))))
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
