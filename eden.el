@@ -2442,6 +2442,9 @@ in a conversation (see `eden-request-conversation')."
      (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-req-at-point-show-system-message ()
+  "Show system message of the request at point.
+
+See `eden-req-at-point-uuid' and `eden-system-message'."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
@@ -2457,6 +2460,9 @@ in a conversation (see `eden-request-conversation')."
            (display-buffer buff '(display-buffer-reuse-window))))))))
 
 (defun eden-req-at-point-show-perplexity-citations ()
+  "Show Perplexity citations of the request at point.
+
+See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
