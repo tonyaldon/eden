@@ -2215,9 +2215,10 @@ See `eden-last-request'."
 (defun eden-show-current-settings ()
   "Show current settings.
 
-This incudes informations about `eden-api', `eden-model',
-`eden-temperature', `eden-system-message' and the current
-conversation (`eden-conversation-id' and `eden-conversations')"
+This incudes informations about `eden-dir', `eden-api', `eden-model',
+`eden-temperature', `eden-system-message' and the current conversation.
+
+See `eden-conversation-id' and `eden-conversations'."
   (interactive)
   (let ((buff (get-buffer-create (eden-buffer-name "current settings")))
         (service (plist-get eden-api :service))
@@ -2233,11 +2234,12 @@ conversation (`eden-conversation-id' and `eden-conversations')"
          (format
           (concat "       service: %s\n"
                   "      endpoint: %s\n"
+                  "      eden-dir: %s\n"
                   "         model: %s\n"
                   "   temperature: %s\n"
                   "  conversation: %s\n"
                   "system message: %s\n")
-          service endpoint model temperature conversation system-message))))
+          service endpoint eden-dir model temperature conversation system-message))))
     (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
