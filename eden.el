@@ -2395,7 +2395,9 @@ the request cannot be found in `eden-dir'."
     (error "No request at point found")))
 
 (defun eden-req-at-point-start-conversation ()
-  "..."
+  "Start a conversation from request at point including all previous exchanges.
+
+See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
     (eden-conversation
@@ -2403,7 +2405,9 @@ the request cannot be found in `eden-dir'."
   (eden))
 
 (defun eden-req-at-point-continue-conversation ()
-  "..."
+  "Start a conversation from request at point excluding all previous exchanges.
+
+See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
     (eden-conversation
