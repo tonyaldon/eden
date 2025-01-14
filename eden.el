@@ -2415,6 +2415,13 @@ See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
   (eden))
 
 (defun eden-req-at-point-show-requests ()
+  "Show requests of conversation at point.
+
+The conversation at point is the request at point as defined
+in `eden-req-at-point-uuid' but considering all its exchanges.
+
+Essentially, we look at the request at point as the last request
+in a conversation (see `eden-request-conversation')."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid))
