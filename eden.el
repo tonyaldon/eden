@@ -2028,7 +2028,8 @@ See `eden-send-request'."
                      (with-selected-window w
                        (goto-char (point-max))
                        (when (re-search-backward "^\\*\\*\\* response" nil t)
-                         (recenter-top-bottom 0)))))
+                         (recenter-top-bottom 0)))
+                     (when winner-mode (winner-save-old-configurations))))
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
