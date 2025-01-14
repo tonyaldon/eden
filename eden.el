@@ -2319,6 +2319,15 @@ it becomes the value of `eden-model'."
               (setq eden-system-message (assoc title eden-system-messages)))
           (error err))))))
 
+(defun eden-pops-up-upon-receipt-toggle ()
+  "Toggle `eden-pops-up-upon-receipt' value."
+  (interactive)
+  "the response’s buffer pops up upon receipt from OpenAI"
+  (setq eden-pops-up-upon-receipt (not eden-pops-up-upon-receipt))
+  (if eden-pops-up-upon-receipt
+      (message "In next calls to OpenAI, the response's buffer will pop up.")
+    (message "In next calls to OpenAI, the response's buffer will not pop up.")))
+
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
 
@@ -2341,6 +2350,7 @@ it becomes the value of `eden-model'."
   - `eden-model-set'
   - `eden-temperature-set'
   - `eden-system-message-set'
+  - `eden-pops-up-upon-receipt-toggle'
   - `eden-show-current-settings'"
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
@@ -2361,6 +2371,7 @@ it becomes the value of `eden-model'."
     ("m" "Set model for current API" eden-model-set)
     ("T" "Set temperature" eden-temperature-set)
     ("TAB" "Set system message" eden-system-message-set)
+    ("t" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)]])
 
 ;;;; Request at point menu
