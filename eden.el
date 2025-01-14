@@ -2326,9 +2326,9 @@ it becomes the value of `eden-model'."
   - `eden-conversation-start'
   - `eden-conversation-start-from-req-history'
   - `eden-conversation-continue-from-req-history'
+  - `eden-conversation-switch'
   - `eden-conversation-rename-current'
   - `eden-conversation-pause'
-  - `eden-conversation-switch'
 - Conversations and requests
   - `eden-show-current-conversation'
   - `eden-show-current-conversation-in-req-history'
@@ -2346,9 +2346,9 @@ it becomes the value of `eden-model'."
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
+    ("C" "Switch conversation" eden-conversation-switch)
     ("r" "Rename current conversation" eden-conversation-rename-current)
-    ("SPC" "Pause current conversation" eden-conversation-pause)
-    ("TAB" "Switch conversation" eden-conversation-switch)]]
+    ("SPC" "Pause current conversation" eden-conversation-pause)]]
   [["Conversations and requests"
     ("v" "Show current conversation" eden-show-current-conversation)
     ("h" "Show current conversation in history" eden-show-current-conversation-in-req-history)
@@ -2359,8 +2359,8 @@ it becomes the value of `eden-model'."
    ["Settings"
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
-    ("t" "Set temperature" eden-temperature-set)
-    ("p" "Set system message" eden-system-message-set)
+    ("T" "Set temperature" eden-temperature-set)
+    ("TAB" "Set system message" eden-system-message-set)
     ("S" "Show current settings" eden-show-current-settings)]])
 
 ;;;; Request at point menu
