@@ -2358,7 +2358,7 @@ it becomes the value of `eden-model'."
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
-    ("C" "Switch conversation" eden-conversation-switch)
+    ("TAB" "Switch conversation" eden-conversation-switch)
     ("r" "Rename current conversation" eden-conversation-rename-current)
     ("SPC" "Pause current conversation" eden-conversation-pause)]]
   [["Conversations and requests"
@@ -2372,7 +2372,7 @@ it becomes the value of `eden-model'."
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("T" "Set temperature" eden-temperature-set)
-    ("TAB" "Set system message" eden-system-message-set)
+    ("'" "Set system message" eden-system-message-set)
     ("t" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)]])
 
