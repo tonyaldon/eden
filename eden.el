@@ -2010,6 +2010,7 @@ See `eden-send-request'."
                       (buff-already-exist-p (get-buffer buff-name))
                       (append (and conversation-id buff-already-exist-p 'append))
                       (buff (get-buffer-create buff-name)))
+                 (push buff-name buffer-name-history)
                  (with-current-buffer buff
                    (save-excursion
                      (widen)
