@@ -1488,6 +1488,9 @@ Valid ACTION values include:
 - `continue-from' - Resumes a conversation from a request requiring its
                     uuid specified by REQ-UUID
 
+Also set `eden-conversation-id' to the id of the newly created conversation
+making it the current conversation.
+
 Signal an error if the conversation cannot be added."
   (cond
    ((eden-conversation-with-title-exists-p title)
@@ -1662,7 +1665,7 @@ See `eden-conversation-id'."
 (defun eden-conversation-start ()
   "Start a new conversation with title based on user's input.
 
-See `eden-conversation' and `eden-conversation-id'."
+See `eden-conversation', `eden-conversations' and `eden-conversation-id'."
   (interactive)
   (eden-conversation
    'start (read-string "Enter a conversation title: ")))
@@ -1670,7 +1673,8 @@ See `eden-conversation' and `eden-conversation-id'."
 (defun eden-conversation-start-from-req-history ()
   "Start a conversation from current request in history excluding previous exchanges.
 
-See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'."
+See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
+`eden-conversation-id'."
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
       (eden-conversation
@@ -1682,7 +1686,8 @@ See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'.
 (defun eden-conversation-continue-from-req-history ()
   "Start a conversation from current request in history including all previous exchanges.
 
-See `eden-conversation', `eden-conversation-id' and `eden-prompt-history-state'."
+See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
+`eden-conversation-id'."
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
       (eden-conversation
@@ -2399,7 +2404,8 @@ the request cannot be found in `eden-dir'."
 (defun eden-req-at-point-start-conversation ()
   "Start a conversation from request at point including all previous exchanges.
 
-See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
+See `eden-req-at-point-uuid', `eden-conversation', `eden-conversations',
+and `eden-conversation-id'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
     (eden-conversation
@@ -2409,7 +2415,8 @@ See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
 (defun eden-req-at-point-continue-conversation ()
   "Start a conversation from request at point excluding all previous exchanges.
 
-See `eden-req-at-point-uuid', `eden-conversation' and `eden-conversation-id'."
+See `eden-req-at-point-uuid', `eden-conversation', `eden-conversations',
+and `eden-conversation-id'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
     (eden-conversation
