@@ -143,14 +143,15 @@ conversations later using the request UUID of the last request in that
 conversation, either by saving it in your notes or navigating the
 prompt history with ~M-p~ and ~M-n~.
 
-* TODO What are requests at point?
+* What are requests at point?
 
-When we call ~eden~ preceded by ~C-u~ prefix argument anywhere we get a
-menu with accepted actions on the request at point.
+Calling ~eden~ with the ~C-u~ prefix argument opens a menu with available
+actions related to the request at point.
 
-Now, if the point is on an ~org-mode~ heading which includes the
-property ~eden-org-property-req~ (~EDEN_REQ~ by default), meaning there is
-a request at point, we can apply one of the offered actions.
+If the point is on an ~org-mode~ heading which includes the
+property ~eden-org-property-req~ (by default ~EDEN_REQ~), indicating that
+a request exists at that position, you can apply one of the action
+listed in the menu.
 
 For instance pressing ~c~ will continue a conversation whose last
 request is the request at point.
