@@ -2,48 +2,58 @@ Eden is an AI assistant package for Emacs.
 
 It offers a simple interface for:
 
-1) OpenAI LLM models (like ~gpt-4o~ and ~o1~) and
+1) OpenAI LLM models such as ~gpt-4o~ and ~o1~ as well as
 2) Perplexity AI powered answer engine.
 
-More broadly it works with any OpenAI-compatible API.
+It also supports any OpenAI-compatible API.
 
 * Get started in minutes
 
-# TO BE CONTINUED...
-# utility requirement: curl, uuidgen, pandoc
+1) Ensure the following utilities are installed and present in one
+   of your ~exec-path~ directories:
 
-1) Ensure the directory holding ~eden.el~ file is in your ~load-path~ and
-   require ~eden~ package.  This can be done by adding the following
-   expressions to your init file (replacing ~/path/to/eden/~ with the
-   correct directory location):
+   - ~curl~
+   - ~uuidgen~
+   - ~pandoc~
+
+2) Add the directory containing ~eden.el~ to your ~load-path~ and
+   require the Eden package by adding the following lines to your init
+   file, ensuring to replace ~/path/to/eden/~ with the appropriate
+   directory:
 
    #+BEGIN_SRC emacs-lisp
    (add-to-list 'load-path "/path/to/eden/")
    (require 'eden)
    #+END_SRC
 
-2) Add your OpenAI API key to ~~/.authinfo.gpg~ file encrypted with ~gpg~
-   (or to ~~/.authinfo~ in plain text):
+3) Store your OpenAI API key in either the ~~/.authinfo.gpg~ file
+   (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
-   - After providing your [[https://platform.openai.com][OpenAI account]] with some credits ($5.00 is
-     enough to get started), create an OpenAI API key visiting
+   - After funding your [[https://platform.openai.com][OpenAI account]] ($5.00 is enough to get
+     started), create an OpenAI API key visiting
      https://platform.openai.com/api-keys.
-   - Add that API key in one of the files mentioned above on a line
-     like this
+   - Add the API key in the selected file as follows:
 
      #+BEGIN_SRC authinfo
      machine openai password <openai-api-key>
      #+END_SRC
 
-     with ~<openai-api-key>~ being your API key.
+     where ~<openai-api-key>~ is your API key.
 
-3) Call the command ~eden~ to switch to ~*eden*~ prompt buffer,
-4) Enter your prompt (i.e. ask something),
-5) Hit ~C-c C-c~ to send that prompt to OpenAI API,
-6) Receive the response asynchronously in a dedicated buffer that pops
-   up upon receipt.
+4) Call the command ~eden~ to switch to ~*eden*~ prompt buffer,
+5) Enter your prompt,
+6) Press ~C-c C-c~ to send your prompt to OpenAI API,
+7) Finally, the response will asynchronously show up in a dedicated
+   buffer upon receipt.
 
-* TODO Utility requirements
+* Utility requirements
+
+Ensure the following utilities are installed and available in one of
+~exec-path~ directories:
+
+- ~curl~
+- ~uuidgen~
+- ~pandoc~
 
 * Eden is simple
 
@@ -51,8 +61,8 @@ Eden is simple and rely exclusively on the ~eden~ command:
 
 1) This command lets you switch to the prompt buffer displayed at the
    bottom of the frame on demand.  Once in that buffer (in ~eden-mode~)
-   you can enter your prompt and send it to ~eden-api~ with ~eden-send~
-   command bound by default to ~C-c C-c~.
+   you can enter your prompt using ~org-mode~ syntax and send it to
+   ~eden-api~ with ~eden-send~ command bound by default to ~C-c C-c~.
 
 2) It also lets you manage conversations and settings via a transient
    command, if it is called from the prompt buffer.  Specifically,
@@ -144,13 +154,6 @@ menu with accepted actions on the request at point.
 Now, if the point is on an ~org-mode~ heading which includes the
 property ~eden-org-property-req~ (~EDEN_REQ~ by default), meaning there is
 a request at point, we can apply one of the offered actions.
-
-Assuming we have a request in ~eden-dir~ .... here's an example of such
-request at point:
-
-#+BEGIN_SRC org
-...
-#+END_SRC
 
 For instance pressing ~c~ will continue a conversation whose last
 request is the request at point.
@@ -272,10 +275,3 @@ Finally, we can se
 
 we can select X.ai API with ~grok-2~ default model by calling ~eden~ in
 the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
-
-* TODO Prompts and responses uses org-mode syntax
-
-- the prompt buffer expect text in org-mode format
-- responses are presented in org-mode buffer making them
-  straightforward to integrate in your org-mode note just by copy
-  pasting
