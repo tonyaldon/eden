@@ -43,7 +43,7 @@ More broadly it works with any OpenAI-compatible API.
 6) Receive the response asynchronously in a dedicated buffer that pops
    up upon receipt.
 
-* Utility requirements
+* TODO Utility requirements
 
 * Eden is simple
 
@@ -139,28 +139,62 @@ navigate the prompt history with M-p and M-n in the prompt buffer.
 
 * What are requests at point?
 
+When we call ~eden~ preceded by ~C-u~ prefix argument anywhere we get a
+menu with accepted actions on the request at point.
+
+Now, if the point is on an ~org-mode~ heading which includes the
+property ~eden-org-property-req~ (~EDEN_REQ~ by default), meaning there is
+a request at point, we can apply offered action.
+
+Assuming we have a request in ~eden-dir~ .... here's an example of such
+request at point:
+
+#+BEGIN_SRC org
+...
+#+END_SRC
+
+For instance pressing ~c~ will continue a conversation whose last
+request is the request at point.
+
 * Managing settings with eden command
 
-* Adding Perplexity API key
+In the prompt buffer you can call ~eden~ and press ~S~ to show the current
+settings.
 
-* Need more examples!  Check the docstrings
+In the menu offered by ~eden~, here are the following action that lets
+you modify the current settings:
 
-* scratch
+- Press ~a~ to set the current API (~eden-api-set~),
+- Press ~m~ to set the model for the current API (~eden-model-set~),
+- Press ~T~ to set the temperature (~eden-temperature-set~),
+- Press ~'~ to set the system message (~eden-system-message-set~),
+- Press ~t~ to toggle the pop-up response (~eden-pops-up-upon-receipt-toggle~).
+
+Here is the complete list of user variables you may want to modify:
+
+- ~eden-api~
+- ~eden-apis~
+- ~eden-model~
+- ~eden-temperature~
+- ~eden-system-message~
+- ~eden-system-messages~
+- ~eden-system-message->developer-for-models~
+- ~eden-dir~
+- ~eden-org-property-date~
+- ~eden-org-property-req~
+- ~eden-pops-up-upon-receipt~
+- ~eden-prompt-buffer-name~
+
+You can lookup their documentation in the ~*Help*~ buffer using
+~describe-variable~ command bound by default to ~C-h v~.
+
+* TODO Adding Perplexity API key
+
+* TODO Adding an OpenAI-compatible API to eden-apis
+
+* TODO Prompts and responses uses org-mode syntax
 
 - the prompt buffer expect text in org-mode format
 - responses are presented in org-mode buffer making them
   straightforward to integrate in your org-mode note just by copy
   pasting
-- the most important variable ~eden-dir~ ... this where all your request
-  are stored...
-- By default request are independent...
-- M-n and M-p in ~eden~ prompt buffer to navigate prompt history...
-- but you can start a conversation...
-- if you want to change the setting...
-- request at point... C-u M-x eden ...
-- please check the docstrings there well detailed with examples...
-
------
-- https://platform.openai.com/docs/guides/text-generation/,
-- https://platform.openai.com/docs/api-reference/chat and
-- https://docs.perplexity.ai/api-reference/chat-completions.
