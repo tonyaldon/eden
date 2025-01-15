@@ -915,7 +915,7 @@ REQ request is a plist with the following keys:
 - :prompt         - The prompt of the request in `org-mode' format.
 - :dir            - A directory (absolute path) where we log all the
                     requests.
-- :uuid           - A unique id (a string) which is the subdirectory of
+- :uuid           - A unique ID (a string) which is the subdirectory of
                     `:dir' in which we kept information about REQ.  See
                     `eden-request-dir'.
 - :system-message - (optional) The system message of the request in `org-mode'
@@ -1445,7 +1445,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
 
 A conversation is a cons cells whose
 
-- car is an id and
+- car is an ID and
 - cdr is a plists with the following keys:
 
   - :title         - The title of the conversation
@@ -1488,7 +1488,7 @@ Valid ACTION values include:
 - `continue-from' - Resumes a conversation from a request requiring its
                     UUID specified by REQ-UUID
 
-Also set `eden-conversation-id' to the id of the newly created conversation
+Also set `eden-conversation-id' to the ID of the newly created conversation
 making it the current conversation.
 
 Signal an error if the conversation cannot be added."
@@ -1795,7 +1795,7 @@ See `eden-request-conversation'."
 Each element is a plist with the following keys:
 
 - :req             - A request created with `eden-request'.
-- :conversation-id - The id for the conversation if `:req' is part of an
+- :conversation-id - The ID for the conversation if `:req' is part of an
                      ongoing conversation in `eden-conversations';  nil
                      if not part of a conversation.
 - :proc            - The process object handling `:req', as returned by
@@ -1927,10 +1927,10 @@ buffer \"*eden[requests]*\":
       (message \"Eden received a response\"))
 
 If REQ belongs to a conversation present in `eden-conversations', we
-must include its conversation id in INFO argument using `:conversation-id'
+must include its conversation ID in INFO argument using `:conversation-id'
 key.
 
-For instance, if \"conversation-id-foo\" is the id for an ongoing
+For instance, if \"conversation-id-foo\" is the ID for an ongoing
 conversation, INFO argument must be structured as:
 
     (:conversation-id \"conversation-id-foo\" ...)"
