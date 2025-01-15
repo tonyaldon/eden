@@ -59,27 +59,26 @@ of your ~exec-path~ directories:
 
 Eden is simple and rely exclusively on the ~eden~ command:
 
-1) This command lets you switch to the prompt buffer displayed at the
-   bottom of the frame on demand.  Once in that buffer (in ~eden-mode~)
-   you can enter your prompt using ~org-mode~ syntax and send it to
-   ~eden-api~ with ~eden-send~ command bound by default to ~C-c C-c~.
+1) Use the ~eden~ command to access the prompt buffer at the bottom of
+   the frame.  This buffer, in ~eden-mode~, allows you to input prompts
+   using ~org-mode~ syntax and send them to ~eden-api~ with the ~eden-send~
+   command, bound by default to ~C-c C-c~.
 
-2) It also lets you manage conversations and settings via a transient
-   command, if it is called from the prompt buffer.  Specifically,
-   calling it that way invokes ~eden-menu~, and after the menu poped up,
-   you can for instance:
+2) When called from the prompt buffer, the ~eden~ command provides a
+   transient menu (~eden-menu~) for managing conversations and settings.
+   Within this menu, you can:
 
-   - Start a new conversation pressing the key ~n~,
-   - Switch to an existing conversation pressing the ~TAB~ key,
-   - Paused a conversation pressing the ~SPC~ key,
-   - Show the current settings pressing the key ~S~,
-   - Set the current API pressing the key ~a~ or
-   - Set the system message pressing the key ~'~.
+   - Start a new conversation (hit ~n~),
+   - Switch to an existing conversation (hit ~TAB~),
+   - Paused a conversation (hit ~SPC~),
+   - Show the current settings (hit ~S~),
+   - Set the current API (hit ~a~),
+   - Set the system message (hit ~'~).
 
-3) Finally it can be used to continue a conversation from a request at
-   point, or only inspect it, if we call it with the prefix argument
-   ~C-u~.  Indeed, doing so invokes ~eden-req-at-point-menu~ which provides
-   a menu with accepted actions on the request at point.
+3) Finally, you can also continue or inspect a conversation from a
+   request at point by calling ~eden~ with the prefix argument ~C-u~.
+   This will bring up ~eden-req-at-point-menu~, offering various actions
+   related to the request at point.
 
 * Eden keeps all your requests in eden-dir
 
