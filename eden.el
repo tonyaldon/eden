@@ -445,8 +445,7 @@ Specifically, 6 files are written to disk:
                             under `:exchanges' key of REQ plist.
 
 Here's an example with a typical request (third of a conversation)
-that we would send to OpenAI-compatible API.  Evaluating the following
-expression
+that we would send to OpenAI API.  Evaluating the following expression
 
     (let ((req \\='(:req (:stream :false
                        :model \"gpt-4o-mini\"
@@ -506,7 +505,7 @@ example:
     ;; eden-api-key-openai
 
 When we want to use `eden-request-send' programmatically without
-asking the user (and so gpg) for the encrytped key in ~/.authinfo.gpg
+asking the user (and so gpg) for the encrytped key in `~/.authinfo.gpg'
 file we can use `eden-api-key-symbol' to set the api key like this
 assumming SERVICE is \"openai\":
 
@@ -564,11 +563,11 @@ lines but also
       (set api-key-symbol (auth-source-pick-first-password :host service)))
     (when (null (eval api-key-symbol))
       (signal 'eden-error-api-key
-              (format
-               (concat "Do you have a line in ~/.authinfo.gpg file declaring "
-                       "the API key of service `%s' like this: "
-                       "machine %s password <api-key>")
-               service service)))
+               (format
+                (concat "Do you have a line in `~/.authinfo.gpg' file declaring "
+                        "the API key of service `%s' like this: "
+                        "machine %s password <api-key>")
+                service service)))
     (list
      (format command-fmt endpoint (eval api-key-symbol) request-file)
      (format command-fmt endpoint "<api-key>" request-file))))
@@ -957,7 +956,6 @@ message and no previous exchanges:
 Here's an example of a REQ request (third of a conversation), using
 Perplexity API and a system message:
 
-
     (:req (:stream :false
            :model \"gpt-4o-mini\"
            :temperature 1
@@ -1111,7 +1109,7 @@ developer messages replace the previous system messages.\"")
 (defvar eden-dir (concat user-emacs-directory "eden/")
   "Directory where all requests sent by `eden-send' are stored.
 
-Each request is organized in a unique subdirectory within `eden-dir`,
+Each request is organized in a unique subdirectory within `eden-dir',
 containing comprehensive details such as the request itself, the
 corresponding response, and any errors encountered, among other relevant
 data.
@@ -1177,8 +1175,6 @@ See `eden-send'.")
                    (format "```%s\n%s\n```" (or lang "") code)))))
       (string-trim
        (org-export-string-as org-str 'md nil)))))
-
-"(eden-org-demote \"* heading\" 3) ;; \"*** heading\""
 
 (defun eden-org-demote (org-str level)
   "Demote ORG-STR `org-mode' string to LEVEL level.
@@ -1704,9 +1700,6 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
   "Pause the current conversation by setting `eden-conversation-id' to nil."
   (interactive)
   (setq eden-conversation-id nil))
-
-"(eden-conversation-insert '(:dir \"/tmp/eden/\" :uuid \"foo-uuid\")
-                          \"Foo Title\")"
 
 (defun eden-conversation-insert (req title &optional append start-from)
   "Format and insert the conversation whose last request is REQ into current buffer.
