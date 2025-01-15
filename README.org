@@ -23,7 +23,7 @@ More broadly it works with any OpenAI-compatible API.
    #+END_SRC
 
 2) Add your OpenAI API key to ~~/.authinfo.gpg~ file encrypted with ~gpg~
-   (or ~~/.authinfo~ in plain text):
+   (or to ~~/.authinfo~ in plain text):
 
    - After providing your [[https://platform.openai.com][OpenAI account]] with some credits ($5.00 is
      enough to get started), create an OpenAI API key visiting
@@ -80,7 +80,7 @@ Eden keeps every request sent to the OpenAI-compatible API in the
 directory ~eden-dir~.  By default, it is the subdirectory ~eden~ in your
 ~user-emacs-directory~.
 
-Each request identified by a UUID used as subdirectory in ~eden-dir~,
+Each request is identified by a UUID used as subdirectory in ~eden-dir~,
 where relevant information about request are stored.
 
 There some benefits to do that among these are:
@@ -103,12 +103,11 @@ There some benefits to do that among these are:
 
 * Eden focuses on conversations but doesn't impose it
 
-By default every requests sent to the current OpenAI-compatible API
-are independant.
+By default every requests sent are independant.
 
 If you want to have a conversation where previous exchanges are
 including belonging to that conversation are sent with newer request,
-you can start or continue a conversation.
+you have to start or continue a conversation.
 
 There several way to do that while you are in the prompt buffer:
 
@@ -123,14 +122,14 @@ There several way to do that while you are in the prompt buffer:
    current one, and each new request will be part of it.
 3) You can also continue a conversation.  It's almost the same as
    in 2) but including all the previous exchanges of the current
-   request in history.  To do this, call ~eden~ command, press ~s~ and
+   request in history.  To do this, call ~eden~ command, press ~c~ and
    enter its title.
 
 You can pause the current conversation in the prompt buffer by calling
 ~eden~ command and pressing ~SPC~.  Now, request that will be sent to
 ~eden-api~ will be independant again.
 
-Note that conversations titles and IDs are not stored.  They only
+Note that conversation titles and IDs are not stored.  They only
 serves during your Emacs session.  Don't worry, your conversations are
 not lost forever when you stop your session, you can get it back with
 the request ID of the last request in that conversation.  You either
@@ -144,7 +143,7 @@ menu with accepted actions on the request at point.
 
 Now, if the point is on an ~org-mode~ heading which includes the
 property ~eden-org-property-req~ (~EDEN_REQ~ by default), meaning there is
-a request at point, we can apply offered action.
+a request at point, we can apply one of the offered actions.
 
 Assuming we have a request in ~eden-dir~ .... here's an example of such
 request at point:
