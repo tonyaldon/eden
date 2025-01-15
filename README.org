@@ -39,3 +39,46 @@ More broadly it works with any OpenAI-compatible API.
 5) Hit ~C-c C-c~ to send that prompt to OpenAI API,
 6) Receive the response asynchronously in a dedicated buffer that pops
    up upon receipt.
+
+* Eden is simple
+
+- ~eden~ is simple and has only one command ~eden~ that
+  - give access to the prompt buffer
+  - when in the prompt buffer, give acces to transient menu that
+    allows to:
+    - manage conversations and individual requests
+    - manage settings
+  - when call with the prefix argument C-u, gives access to another
+    transient menu with command that apply to the request at point
+
+* Eden keeps all your requests in eden-dir
+
+* Eden focuses on conversations but doesn't impose it
+
+* What are requests at point?
+
+* Managing settings with eden command
+
+* Adding Perplexity API key
+
+* Need more examples!  Check the docstrings
+
+* scratch
+
+- the prompt buffer expect text in org-mode format
+- responses are presented in org-mode buffer making them
+  straightforward to integrate in your org-mode note just by copy
+  pasting
+- the most important variable ~eden-dir~ ... this where all your request
+  are stored...
+- By default request are independent...
+- M-n and M-p in ~eden~ prompt buffer to navigate prompt history...
+- but you can start a conversation...
+- if you want to change the setting...
+- request at point... C-u M-x eden ...
+- please check the docstrings there well detailed with examples...
+
+-----
+- https://platform.openai.com/docs/guides/text-generation/,
+- https://platform.openai.com/docs/api-reference/chat and
+- https://docs.perplexity.ai/api-reference/chat-completions.
