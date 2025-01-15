@@ -9,6 +9,9 @@ More broadly it works with any OpenAI-compatible API.
 
 * Get started in minutes
 
+# TO BE CONTINUED...
+# utility requirement: curl, uuidgen, pandoc
+
 1) Ensure the directory holding ~eden.el~ file is in your ~load-path~ and
    require ~eden~ package.  This can be done by adding the following
    expressions to your init file (replacing ~/path/to/eden/~ with the
@@ -40,6 +43,8 @@ More broadly it works with any OpenAI-compatible API.
 6) Receive the response asynchronously in a dedicated buffer that pops
    up upon receipt.
 
+* Utility requirements
+
 * Eden is simple
 
 Eden is simple and rely exclusively on the ~eden~ command:
@@ -67,6 +72,34 @@ Eden is simple and rely exclusively on the ~eden~ command:
    a menu with accepted actions on the request at point.
 
 * Eden keeps all your requests in eden-dir
+
+An important aspect of Eden is that none of the questions you asked to
+the underlying LLM is lost.
+
+Eden keeps every request sent to the OpenAI-compatible API in the
+directory ~eden-dir~.  By default, it is the subdirectory ~eden~ in your
+~user-emacs-directory~.
+
+Each request identified by a UUID used as subdirectory in ~eden-dir~,
+where relevant information about request are stored.
+
+There some benefits to do that among these are:
+
+- you can forget about your request, it will always be there,
+- if you copied the org heading with the request's UUID somewhere else
+  in your notes, you can lookup the request, jump to the directory and
+  get all the information associated the request, API, model, system
+  prompt, timestamp...
+- if an error occurs while proceding the request, you can consult the
+  ~error.json~ of that request and troubleshoot it,
+- You can start or continue a conversation from any existing request
+  (it seems to be called ~branching~):
+  - either from req at point ... from a conversation in your notes
+  - or in prompt buffer, navigate the history with M-p, M-n to find
+    the request you're interested in, call ~eden~ to pop up the menu and
+    press ~c~ to continue the conversation where you left it
+- everything in json (or text format), so you can feed it to other
+  software of your choice to analyze you request for instance,...
 
 * Eden focuses on conversations but doesn't impose it
 
