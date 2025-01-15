@@ -2578,7 +2578,14 @@ by default to `C-c C-c'.
 If not in `eden-prompt-buffer-name' buffer and called with a `\\[universal-argument]' prefix
 argument, call `eden-req-at-point-menu' command.
 
-If in `eden-prompt-buffer-name' buffer, call `eden-menu'."
+If in `eden-prompt-buffer-name' buffer, call `eden-menu'.
+
+Signal an error if the following utilities are not installed and available
+in one of `exec-path' directories:
+
+- curl
+- uuidgen
+- pandoc"
   (interactive "P")
   (let ((error-fmt
          (concat
