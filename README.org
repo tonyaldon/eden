@@ -5,12 +5,37 @@ It offers a simple interface for:
 1) OpenAI LLM models (like ~gpt-4o~ and ~o1~) and
 2) Perplexity AI powered answer engine.
 
-Get started in minutes:
+More broadly it works with any OpenAI-compatible API.
 
-1) Add your API keys to ~~/.authinfo.gpg~ file (or ~~/.authinfo~),
-2) Call the command ~eden~ to switch to ~eden~ prompt buffer,
-3) Enter your prompt (i.e. ask something),
-4) Hit ~C-c C-c~ to send the request to the current API (OpenAI by
-   default with ~gpt-4o-mini~ model),
-5) Receive the response asynchronously in a dedicated buffer that pops
+* Get started in minutes
+
+1) Ensure the directory holding ~eden.el~ file is in your ~load-path~ and
+   require ~eden~ package.  This can be done by adding the following
+   expressions to your init file (replacing ~/path/to/eden/~ with the
+   correct directory location):
+
+   #+BEGIN_SRC emacs-lisp
+   (add-to-list 'load-path "/path/to/eden/")
+   (require 'eden)
+   #+END_SRC
+
+2) Add your OpenAI API key to ~~/.authinfo.gpg~ file encrypted with ~gpg~
+   (or ~~/.authinfo~ in plain text):
+
+   - After providing your [[https://platform.openai.com][OpenAI account]] with some credits ($5.00 is
+     enough to get started), create an OpenAI API key visiting
+     https://platform.openai.com/api-keys.
+   - Add that API key in one of the files mentioned above on a line
+     like this
+
+     #+BEGIN_SRC authinfo
+     machine openai password <openai-api-key>
+     #+END_SRC
+
+     with ~<openai-api-key>~ being your API key.
+
+3) Call the command ~eden~ to switch to ~*eden*~ prompt buffer,
+4) Enter your prompt (i.e. ask something),
+5) Hit ~C-c C-c~ to send that prompt to OpenAI API,
+6) Receive the response asynchronously in a dedicated buffer that pops
    up upon receipt.
