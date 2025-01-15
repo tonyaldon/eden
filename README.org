@@ -187,9 +187,91 @@ Here is the complete list of user variables you may want to modify:
 You can lookup their documentation in the ~*Help*~ buffer using
 ~describe-variable~ command bound by default to ~C-h v~.
 
-* TODO Adding Perplexity API key
+* Adding Perplexity API key
 
-* TODO Adding an OpenAI-compatible API to eden-apis
+By default, ~eden-api~ variable is set to
+
+#+BEGIN_SRC emacs-lisp
+(:service "openai"
+ :endpoint "https://api.openai.com/v1/chat/completions"
+ :default-model "gpt-4o-mini"
+ :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
+#+END_SRC
+
+such that the requests are sent to OpenAI API.
+
+We've seen in the "Get Started" section that for this to work we need
+to add the following line
+
+#+BEGIN_SRC authinfo
+machine openai password <openai-api-key>
+#+END_SRC
+
+with ~<openai-api-key>~ being OpenAI API key to ~~/.authinfo.gpg~ or
+~~/.authinfo~ files.
+
+To use Perplexity API, we can either set ~eden-api~ to
+
+#+BEGIN_SRC emacs-lisp
+(:service "perplexity"
+ :endpoint "https://api.perplexity.ai/chat/completions")
+#+END_SRC
+
+and ~eden-model~ to a model supported by Perplexity API like this
+
+#+BEGIN_SRC emacs-lisp
+"llama-3.1-sonar-small-128k-online"
+#+END_SRC
+
+or we can select it by calling ~eden~ in the prompt buffer, pressing the
+key ~a~ and selecting ~perplexity~.
+
+In both cases we need to add Perplexity API key to one of the two
+files mentioned above.
+
+This can be done the same way as for OpenAI API key.  First we provide
+our [[https://www.perplexity.ai][Perplexity account]] with some credits ($5.00 is enough to get
+started) then we create a Perplexity API key visiting
+https://www.perplexity.ai/settings/api and finally we add it to the
+correponding file like this
+
+#+BEGIN_SRC authinfo
+machine perplexity password <perplexity-api-key>
+#+END_SRC
+
+with ~<perplexity-api-key>~ being Perplexity API key.
+
+* Adding an OpenAI-compatible API to eden-apis
+
+Let's say that we want to use X.ai API along with the other
+OpenAI-compatible APIs.
+
+To do that, first we add its description to ~eden-apis~ variable like
+this:
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'eden-apis
+             '(:service "x.ai"
+               :endpoint "https://api.x.ai/v1/chat/completions"
+               :default-model "grok-2"
+               :models ("grok-beta" "grok-2-latest" "grok-2" "grok-2-12-12")))
+#+END_SRC
+
+Then, we provide our [[https://console.x.ai][X.ai ]] with some credits
+($5.00 is enough to get started) then we create a X.ai API key in that
+same console and finally we add the following line
+
+#+BEGIN_SRC authinfo
+machine x.ai password <x.ai-api-key>
+#+END_SRC
+
+with ~<x.ai-api-key>~ being X.ai API key to ~~/.authinfo.gpg~ or
+~~/.authinfo~ files.
+
+Finally, we can se
+
+we can select X.ai API with ~grok-2~ default model by calling ~eden~ in
+the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
 
 * TODO Prompts and responses uses org-mode syntax
 
