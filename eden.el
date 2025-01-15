@@ -158,7 +158,7 @@ user prompt was \"foo bar baz\") we get something like this:
           (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun eden-request-assistant-content (resp)
-  "Return the first message in RESP response from OpenAI API.
+  "Return the first message in RESP response from OpenAI-compatible API.
 
 For instance (with some keys omitted from a real response from
 OpenAI API) we have:
@@ -177,7 +177,7 @@ OpenAI API) we have:
   (eden-get-in resp [:choices 0 :message :content]))
 
 (defun eden-request-user-content (request)
-  "Return the last message of REQUEST, an OpenAI API comliant request.
+  "Return the last message of REQUEST, an OpenAI-compatible API request.
 
 For instance we have:
 
@@ -241,11 +241,13 @@ following keys:
 
 - :uuid      - uuid of the request for that exchange
 - :prompt    - prompt of that exchange (`org-mode' string)
-- :user      - prompt of that exchange sent to OpenAI (markdown string)
+- :user      - prompt of that exchange sent to OpenAI-compatible API
+               (markdown string)
 - :assitant  - content message of the response of that exchange
-               received from OpenAI (markdown string)
+               received from OpenAI-compatible API (markdown string)
 - :response  - content message of the response of that exchange
-               received from OpenAI converted to Org (`org-mode' string)
+               received from OpenAI-compatible API converted to Org
+               (`org-mode' string)
 
 Signal an error if REQ doesn't pass `eden-request-check' check.
 
@@ -370,12 +372,12 @@ See `eden-req-at-point-show-perplexity-citations'."
      '())))
 
 (defun eden-request-timestamp (req)
-  "Return the timestamp (a float) of the moment REQ request was sent to OpenAI.
+  "Return the timestamp (a float) of the moment REQ request was sent to OpenAI-compatible API.
 
-Just before we send a request to OpenAI, we store the information
-related to the request using `eden-write-request' function.  One
-of the file we write to disk is a timestamp file whose filename
-relative to the request's directory is of the form
+Just before we send a request to OpenAI-compatible API, we store
+the information related to the request using `eden-write-request'
+function.  One of the file we write to disk is a timestamp file
+whose filename relative to the request's directory is of the form
 
     timestamp-<timestamp>
 
@@ -443,7 +445,7 @@ Specifically, 6 files are written to disk:
                             under `:exchanges' key of REQ plist.
 
 Here's an example with a typical request (third of a conversation)
-that we would send to OpenAI API.  Evaluating the following
+that we would send to OpenAI-compatible API.  Evaluating the following
 expression
 
     (let ((req \\='(:req (:stream :false
@@ -516,12 +518,12 @@ assumming SERVICE is \"openai\":
   (intern (format "eden-api-key-%s" service)))
 
 (defun eden-request-command (req)
-  "Return curl command we use to send REQ request to OpenAI API.
+  "Return curl command we use to send REQ request to OpenAI-compatible API.
 
 More precisely, return a list whose
 
-1) first element is the command line with OpenAI API key that
-   we actually use to send REQ and
+1) first element is the command line with OpenAI-compatible API
+   key that we actually use to send REQ and
 2) second element is the same command line as in 1) but with
    the API key replaced with the placeholder <api-key> such
    that we can use it safely for logging.
@@ -537,8 +539,9 @@ example:
 The function `eden-request-command' not only produces these command
 lines but also
 
-1) retrieves OpenAI API key from `~/.authinfo.gpg' (encrypted
-   with gpg) or `~/.authinfo' file looking for a line like this
+1) retrieves OpenAI-compatible API key from `~/.authinfo.gpg'
+   (encrypted with gpg) or `~/.authinfo' file looking for a line
+   like this
 
        machine openai password <openai-api-key>
 
@@ -708,7 +711,7 @@ The error data is a plist with the following keys:
 - :type                   - TYPE (see `eden-errors')
 - :message                - see `eden-errors'
 - :directory              - REQ's directory
-- :request                - the request we sent to OpenAI
+- :request                - the request we sent to OpenAI-compatible API
 - :error                  - (optional) ERROR
 - :process-event          - (optional) EVENT
 - :process-buffer-content - (optional) stdout of the curl request
@@ -716,8 +719,8 @@ The error data is a plist with the following keys:
                             CALLBACK-ERROR function.  This happens only
                             when CALLBACK-ERROR signals an error.
 
-For instance if we provide a wrong API key to OpenAI the error data
-looks like this:
+For instance if we provide a wrong API key to OpenAI-compatible API the
+error data looks like this:
 
     (:type \"eden-error-api\"
      :message \"API error\"
@@ -764,7 +767,7 @@ When no error occurs during execution of the sentinel, CALLBACK function
 is called.  It takes 3 arguments
 
 - REQ   - plist of information about the request where :req
-          complies with openai API.  For instance:
+          is an OpenAI-compatible API request.  For instance:
 
               (:req (:stream :false
                      :model \"gpt-4o-mini\"
@@ -776,7 +779,7 @@ is called.  It takes 3 arguments
                :dir \"/tmp/eden/\"
                :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
 
-- resp  - plist of the response received from openai
+- resp  - plist of the response received from OpenAI-compatible API
 - INFO  - plist of additional data, can be nil
 
 and must be use for side effects.
@@ -788,7 +791,8 @@ just before signaling the error.  It takes 3 arguments:
 - err  - plist describing the error which is also the data that is
          associated with error when signaled with `signal' function
          in `eden-error-log-and-signal'.  For instance if we provide
-         OpenAI with a wrong API key `err' looks like this:
+         OpenAI-compatible API with a wrong API key `err' looks like
+         this:
 
              (:type \"eden-error-api\"
               :message \"API error\"
@@ -854,7 +858,7 @@ just before signaling the error.  It takes 3 arguments:
             :info ,info))))))
 
 (defun eden-request-send (req callback &optional callback-error info)
-  "Send REQ request asynchronously to OpenAI API using `make-process'.
+  "Send REQ request asynchronously to OpenAI-compatible API using `make-process'.
 
 Return the process handling the request.
 
@@ -863,8 +867,8 @@ If the request failed or there's an error in the sentinel, CALLBACK-ERROR
 function is called.  In both cases, INFO, plist of additional data, is
 passed as last argument to these functions.  See `eden-sentinel'.
 
-For the request to have a chance to succeed, OpenAI API key must
-be set correctly beforehand.  See `eden-request-command' and
+For the request to have a chance to succeed, OpenAI-compatible API key
+must be set correctly beforehand.  See `eden-request-command' and
 `eden-api-key-symbol'.
 
 Before sending REQ request:
@@ -874,9 +878,9 @@ Before sending REQ request:
 2) The curl command line issued to send the request is saved in
    REQ's directory.  See `eden-write-command'.
 
-And upon receipt of OpenAI response, we either save the response
-or an error in REQ's directory.  See `eden-write-response' and
-`eden-write-error'.
+And upon receipt of OpenAI-compatible API response, we either save
+the response or an error in REQ's directory.  See `eden-write-response'
+and `eden-write-error'.
 
 See also `eden-request-dir' and `eden-request-file'.
 
@@ -1132,7 +1136,7 @@ such as `eden-req-at-point-goto'.
 See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 
 (defvar eden-pops-up-upon-receipt t
-  "If t, the response's buffer pops up upon receipt from OpenAI.
+  "If t, the response's buffer pops up upon receipt from `eden-api'.
 
 See `eden-send'.")
 
@@ -1887,7 +1891,7 @@ See `eden-conversations'."
    eden-pending-requests))
 
 (cl-defun eden-send-request (&key req callback info)
-  "Send REQ request asynchronously to OpenAI API.
+  "Send REQ request asynchronously to OpenAI-compatible API.
 
 This function wraps around `eden-request-send', and performs the
 following actions:
@@ -2331,11 +2335,10 @@ it becomes the value of `eden-model'."
 (defun eden-pops-up-upon-receipt-toggle ()
   "Toggle `eden-pops-up-upon-receipt' value."
   (interactive)
-  "the response’s buffer pops up upon receipt from OpenAI"
   (setq eden-pops-up-upon-receipt (not eden-pops-up-upon-receipt))
   (if eden-pops-up-upon-receipt
-      (message "The response's buffer will pop up in next calls to OpenAI.")
-    (message "The response's buffer won't pop up in next calls to OpenAI.")))
+      (message "The response's buffer will pop up in next calls to `eden-api'.")
+    (message "The response's buffer won't pop up in next calls to `eden-api'.")))
 
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
