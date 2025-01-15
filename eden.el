@@ -249,9 +249,9 @@ following keys:
 
 Signal an error if REQ doesn't pass `eden-request-check' check.
 
-For instance, assuming \"uuid-baz\" is the uuid of the last request
+For instance, assuming \"uuid-baz\" is the UUID of the last request
 of a conversation whose previous exchanges are the requests whose
-uuids are \"uuid-foo\" and \"uuid-bar\" in that order, the following
+UUIDs are \"uuid-foo\" and \"uuid-bar\" in that order, the following
 function call
 
     (eden-request-conversation \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
@@ -290,9 +290,9 @@ gives use the following conversation:
 
 Return nil if REQ doesn't pass `eden-request-check' check.
 
-For instance, assuming \"uuid-baz\" is the uuid of the last request
+For instance, assuming \"uuid-baz\" is the UUID of the last request
 of a conversation whose previous exchanges are the requests whose
-uuids are \"uuid-foo\" and \"uuid-bar\" in that order, we have
+UUIDs are \"uuid-foo\" and \"uuid-bar\" in that order, we have
 the following:
 
     (eden-request-conversation-path \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
@@ -335,7 +335,7 @@ The function `eden-request-perplexity-citations' returns the
 concatenation of all these citations for the conversation
 whose last request is REQ.
 
-For instance, assuming \"uuid-baz\" is the uuid of the third and
+For instance, assuming \"uuid-baz\" is the UUID of the third and
 last request of a conversation whose first conversation has the
 citations
 
@@ -392,7 +392,7 @@ float for REQ request."
 (defun eden-request-date (req)
   "Return the date in `org-mode' format of when REQ request was sent.
 
-For instance if the some request with \"foo\" uuid logged in
+For instance if the some request with \"foo\" UUID logged in
 \"/tmp/eden/\" directory has the timestamp file
 \"timestamp-1733921715.2331347\" in its directory, then we
 have the following:
@@ -1123,7 +1123,7 @@ This is used when inserting requests/conversations into buffers.
 See `eden-conversation-insert'.")
 
 (defvar eden-org-property-req "EDEN_REQ"
-  "Org property used for request's uuid.
+  "Org property used for request's UUID.
 
 This is used when inserting requests or conversations into buffers
 and is relevant for any command that operates on requests at point
@@ -1205,7 +1205,7 @@ For instance:
 ;;;; Prompt and Request history
 
 (defvar eden-request-history nil
-  "List of request's uuid where the latest request is listed first.
+  "List of request's UUID where the latest request is listed first.
 
 When we call `eden' for the first time, `eden-request-history-set'
 initializes `eden-request-history' with existing requests in `eden-dir'.
@@ -1216,7 +1216,7 @@ variable.
 See `eden-send-request'.")
 
 (defun eden-request-history-set ()
-  "Set `eden-request-history' with uuids of existing requests in `eden-dir'.
+  "Set `eden-request-history' with UUIDs of existing requests in `eden-dir'.
 
 They are sorted by their timestamp file with the latest request appearing
 first.
@@ -1247,14 +1247,14 @@ The variable is a vector of three elements:
 1) The first element holds the list of previous prompts, which can be:
 
    - nil,
-   - uuids of existing requests in `eden-dir' or
+   - UUIDs of existing requests in `eden-dir' or
    - temporary prompts entered in `eden-prompt-buffer-name' buffer
      formatted as (:prompt \"foo bar baz\")
 
 2) The second element holds the current prompt, which may be nil, a
-   uuid or a temporary prompt as described in 1),
+   UUID or a temporary prompt as described in 1),
 3) The Third element holds the list of next prompts which can also be
-   nil, uuids or a temporary prompts as described in 1).")
+   nil, UUIDs or a temporary prompts as described in 1).")
 
 (defun eden-prompt-history-state-set ()
   "Set `eden-prompt-history-state' with `eden-request-history'."
@@ -1268,7 +1268,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun eden-prompt-current-req-uuid ()
-  "Return request's uuid of current prompt in `eden-prompt-history-state'.
+  "Return request's UUID of current prompt in `eden-prompt-history-state'.
 
 If the current prompt is temporary with no corresponding request, return nil."
   (when-let ((current (aref eden-prompt-history-state 1)))
@@ -1451,7 +1451,7 @@ A conversation is a cons cells whose
   - :title         - The title of the conversation
   - :action        - The symbol `start', `start-from' or `continue-from'
                      depending on the state of the conversation
-  - :last-req-uuid - The uuid of the last request in the conversation
+  - :last-req-uuid - The UUID of the last request in the conversation
                      which can be nil if `:action' is `start'
 
 For instance `eden-conversations' can be:
@@ -1470,7 +1470,7 @@ For instance `eden-conversations' can be:
        :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))")
 
 (defvar eden-conversation-id nil
-  "uuid of the current conversation if any.")
+  "UUID of the current conversation if any.")
 
 (defun eden-conversation-with-title-exists-p (title)
   "Return t if a conversation with TITLE exists in `eden-conversations'."
@@ -1484,9 +1484,9 @@ Valid ACTION values include:
 
 - `start'         - Initiates a new conversation.
 - `start-from'    - Begins a conversation from a request requiring its
-                    uuid specified by REQ-UUID.
+                    UUID specified by REQ-UUID.
 - `continue-from' - Resumes a conversation from a request requiring its
-                    uuid specified by REQ-UUID
+                    UUID specified by REQ-UUID
 
 Also set `eden-conversation-id' to the id of the newly created conversation
 making it the current conversation.
@@ -1613,7 +1613,7 @@ See `eden-conversation-id' and `eden-conversation-rename'."
     (message "Cannot rename current conversation which is not set.  Switch to an existing conversation first.")))
 
 (defun eden-conversation-update (info req)
-  "Update last request uuid of conversation specified by INFO to REQ's uuid.
+  "Update last request UUID of conversation specified by INFO to REQ's UUID.
 
 INFO plist must include a `:conversation-id' key while REQ must contain
 a `:uuid' key.
@@ -1718,7 +1718,7 @@ Signal an error if REQ fails `eden-request-check'.
 Signal an error if TITLE and APPEND are both non-nil.
 
 The `org-mode' properties used for the date of the conversation and
-REQ's uuid are defined respectively by the variables `eden-org-property-date'
+REQ's UUID are defined respectively by the variables `eden-org-property-date'
 and `eden-org-property-req'.
 
 For instance, given a valid request with \"foo-uuid\" in `/tmp/eden/'
@@ -2386,7 +2386,7 @@ it becomes the value of `eden-model'."
 ;;;; Request at point menu
 
 (defun eden-req-at-point-uuid ()
-  "Return the uuid of the request at point.
+  "Return the UUID of the request at point.
 
 To find a request a point, the point must be on an `org-mode'
 heading which includes the property `eden-org-property-req'.
