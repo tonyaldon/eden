@@ -2493,7 +2493,14 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     (dired req-dir)))
 
 (transient-define-prefix eden-req-at-point-menu ()
-  "Insert menu"
+  "Transient command to manage conversations and requests at point.
+
+- `eden-req-at-point-start-conversation'
+- `eden-req-at-point-continue-conversation'
+- `eden-req-at-point-show-requests'
+- `eden-req-at-point-show-system-message'
+- `eden-req-at-point-show-perplexity-citations'
+- `eden-req-at-point-goto'"
   [["Conversation/Request at point"
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
