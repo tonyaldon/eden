@@ -113,40 +113,37 @@ The benefits of this design include:
 
 * Eden focuses on conversations but doesn't impose it
 
-By default every requests sent are independant.
+By default, all requests sent through Eden are independent.  To engage
+in a conversation where previous exchanges are included with new
+requests, you must start or continue a conversation.
 
-If you want to have a conversation where previous exchanges are
-including belonging to that conversation are sent with newer request,
-you have to start or continue a conversation.
+There are several ways to achieve this in the prompt buffer:
 
-There several way to do that while you are in the prompt buffer:
+1) To start a new conversation, call the ~eden~ command, press ~n~,
+   and enter a title.  This creates a new empty conversation, setting
+   it as the current one for all new requests.
 
-1) You can start a conversation by calling ~eden~ command, pressing ~n~
-   and entering its title.  This made that new empty conversation the
-   current one, and each new request will be part of it.
-2) You can start a conversation from the current request in history
-   excluding previous exchanges.  First, use M-p and M-n to navigate
-   the prompt history to find the request from which the conversation
-   will start.  Then, call ~eden~ command, press ~s~ and enter its title.
-   This made that new conversation, with already one exchange, the
-   current one, and each new request will be part of it.
-3) You can also continue a conversation.  It's almost the same as
-   in 2) but including all the previous exchanges of the current
-   request in history.  To do this, call ~eden~ command, press ~c~ and
-   enter its title.
+2) To start a conversation from the current request in history
+   (excluding earlier exchanges), navigate through the history using
+   ~M-p~ and ~M-n~ to find the desired request.  Then, call the ~eden~
+   command, press ~s~, and enter a title.  This creates a new
+   conversation that already include one exchange.
 
-You can pause the current conversation in the prompt buffer by calling
-~eden~ command and pressing ~SPC~.  Now, request that will be sent to
-~eden-api~ will be independant again.
+3) To continue an existing conversation call the ~eden~ command, press
+   ~c~, and enter a title.  This will include all previous exchanges of
+   the current request in history.
 
-Note that conversation titles and IDs are not stored.  They only
-serves during your Emacs session.  Don't worry, your conversations are
-not lost forever when you stop your session, you can get it back with
-the request ID of the last request in that conversation.  You either
-saved the conversation somewhere in your note with its ID or you can
-navigate the prompt history with M-p and M-n in the prompt buffer.
+You can pause the current conversation by calling ~eden~ and pressing
+~SPC~.  Subsequent requests sent to ~eden-api~ will then be independent
+again.
 
-* What are requests at point?
+Note that conversation titles and IDs are not stored; they only exist
+during your Emacs session.  However, you can retrieve your
+conversations later using the request UUID of the last request in that
+conversation, either by saving it in your notes or navigating the
+prompt history with ~M-p~ and ~M-n~.
+
+* TODO What are requests at point?
 
 When we call ~eden~ preceded by ~C-u~ prefix argument anywhere we get a
 menu with accepted actions on the request at point.
@@ -158,7 +155,7 @@ a request at point, we can apply one of the offered actions.
 For instance pressing ~c~ will continue a conversation whose last
 request is the request at point.
 
-* Managing settings with eden command
+* TODO Managing settings with eden command
 
 In the prompt buffer you can call ~eden~ and press ~S~ to show the current
 settings.
@@ -190,7 +187,7 @@ Here is the complete list of user variables you may want to modify:
 You can lookup their documentation in the ~*Help*~ buffer using
 ~describe-variable~ command bound by default to ~C-h v~.
 
-* Adding Perplexity API key
+* TODO Adding Perplexity API key
 
 By default, ~eden-api~ variable is set to
 
@@ -244,7 +241,7 @@ machine perplexity password <perplexity-api-key>
 
 with ~<perplexity-api-key>~ being Perplexity API key.
 
-* Adding an OpenAI-compatible API to eden-apis
+* TODO Adding an OpenAI-compatible API to eden-apis
 
 Let's say that we want to use X.ai API along with the other
 OpenAI-compatible APIs.
