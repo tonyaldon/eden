@@ -103,6 +103,40 @@ There some benefits to do that among these are:
 
 * Eden focuses on conversations but doesn't impose it
 
+By default every requests sent to the current OpenAI-compatible API
+are independant.
+
+If you want to have a conversation where previous exchanges are
+including belonging to that conversation are sent with newer request,
+you can start or continue a conversation.
+
+There several way to do that while you are in the prompt buffer:
+
+1) You can start a conversation by calling ~eden~ command, pressing ~n~
+   and entering its title.  This made that new empty conversation the
+   current one, and each new request will be part of it.
+2) You can start a conversation from the current request in history
+   excluding previous exchanges.  First, use M-p and M-n to navigate
+   the prompt history to find the request from which the conversation
+   will start.  Then, call ~eden~ command, press ~s~ and enter its title.
+   This made that new conversation, with already one exchange, the
+   current one, and each new request will be part of it.
+3) You can also continue a conversation.  It's almost the same as
+   in 2) but including all the previous exchanges of the current
+   request in history.  To do this, call ~eden~ command, press ~s~ and
+   enter its title.
+
+You can pause the current conversation in the prompt buffer by calling
+~eden~ command and pressing ~SPC~.  Now, request that will be sent to
+~eden-api~ will be independant again.
+
+Note that conversations titles and IDs are not stored.  They only
+serves during your Emacs session.  Don't worry, your conversations are
+not lost forever when you stop your session, you can get it back with
+the request ID of the last request in that conversation.  You either
+saved the conversation somewhere in your note with its ID or you can
+navigate the prompt history with M-p and M-n in the prompt buffer.
+
 * What are requests at point?
 
 * Managing settings with eden command
