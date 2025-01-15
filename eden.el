@@ -1985,7 +1985,7 @@ conversation, INFO argument must be structured as:
       :uuid ,(eden-uuid))))
 
 (defun eden-send ()
-  "Send current prompt to OpenAI-compatible API respecting current API and model settings.
+  "Send current prompt to `eden-api' OpenAI-compatible API.
 
 If the request succeeds, the response will be displayed in a buffer
 named by `eden-buffer-name' and formatted with `eden-conversation-insert'.
@@ -2561,7 +2561,17 @@ mode-specific capabilities."
   (eden-prompt-history-state-set))
 
 (defun eden (&optional arg)
-  ""
+  "Command to access the prompt buffer and menus to manage conversations and settings.
+
+If not in `eden-prompt-buffer-name' buffer, select a window displaying it
+at the bottom of the frame.  Once in that buffer (in `eden-mode') you can
+enter your prompt and send it to `eden-api' with `eden-send' command bound
+by default to `C-c C-c'.
+
+If not in `eden-prompt-buffer-name' buffer and called with a `\\[universal-argument]' prefix
+argument, call `eden-req-at-point-menu' command.
+
+If in `eden-prompt-buffer-name' buffer, call `eden-menu'."
   (interactive "P")
   (let ((error-fmt
          (concat
