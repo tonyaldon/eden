@@ -48,8 +48,8 @@ It also supports any OpenAI-compatible API.
 
 * Utility requirements
 
-Ensure the following utilities are installed and available in one of
-~exec-path~ directories:
+Ensure the following utilities are installed and present in one
+of your ~exec-path~ directories:
 
 - ~curl~
 - ~uuidgen~
