@@ -42,14 +42,29 @@ More broadly it works with any OpenAI-compatible API.
 
 * Eden is simple
 
-- ~eden~ is simple and has only one command ~eden~ that
-  - give access to the prompt buffer
-  - when in the prompt buffer, give acces to transient menu that
-    allows to:
-    - manage conversations and individual requests
-    - manage settings
-  - when call with the prefix argument C-u, gives access to another
-    transient menu with command that apply to the request at point
+Eden is simple and rely exclusively on the ~eden~ command:
+
+1) This command lets you switch to the prompt buffer displayed at the
+   bottom of the frame on demand.  Once in that buffer (in ~eden-mode~)
+   you can enter your prompt and send it to ~eden-api~ with ~eden-send~
+   command bound by default to ~C-c C-c~.
+
+2) It also lets you manage conversations and settings via a transient
+   command, if it is called from the prompt buffer.  Specifically,
+   calling it that way invokes ~eden-menu~, and after the menu poped up,
+   you can for instance:
+
+   - Start a new conversation pressing the key ~n~,
+   - Switch to an existing conversation pressing the ~TAB~ key,
+   - Paused a conversation pressing the ~SPC~ key,
+   - Show the current settings pressing the key ~S~,
+   - Set the current API pressing the key ~a~ or
+   - Set the system message pressing the key ~'~.
+
+3) Finally it can be used to continue a conversation from a request at
+   point, or only inspect it, if we call it with the prefix argument
+   ~C-u~.  Indeed, doing so invokes ~eden-req-at-point-menu~ which provides
+   a menu with accepted actions on the request at point.
 
 * Eden keeps all your requests in eden-dir
 
