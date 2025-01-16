@@ -1,11 +1,30 @@
-Eden is an AI assistant package for Emacs.
+Unlock a new level of productivity with *Eden*, the seamless
+*ChatGPT* integration crafted for Emacs users craving a clean,
+text-focused interface that fuels their creativity!
 
-It offers a simple interface for:
+*Eden* interface is simple:
 
-1) OpenAI LLM models such as ~gpt-4o~ and ~o1~ as well as
-2) Perplexity AI powered answer engine.
+- You want to ask something to *ChatGPT*, call ~eden~ command, enter your
+  prompt, press ~C-c C-c~ and you're done.
+- You want to integrate the response in your ~org-mode~ notes, just
+  copy/paste it.
+- You want to manage your settings, call ~eden~ and explore the options
+  in its transient menu.
 
-It also supports any OpenAI-compatible API.
+*Eden* strikes the perfect balance by focusing on conversations without
+enforcing them; defaulting to independent requests, it makes starting
+new conversations or continuing from previous ones easy!
+
+Another key feature of *Eden* is its ability to keep track of all your
+interaction with *ChatGPT*.  Each request is stored in the ~eden-dir~
+directory, providing a range of benefits:
+
+1) Requests are always preserved, ensuring you can retrieve them at
+   any time.
+2) Should an error occur during processing, the corresponding
+   ~error.json~ file can be consulted for troubleshooting.
+3) All data is stored in JSON (or text format), facilitating
+   integration with other software for further analysis.
 
 * Get started in minutes
 
@@ -57,7 +76,7 @@ of your ~exec-path~ directories:
 
 * Eden is simple
 
-Eden is simple and rely exclusively on the ~eden~ command:
+Eden is simple and relies exclusively on the ~eden~ command:
 
 1) Use the ~eden~ command to access the prompt buffer at the bottom of
    the frame.  This buffer, in ~eden-mode~, allows you to input prompts
