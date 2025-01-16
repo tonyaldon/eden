@@ -2022,7 +2022,8 @@ See `eden-send-request'."
    :req (eden-request
          :prompt (eden-prompt-current-buffer)
          :exchanges (eden-conversation-exchanges eden-conversation-id))
-   :info `(:conversation-id ,eden-conversation-id)
+   :info `(:conversation-id ,eden-conversation-id
+           :created ,(float-time))
    :callback (lambda (req _resp info)
                (let* ((conversation-id (plist-get info :conversation-id))
                       (title (or (eden-conversation-title conversation-id)
@@ -2056,11 +2057,13 @@ See `eden-send-request'."
                  (eden-pending-remove req)
                  (eden-conversation-update info req)
                  (eden-mode-line-waiting 'maybe-stop)
-                 (message "Eden received a response from %s service.  See `%s' buffer."
-                          (plist-get eden-api :service) buff-name))))
+                 (message "Eden received a response from %s after %.3fs.  See `%s' buffer."
+                          (plist-get eden-api :service)
+                          (- (float-time) (plist-get info :created))
+                          buff-name))))
   (erase-buffer)
   (eden-maybe-delete-window-prompt-buffer)
-  (message "Eden sent a request to %s service"
+  (message "Eden sent a request to %s."
            (plist-get eden-api :service)))
 
 ;;;; Main menu
