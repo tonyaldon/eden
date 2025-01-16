@@ -1,6 +1,9 @@
-Unlock a new level of productivity with *Eden*, the seamless
-*ChatGPT* integration crafted for Emacs users craving a clean,
-text-focused interface that fuels your creativity!
+Boost your productivity with *Eden*, the intuitive *ChatGPT*
+integration designed for Emacs users craving a clean, text-focused
+interface that adapts to various workflows.
+
+It seamlessly facilitates branching conversations making it the
+perfect tool for effective thinking and brainstorming.
 
 *Eden* interface is simple:
 
@@ -76,8 +79,6 @@ of your ~exec-path~ directories:
 
 * Eden interface is simple
 
-*Eden* interface is simple:
-
 1) You want to ask something to *ChatGPT*, call ~eden~ command, enter your
    prompt, press ~C-c C-c~ and you're done.
 2) You want to integrate the response in your ~org-mode~ notes, just
@@ -121,10 +122,10 @@ range of benefits:
    ~error.json~ file can be consulted for troubleshooting.
 4) You can start or continue a conversation from any existing request
    (a feature known as "branching"):
-   - Either from the request at point in your notes,
-   - Or navigate through history in the prompt buffer using ~M-p~ and
-     ~M-n~ to find the desired request, open the menu with ~eden~, and
-     press ~c~ to continue the conversation or press ~s~ to start a new
+   - Either from a request at point in your notes,
+   - Or navigating through history in the prompt buffer using ~M-p~ and
+     ~M-n~ to find the desired request, opening the menu with ~eden~, and
+     pressing ~c~ to continue the conversation or ~s~ to start a new
      conversation from the request.
 5) All data is stored in JSON (or text format), facilitating
    integration with other software for further analysis.
@@ -157,10 +158,9 @@ You can pause the current conversation by calling ~eden~ and pressing
 will then be independent again.
 
 Note that conversation titles and IDs are not stored; they only exist
-during your Emacs session.  However, you can retrieve your
-conversations later using the request UUID of the last request in that
-conversation, either by saving it in your notes or navigating the
-prompt history with ~M-p~ and ~M-n~.
+during your Emacs session.  However, you can retrieve any conversation
+later either by saving its UUID in your notes or navigating the prompt
+history with ~M-p~ and ~M-n~.
 
 * What are requests at point?
 
@@ -243,6 +243,8 @@ In both cases you need to store your Perplexity API key in either the
 
 * Adding an OpenAI-compatible API to eden-apis
 
+Let's take an example with X.ai API, an OpenAI-compatible API.
+
 If you want to use X.ai API alongside other OpenAI-compatible APIs,
 start by adding its description to the ~eden-apis~ variable as follows:
 
@@ -267,6 +269,5 @@ file (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
   where ~<x.ai-api-key>~ is your API key.
 
-Finally, we can we can select X.ai API with ~grok-2~ default model by
-calling ~eden~ in the prompt buffer, pressing the key ~a~ and selecting
-~x.ai~.
+Finally, we can select X.ai API with ~grok-2~ default model by calling
+~eden~ in the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
