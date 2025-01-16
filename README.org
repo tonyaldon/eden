@@ -1,6 +1,6 @@
 Unlock a new level of productivity with *Eden*, the seamless
 *ChatGPT* integration crafted for Emacs users craving a clean,
-text-focused interface that fuels their creativity!
+text-focused interface that fuels your creativity!
 
 *Eden* interface is simple:
 
