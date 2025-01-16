@@ -16,7 +16,7 @@ enforcing them; defaulting to independent requests, it makes starting
 new conversations or continuing from previous ones easy!
 
 Another key feature of *Eden* is its ability to keep track of all your
-interaction with *ChatGPT*.  Each request is stored in the ~eden-dir~
+interactions with *ChatGPT*.  Each request is stored in the ~eden-dir~
 directory, providing a range of benefits:
 
 1) Requests are always preserved, ensuring you can retrieve them at
@@ -101,25 +101,20 @@ Eden is simple and relies exclusively on the ~eden~ command:
 
 * Eden keeps all your requests in eden-dir
 
-A key feature of Eden is its ability to retain all questions asked to
-the underlying LLM.
+Another key feature of *Eden* is its ability to keep track of all your
+interactions with *ChatGPT* or any OpenAI-compatible API.
 
-Eden stores each request sent to the OpenAI-compatible API in the
-~eden-dir~ directory, which defaults to the ~eden~ subdirectory within
-your ~user-emacs-directory~.
+Each request is stored in the ~eden-dir~ directory, which defaults to
+the ~eden~ subdirectory within your ~user-emacs-directory~, providing a
+range of benefits:
 
-Each request is uniquely identified by a UUID, used as a subdirectory
-in ~eden-dir~, where relevant information about the request is recorded.
-
-The benefits of this design include:
-
-1) Requests are never lost; you can always retrieve them.
-2) If you copy an org heading containing the request's UUID elsewhere,
-   you can look up the associated request, access the directory, and
-   access details like the request, API, model, system prompt, and
+1) Requests are always preserved, ensuring you can retrieve them at
+   any time.
+2) With the request's UUID, you can track down the associated
+   request and check details like the API, model, system prompt, and
    timestamp.
-3) Should an error occur during processing, you can consult the
-   ~error.json~ file associated with that request for troubleshooting.
+3) Should an error occur during processing, the corresponding
+   ~error.json~ file can be consulted for troubleshooting.
 4) You can start or continue a conversation from any existing request
    (a feature known as "branching"):
    - Either from the request at point in your notes,
