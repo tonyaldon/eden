@@ -156,13 +156,13 @@ listed in the menu.
 For instance pressing ~c~ will continue a conversation whose last
 request is the request at point.
 
-* TODO Managing settings with eden command
+* Managing settings with eden command
 
-In the prompt buffer you can call ~eden~ and press ~S~ to show the current
+In the prompt buffer, you can call ~eden~ and press ~S~ to show the current
 settings.
 
-In the menu offered by ~eden~, here are the following action that lets
-you modify the current settings:
+From the menu provided by ~eden~, you can modify the current settings
+using the following actions:
 
 - Press ~a~ to set the current API (~eden-api-set~),
 - Press ~m~ to set the model for the current API (~eden-model-set~),
@@ -170,7 +170,7 @@ you modify the current settings:
 - Press ~'~ to set the system message (~eden-system-message-set~),
 - Press ~t~ to toggle the pop-up response (~eden-pops-up-upon-receipt-toggle~).
 
-Here is the complete list of user variables you may want to modify:
+The complete list of user variables you may want to adjust includes:
 
 - ~eden-api~
 - ~eden-apis~
@@ -185,8 +185,9 @@ Here is the complete list of user variables you may want to modify:
 - ~eden-pops-up-upon-receipt~
 - ~eden-prompt-buffer-name~
 
-You can lookup their documentation in the ~*Help*~ buffer using
-~describe-variable~ command bound by default to ~C-h v~.
+For more information on these variables, consult their documentation
+in the ~*Help*~ buffer using ~describe-variable~ command, bound by default
+to ~C-h v~.
 
 * TODO Adding Perplexity API key
 
