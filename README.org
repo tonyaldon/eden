@@ -189,30 +189,9 @@ For more information on these variables, consult their documentation
 in the ~*Help*~ buffer using ~describe-variable~ command, bound by default
 to ~C-h v~.
 
-* TODO Adding Perplexity API key
+* Adding Perplexity API key
 
-By default, ~eden-api~ variable is set to
-
-#+BEGIN_SRC emacs-lisp
-(:service "openai"
- :endpoint "https://api.openai.com/v1/chat/completions"
- :default-model "gpt-4o-mini"
- :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
-#+END_SRC
-
-such that the requests are sent to OpenAI API.
-
-We've seen in the "Get Started" section that for this to work we need
-to add the following line
-
-#+BEGIN_SRC authinfo
-machine openai password <openai-api-key>
-#+END_SRC
-
-with ~<openai-api-key>~ being OpenAI API key to ~~/.authinfo.gpg~ or
-~~/.authinfo~ files.
-
-To use Perplexity API, we can either set ~eden-api~ to
+To use Perplexity API, you can either set ~eden-api~ to
 
 #+BEGIN_SRC emacs-lisp
 (:service "perplexity"
@@ -225,31 +204,28 @@ and ~eden-model~ to a model supported by Perplexity API like this
 "llama-3.1-sonar-small-128k-online"
 #+END_SRC
 
-or we can select it by calling ~eden~ in the prompt buffer, pressing the
-key ~a~ and selecting ~perplexity~.
+or you can select Perplexity API by calling ~eden~ in the prompt buffer,
+pressing the key ~a~ and selecting ~perplexity~.
 
-In both cases we need to add Perplexity API key to one of the two
-files mentioned above.
+In both cases you need to store your Perplexity API key in either the
+~~/.authinfo.gpg~ file (encrypted with ~gpg~) or the ~~/.authinfo~ file
+(plaintext):
 
-This can be done the same way as for OpenAI API key.  First we provide
-our [[https://www.perplexity.ai][Perplexity account]] with some credits ($5.00 is enough to get
-started) then we create a Perplexity API key visiting
-https://www.perplexity.ai/settings/api and finally we add it to the
-correponding file like this
+- After funding your [[https://www.perplexity.ai][Perplexity account]] ($5.00 is enough to get
+  started), create an OpenAI API key visiting
+  https://www.perplexity.ai/settings/api.
+- Add the API key in the selected file as follows:
 
-#+BEGIN_SRC authinfo
-machine perplexity password <perplexity-api-key>
-#+END_SRC
+  #+BEGIN_SRC authinfo
+  machine perplexity password <perplexity-api-key>
+  #+END_SRC
 
-with ~<perplexity-api-key>~ being Perplexity API key.
+  where ~<perplexity-api-key>~ is your API key.
 
-* TODO Adding an OpenAI-compatible API to eden-apis
+* Adding an OpenAI-compatible API to eden-apis
 
-Let's say that we want to use X.ai API along with the other
-OpenAI-compatible APIs.
-
-To do that, first we add its description to ~eden-apis~ variable like
-this:
+If you want to use X.ai API alongside other OpenAI-compatible APIs,
+start by adding its description to the ~eden-apis~ variable as follows:
 
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'eden-apis
@@ -259,18 +235,19 @@ this:
                :models ("grok-beta" "grok-2-latest" "grok-2" "grok-2-12-12")))
 #+END_SRC
 
-Then, we provide our [[https://console.x.ai][X.ai ]] with some credits
-($5.00 is enough to get started) then we create a X.ai API key in that
-same console and finally we add the following line
+Then you need to store your X.ai API key in either the ~~/.authinfo.gpg~
+file (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
-#+BEGIN_SRC authinfo
-machine x.ai password <x.ai-api-key>
-#+END_SRC
+- After funding your [[https://console.x.ai][X.ai]] ($5.00 is enough to get started), create an
+  X.ai API key in that same console.
+- Add the API key in the selected file as follows:
 
-with ~<x.ai-api-key>~ being X.ai API key to ~~/.authinfo.gpg~ or
-~~/.authinfo~ files.
+  #+BEGIN_SRC authinfo
+  machine x.ai password <x.ai-api-key>
+  #+END_SRC
 
-Finally, we can se
+  where ~<x.ai-api-key>~ is your API key.
 
-we can select X.ai API with ~grok-2~ default model by calling ~eden~ in
-the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
+Finally, we can we can select X.ai API with ~grok-2~ default model by
+calling ~eden~ in the prompt buffer, pressing the key ~a~ and selecting
+~x.ai~.
