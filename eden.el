@@ -2508,7 +2508,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
-    ("p" "Show system message of request at point" eden-req-at-point-show-system-message)
+    ("'" "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
