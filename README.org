@@ -2,8 +2,8 @@ Boost your productivity with *Eden*, the intuitive *ChatGPT*
 integration designed for Emacs users craving a clean, text-focused
 interface that adapts to various workflows.
 
-It seamlessly facilitates branching conversations making it the
-perfect tool for effective thinking and brainstorming.
+It seamlessly facilitates *branching conversations* making it the
+perfect tool for effective *thinking* and *brainstorming*.
 
 *Eden* interface is simple:
 
@@ -269,5 +269,5 @@ file (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
   where ~<x.ai-api-key>~ is your API key.
 
-Finally, we can select X.ai API with ~grok-2~ default model by calling
+Finally, you can select X.ai API with ~grok-2~ default model by calling
 ~eden~ in the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
