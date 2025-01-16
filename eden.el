@@ -1,4 +1,4 @@
-;;; eden.el --- AI assistant interface for OpenAI LLM models and Perplexity -*- lexical-binding: t; -*-
+;;; eden.el --- The intuitive ChatGPT integration designed for Emacs users -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2025 Tony Aldon
 ;;
@@ -9,22 +9,72 @@
 ;;
 ;;; Commentary:
 ;;
-;; Eden is an AI assistant package for Emacs.
+;; Boost your productivity with Eden, the intuitive ChatGPT
+;; integration designed for Emacs users craving a clean, text-focused
+;; interface that adapts to various workflows.
 ;;
-;; It offers a simple interface for:
+;; It seamlessly facilitates branching conversations making it the
+;; perfect tool for effective thinking and brainstorming.
 ;;
-;; 1) OpenAI LLM models (like gpt-4o and o1) and
-;; 2) Perplexity AI powered answer engine.
+;; Eden interface is simple:
 ;;
-;; Get started in minutes:
+;; - You want to ask something to ChatGPT, call `eden' command, enter your
+;;   prompt, press C-c C-c and you're done.
+;; - You want to integrate the response in your `org-mode' notes, just
+;;   copy/paste it.
+;; - You want to manage your settings, call `eden' and explore the options
+;;   in its transient menu.
 ;;
-;; 1) Add your API keys to ~/.authinfo.gpg file (or ~/.authinfo),
-;; 2) Call the command eden to switch to eden prompt buffer,
-;; 3) Enter your prompt (i.e. ask something),
-;; 4) Hit C-c C-c to send the request to the current API (OpenAI by
-;;    default with gpt-4o-mini model),
-;; 5) Receive the response asynchronously in a dedicated buffer that pops
-;;    up upon receipt.
+;; Eden strikes the perfect balance by focusing on conversations without
+;; enforcing them; defaulting to independent requests, it makes starting
+;; new conversations or continuing from previous ones easy!
+;;
+;; Another key feature of Eden is its ability to keep track of all your
+;; interactions with ChatGPT.  Each request is stored in the `eden-dir'
+;; directory, providing a range of benefits:
+;;
+;; 1) Requests are always preserved, ensuring you can retrieve them at
+;;    any time.
+;; 2) Should an error occur during processing, the corresponding
+;;    error.json file can be consulted for troubleshooting.
+;; 3) All data is stored in JSON (or text format), facilitating
+;;    integration with other software for further analysis.
+;;
+;;;; Get started in minutes
+;;
+;; 1) Ensure the following utilities are installed and present in one
+;;    of your `exec-path' directories:
+;;
+;;    - curl
+;;    - uuidgen
+;;    - pandoc
+;;
+;; 2) Add the directory containing eden.el to your `load-path' and
+;;    require the Eden package by adding the following lines to your init
+;;    file, ensuring to replace /path/to/eden/ with the appropriate
+;;    directory:
+;;
+;;        (add-to-list 'load-path "/path/to/eden/")
+;;        (require 'eden)
+;;
+;; 3) Store your OpenAI API key in either the ~/.authinfo.gpg file
+;;    (encrypted with gpg) or the ~/.authinfo file (plaintext):
+;;
+;;    - After funding your OpenAI account (https://platform.openai.com)
+;;      ($5.00 is enough to get started), create an OpenAI API key
+;;      visiting https://platform.openai.com/api-keys.
+;;    - Add the API key in the selected file as follows:
+;;
+;;          machine openai password <openai-api-key>
+;;
+;;      where <openai-api-key> is your API key.
+;;
+;; 4) Call the command `eden' to switch to *eden* prompt buffer,
+;; 5) Enter your prompt,
+;; 6) Press C-c C-c to send your prompt to OpenAI API,
+;; 7) Finally, the response will asynchronously show up in a dedicated
+;;    buffer upon receipt.
+;;
 ;;; Code:
 
 (require 'json)
