@@ -1954,7 +1954,23 @@ conversation, INFO argument must be structured as:
                              api dir)
   "Return a request as defined in `eden-request-send'.
 
-`:prompt'"
+`:prompt' is mandatory.
+
+If `:system-message' is missing, it is replaced by `eden-system-message'
+or \"\".
+
+If `:model' is missing, it is replaced by `eden-model'.
+If the model picked is part of `eden-system-message->developer-for-models',
+the role of the system message if any will be \"developer\" instead
+of \"system\".
+
+Both the prompt and the system message considered `org-mode' strings
+are converted to markdown using `eden-org-to-markdown' function.
+
+If `:temperature' is missing, it is replaced by `eden-temperature'.
+If `:api' is missing, it is replaced by `eden-api'.
+If `:dir' is missing, it is replaced by `eden-dir'
+or a temporary directory."
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request"))
   (let* ((-model (or model eden-model))
