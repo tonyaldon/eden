@@ -212,7 +212,7 @@ In both cases you need to store your Perplexity API key in either the
 (plaintext):
 
 - After funding your [[https://www.perplexity.ai][Perplexity account]] ($5.00 is enough to get
-  started), create an OpenAI API key visiting
+  started), create a Perplexity API key visiting
   https://www.perplexity.ai/settings/api.
 - Add the API key in the selected file as follows:
 
