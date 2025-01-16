@@ -36,7 +36,7 @@ directory, providing a range of benefits:
    - ~pandoc~
 
 2) Add the directory containing ~eden.el~ to your ~load-path~ and
-   require the Eden package by adding the following lines to your init
+   require the *Eden* package by adding the following lines to your init
    file, ensuring to replace ~/path/to/eden/~ with the appropriate
    directory:
 
@@ -78,32 +78,32 @@ of your ~exec-path~ directories:
 
 *Eden* interface is simple:
 
-- You want to ask something to *ChatGPT*, call ~eden~ command, enter your
-  prompt, press ~C-c C-c~ and you're done.
-- You want to integrate the response in your ~org-mode~ notes, just
-  copy/paste it.
-- You want to manage your *settings*, call ~eden~ from the prompt buffer
-  and explore the options in its transient menu.  For instance, you
-  can:
+1) You want to ask something to *ChatGPT*, call ~eden~ command, enter your
+   prompt, press ~C-c C-c~ and you're done.
+2) You want to integrate the response in your ~org-mode~ notes, just
+   copy/paste it.
+3) You want to manage your *settings*, call ~eden~ from the prompt buffer
+   and explore the options in its transient menu.  For instance, you
+   can:
 
-  - Show the current settings by pressing ~S~,
-  - Set the current API by pressing ~a~ or
-  - Set the system message by pressing ~'~.
+   - Show the current settings by pressing ~S~,
+   - Set the current API by pressing ~a~ or
+   - Set the system message by pressing ~'~.
 
-- You want to manage your *conversations*, call ~eden~ from the prompt
-  buffer and explore the options in its transient menu.  For instance,
-  you can:
+4) You want to manage your *conversations*, call ~eden~ from the prompt
+   buffer and explore the options in its transient menu.  For instance,
+   you can:
 
-  - Start a new conversation by pressing ~n~,
-  - Switch to an existing conversation by pressing ~TAB~ or
-  - Paused a conversation by pressing ~SPC~.
+   - Start a new conversation by pressing ~n~,
+   - Switch to an existing conversation by pressing ~TAB~ or
+   - Paused a conversation by pressing ~SPC~.
 
-- Finally, you can also continue or inspect a conversation from a
-  *request at point* by calling ~eden~ with the prefix argument ~C-u~.
-  This will bring up ~eden-req-at-point-menu~, offering various actions
-  related to the request at point.
+5) Finally, you can also continue or inspect a conversation from a
+   *request at point* by calling ~eden~ with the prefix argument ~C-u~.
+   This will bring up ~eden-req-at-point-menu~, offering various actions
+   related to the request at point.
 
-* Eden keeps all your requests in eden-dir
+* Eden keeps track of all your interactions with ChatGPT
 
 Another key feature of *Eden* is its ability to keep track of all your
 interactions with *ChatGPT* or any OpenAI-compatible API.
@@ -129,13 +129,14 @@ range of benefits:
 5) All data is stored in JSON (or text format), facilitating
    integration with other software for further analysis.
 
-* Eden focuses on conversations but doesn't impose it
+* Eden focuses on conversations without enforcing them
 
-By default, all requests sent through Eden are independent.  To engage
-in a conversation where previous exchanges are included with new
-requests, you must start or continue a conversation.
+*Eden* strikes the perfect balance by focusing on conversations without
+enforcing them; defaulting to independent requests, it makes starting
+new conversations or continuing from previous ones easy!
 
-There are several ways to achieve this in the prompt buffer:
+There are several ways to engage in a conversation while in the prompt
+buffer:
 
 1) To start a new conversation, call the ~eden~ command, press ~n~,
    and enter a title.  This creates a new empty conversation, setting
@@ -152,8 +153,8 @@ There are several ways to achieve this in the prompt buffer:
    the current request in history.
 
 You can pause the current conversation by calling ~eden~ and pressing
-~SPC~.  Subsequent requests sent to ~eden-api~ will then be independent
-again.
+~SPC~.  Subsequent requests sent to *ChatGPT* or any OpenAI-compatible API
+will then be independent again.
 
 Note that conversation titles and IDs are not stored; they only exist
 during your Emacs session.  However, you can retrieve your
