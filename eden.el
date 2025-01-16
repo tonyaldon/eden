@@ -150,7 +150,7 @@ user prompt was \"foo bar baz\") we get something like this:
 
   (let* ((file (eden-request-file file-type req)))
     (if (not (file-exists-p file))
-        (error "Missing `%s' file." file)
+        (error "Missing `%s' file" file)
       (with-temp-buffer
         (insert-file-contents (eden-request-file file-type req))
         (if (string= (file-name-extension file) "json")
@@ -230,7 +230,7 @@ Signal an error in the following cases:
      ((not (file-exists-p (eden-request-file 'exchanges req)))
       (error "Missing `%s' file" (eden-request-file 'exchanges req)))
      ((null (directory-files req-dir nil "timestamp-.*"))
-      (error "Missing timestamp file in `%s' request." req-dir))
+      (error "Missing timestamp file in `%s' request" req-dir))
      (t t))))
 
 (defun eden-request-conversation (req)
@@ -580,7 +580,7 @@ See `eden-request-file' and `eden-request-command'."
   (eden-request-write 'command req command-no-api-key))
 
 (defun eden-markdown-to-org (markdown-str)
-  "Return MARKDOWN-STR markdown string converted into org-mode string."
+  "Return MARKDOWN-STR markdown string converted into `org-mode' string."
   (let* ((tmp-dir (concat (temporary-file-directory) "eden-tmp/"))
          (_ (make-directory tmp-dir 'parent))
          (file-markdown (make-temp-file tmp-dir nil ".md" markdown-str))
@@ -1063,7 +1063,7 @@ Example listing OpenAI API and Perplexity configurations:
   "Model used by `eden-send' to send requests to `eden-api'.
 
 Examples of valid model for OpenAI API: \"gpt-4o-mini\", \"gpt-4o\",
-\"o1-mini\", \"o1\". ")
+\"o1-mini\", \"o1\".")
 
 (defvar eden-temperature nil
   "Temperature used by `eden-send' to send requests to `eden-api'.
@@ -1554,6 +1554,7 @@ For instance:
     `(:uuid ,uuid :dir ,eden-dir)))
 
 (defun eden-conversation-buffer-name (conversation-id)
+  "Return buffer name for conversation with CONVERSATION-ID."
   (when-let ((title (eden-conversation-title conversation-id)))
     (eden-buffer-name title)))
 
@@ -1838,7 +1839,7 @@ See `eden-pending-requests' and `eden-send-request'."
 (defun eden-mode-line-waiting (action)
   "Maybe start or stop a waiting widget in mode line.
 
-The following two actions are accepted:
+Accepted values for ACTION includes:
 
 - `maybe-start' - If no waiting widget is active, start `eden-pending-timer'
                   to display and refresh one such widget in all mode lines,
@@ -1951,7 +1952,9 @@ conversation, INFO argument must be structured as:
 (cl-defun eden-request (&key prompt system-message exchanges
                              stream model temperature
                              api dir)
-  "..."
+  "Return a request as defined in `eden-request-send'.
+
+`:prompt'"
   (when (null prompt)
     (error "You must provide a prompt via `:prompt' key to build a request"))
   (let* ((-model (or model eden-model))
