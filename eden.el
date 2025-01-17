@@ -2402,6 +2402,20 @@ it becomes the value of `eden-model'."
   (interactive)
   (setq eden-system-message nil))
 
+(defun eden-system-message-update ()
+  "Interactively system message of `eden-system-message'.
+
+This also updates its value in `eden-system-messages' list."
+  (interactive)
+  (if-let ((title (car-safe eden-system-message))
+           (message (cdr-safe eden-system-message)))
+      (let ((new-message
+             (read-string-from-buffer
+              (format "Modifying \"%s\" system message" title)
+              message)))
+        (setf (cdr eden-system-message) new-message))
+    (message "Cannot update a system message not set.  Try instead to set or add a system message with respectively `eden-system-message-set' or `eden-system-message-add'.")))
+
 (defun eden-pops-up-upon-receipt-toggle ()
   "Toggle `eden-pops-up-upon-receipt' value."
   (interactive)
@@ -2436,6 +2450,7 @@ it becomes the value of `eden-model'."
 - System messages
   - `eden-system-message-set'
   - `eden-system-message-reset'
+  - `eden-system-message-update'"
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
@@ -2460,7 +2475,7 @@ it becomes the value of `eden-model'."
     ("." "Set system message (SM)" eden-system-message-set)]
    ["" ("'" "Reset SM" eden-system-message-reset)]
    ["" ("+" "Add SM" eden-system-message-set)]
-   ["" ("u" "Update SM" eden-system-message-set)]]
+   ["" ("u" "Update SM" eden-system-message-update)]]
   )
 
 ;;;; Request at point menu
