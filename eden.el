@@ -1123,6 +1123,13 @@ It can be a float between 0 and 2 or nil.")
 (defvar eden-system-message nil
   "System message used by `eden-send' to send requests to `eden-api'.
 
+Don't set `eden-system-message' directly.  Use one of the following
+command instead:
+
+- `eden-system-message-set',
+- `eden-system-message-reset',
+- `eden-system-message-update'.
+
 It is a cons cell (\"title\" . \"system message\"), where \"system message\"
 serves as `:content' of the first message in request's `:messages'.
 
@@ -1132,9 +1139,6 @@ to \"system\".
 
 Additionally,`eden-system-message' may be nil, in which case `:messages'
 will omit the initial system message.
-
-`eden-system-message' is typically set through `eden-system-message-set'
-command, selecting from `eden-system-messages'.
 
 According to OpenAI API documentation, a system message consists of
 \"Developer-provided instructions that the model should follow,
