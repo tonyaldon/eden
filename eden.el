@@ -2397,6 +2397,11 @@ it becomes the value of `eden-model'."
               (setq eden-system-message (assoc title eden-system-messages)))
           (error err))))))
 
+(defun eden-system-message-reset ()
+  "Set `eden-system-message' to nil."
+  (interactive)
+  (setq eden-system-message nil))
+
 (defun eden-pops-up-upon-receipt-toggle ()
   "Toggle `eden-pops-up-upon-receipt' value."
   (interactive)
@@ -2426,9 +2431,11 @@ it becomes the value of `eden-model'."
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
-  - `eden-system-message-set'
   - `eden-pops-up-upon-receipt-toggle'
-  - `eden-show-current-settings'"
+  - `eden-show-current-settings'
+- System messages
+  - `eden-system-message-set'
+  - `eden-system-message-reset'
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
@@ -2447,9 +2454,14 @@ it becomes the value of `eden-model'."
     ("a" "Set current API" eden-api-set)
     ("m" "Set model for current API" eden-model-set)
     ("T" "Set temperature" eden-temperature-set)
-    ("'" "Set system message" eden-system-message-set)
     ("t" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
-    ("S" "Show current settings" eden-show-current-settings)]])
+    ("S" "Show current settings" eden-show-current-settings)]]
+  [["System messages"
+    ("." "Set system message (SM)" eden-system-message-set)]
+   ["" ("'" "Reset SM" eden-system-message-reset)]
+   ["" ("+" "Add SM" eden-system-message-set)]
+   ["" ("u" "Update SM" eden-system-message-set)]]
+  )
 
 ;;;; Request at point menu
 
