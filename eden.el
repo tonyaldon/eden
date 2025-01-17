@@ -1128,6 +1128,7 @@ command instead:
 
 - `eden-system-message-set',
 - `eden-system-message-reset',
+- `eden-system-message-add' or
 - `eden-system-message-update'.
 
 It is a cons cell (\"title\" . \"system message\"), where \"system message\"
@@ -2407,7 +2408,7 @@ it becomes the value of `eden-model'."
   (setq eden-system-message nil))
 
 (defun eden-system-message-update ()
-  "Interactively system message of `eden-system-message'.
+  "Interactively update `eden-system-message'.
 
 This also updates its value in `eden-system-messages' list."
   (interactive)
@@ -2419,6 +2420,19 @@ This also updates its value in `eden-system-messages' list."
               message)))
         (setf (cdr eden-system-message) new-message))
     (message "Cannot update a system message not set.  Try instead to set or add a system message with respectively `eden-system-message-set' or `eden-system-message-add'.")))
+
+(defun eden-system-message-add ()
+  "Interactively add a new system message to `eden-system-messages'.
+
+This also sets `eden-system-message' with this new system message."
+  (interactive)
+  (let ((title (read-string "Enter title for new system message: ")))
+    (if (seq-contains-p (mapcar 'car-safe eden-system-messages) title)
+        (message "Cannot use `%s' as system message title which is already taken." title)
+      (let ((message (read-string-from-buffer
+                      (format "Enter \"%s\" system message" title) "")))
+        (push (cons title message) eden-system-messages)
+        (setq eden-system-message (assoc title eden-system-messages))))))
 
 (defun eden-pops-up-upon-receipt-toggle ()
   "Toggle `eden-pops-up-upon-receipt' value."
@@ -2454,6 +2468,7 @@ This also updates its value in `eden-system-messages' list."
 - System messages
   - `eden-system-message-set'
   - `eden-system-message-reset'
+  - `eden-system-message-add'
   - `eden-system-message-update'"
   [["Conversation"
     ("n" "Start new conversation" eden-conversation-start)
@@ -2478,7 +2493,7 @@ This also updates its value in `eden-system-messages' list."
   [["System messages"
     ("." "Set system message (SM)" eden-system-message-set)]
    ["" ("'" "Reset SM" eden-system-message-reset)]
-   ["" ("+" "Add SM" eden-system-message-set)]
+   ["" ("+" "Add SM" eden-system-message-add)]
    ["" ("u" "Update SM" eden-system-message-update)]]
   )
 
