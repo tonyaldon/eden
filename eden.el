@@ -2166,52 +2166,6 @@ See `eden-prompt-current-req-uuid' and `eden-prompt-history-state'."
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
-(defun eden-paths-since (timestamp)
-  "..."
-  (let* ((timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
-    (thread-last
-      timestamp-files
-      (mapcar (lambda (f)
-                (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                (cons (match-string 1 f)
-                      (string-to-number (match-string 2 f)))))
-      (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
-      (mapcar (lambda (r)
-                (when (<= timestamp (cdr r))
-                  (let ((req `(:dir ,eden-dir
-                               :uuid ,(car r))))
-                    (eden-request-conversation-path req)))))
-      (delq nil))))
-
-(defun eden-last-paths (num-of-days)
-  "Return the list of request paths from `eden-dir' for the last NUM-OF-DAYS days.
-
-The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
-representing today and yesterday, and so on.
-
-Request paths are ordered chronologically.
-
-See `eden-request-conversation-path' and `eden-request-timestamp'."
-  (let* ((today (calendar-current-date))
-         (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
-         (timestamp (thread-last (days-to-time (1- num-of-days))
-                                 (time-subtract midnight)
-                                 (float-time)))
-         (timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
-    (eden-paths-since timestamp)))
-
-(defun eden-last-requests (num-of-days)
-  "Return the list of requests from `eden-dir' for the last NUM-OF-DAYS days.
-
-The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
-representing today and yesterday, and so on.
-
-Request are ordered chronologically (see `eden-request-timestamp')."
-  (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-last-paths num-of-days)))
-
 (defun eden-paths-maximal (paths)
   "Return last entry of maximal paths in PATHS.
 
@@ -2261,6 +2215,52 @@ For instance:
             (push path-vec branches)))))
     (mapcar (lambda (p) (aref p (1- (length p))))
             branches)))
+
+(defun eden-paths-since (timestamp)
+  "..."
+  (let* ((timestamp-files
+          (directory-files-recursively eden-dir "timestamp-.*")))
+    (thread-last
+      timestamp-files
+      (mapcar (lambda (f)
+                (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
+                (cons (match-string 1 f)
+                      (string-to-number (match-string 2 f)))))
+      (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
+      (mapcar (lambda (r)
+                (when (<= timestamp (cdr r))
+                  (let ((req `(:dir ,eden-dir
+                               :uuid ,(car r))))
+                    (eden-request-conversation-path req)))))
+      (delq nil))))
+
+(defun eden-last-paths (num-of-days)
+  "Return the list of request paths from `eden-dir' for the last NUM-OF-DAYS days.
+
+The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
+representing today and yesterday, and so on.
+
+Request paths are ordered chronologically.
+
+See `eden-request-conversation-path' and `eden-request-timestamp'."
+  (let* ((today (calendar-current-date))
+         (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
+         (timestamp (thread-last (days-to-time (1- num-of-days))
+                                 (time-subtract midnight)
+                                 (float-time)))
+         (timestamp-files
+          (directory-files-recursively eden-dir "timestamp-.*")))
+    (eden-paths-since timestamp)))
+
+(defun eden-last-requests (num-of-days)
+  "Return the list of requests from `eden-dir' for the last NUM-OF-DAYS days.
+
+The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
+representing today and yesterday, and so on.
+
+Request are ordered chronologically (see `eden-request-timestamp')."
+  (mapcar (lambda (p) (aref p (1- (length p))))
+          (eden-last-paths num-of-days)))
 
 (defun eden-last-conversations (num-of-days)
   "Return the latest requests of conversations from `eden-dir' for the last NUM-OF-DAYS days.
