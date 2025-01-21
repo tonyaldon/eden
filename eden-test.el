@@ -2992,6 +2992,20 @@ baz-assistant-content
                              (eden-json-read))))
                 (eden-write-response resp-str resp req)))))
 
+        ;; Test `eden-paths-since'
+        (should (equal (eden-paths-since (nth 0 timestamps))
+                       '(["uuid-req-1"]
+                         ["uuid-req-1" "uuid-req-2"]
+                         ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+                         ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                         ["uuid-req-2" "uuid-req-6"]
+                         ["uuid-req-7"])))
+        (should (equal (eden-paths-since (nth 6 timestamps)) '(["uuid-req-7"])))
+        (should (equal (eden-paths-since (nth 3 timestamps))
+                       '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                         ["uuid-req-2" "uuid-req-6"]
+                         ["uuid-req-7"])))
+
         ;; Test `eden-last-paths'
         (should (equal (eden-last-paths 10)
                        '(["uuid-req-1"]
