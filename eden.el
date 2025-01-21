@@ -2632,6 +2632,30 @@ See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
       (message "No citations for `%s' conversation"
                (eden-request-dir req)))))
 
+(defun eden-req-at-point-show-branches ()
+  "Show conversation branches containing request at point.
+
+See `eden-req-at-point-uuid' and `eden-paths-branches'."
+  (interactive)
+  (when-let* ((req-uuid (eden-req-at-point-uuid))
+              (req `(:dir ,eden-dir :uuid ,req-uuid))
+              (timestamp (eden-request-timestamp req))
+              (branches
+               (eden-paths-branches req-uuid (eden-paths-since timestamp)))
+              (requests (mapcar
+                         (lambda (uuid) `(:dir ,eden-dir :uuid ,uuid))
+                         branches))
+              (buff (get-buffer-create
+                     (eden-buffer-name "branches of request at point"))))
+    (with-current-buffer buff
+      (erase-buffer)
+      (org-mode)
+      (save-excursion
+        (dolist (req requests)
+          (eden-conversation-insert req "Branch"))))
+    (select-window
+     (display-buffer buff '(display-buffer-reuse-window)))))
+
 (defun eden-req-at-point-goto ()
   "Go to the directory of the request at point.
 
@@ -2648,6 +2672,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 - `eden-req-at-point-start-conversation'
 - `eden-req-at-point-continue-conversation'
 - `eden-req-at-point-show-requests'
+- `eden-req-at-point-show-branches'
 - `eden-req-at-point-show-system-message'
 - `eden-req-at-point-show-perplexity-citations'
 - `eden-req-at-point-goto'"
@@ -2655,6 +2680,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
+    ("b" "Show branches of request at point" eden-req-at-point-show-branches)
     ("." "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
