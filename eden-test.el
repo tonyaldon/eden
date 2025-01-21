@@ -1390,6 +1390,20 @@ foo bar baz
 ***** foo-6
 ")))
 
+(ert-deftest eden-assoc-in-test ()
+  (let ((map (make-hash-table :test 'equal)))
+    (puthash "foo" (make-hash-table :test 'equal) map)
+    (puthash "bar" (make-hash-table :test 'equal) (gethash "foo" map))
+    (puthash "baz-1" 1 (gethash "bar" (gethash "foo" map)))
+
+    (eden-assoc-in map '["foo" "bar" "baz-1"] 2)
+    (eden-assoc-in map '["foo" "bar" "baz-2"] 3)
+    (eden-assoc-in map '["baz-3" "baz-4"] 4)
+
+    (should (= (gethash "baz-1" (gethash "bar" (gethash "foo" map))) 2))
+    (should (= (gethash "baz-2" (gethash "bar" (gethash "foo" map))) 3))
+    (should (= (gethash "baz-4" (gethash "baz-3" map)) 4))))
+
 ;;;; Prompt and Request history
 
 (ert-deftest eden-request-history-set-test ()

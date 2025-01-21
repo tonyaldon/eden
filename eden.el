@@ -1257,6 +1257,20 @@ For instance:
             (insert (make-string (- level headline-top-level) ?*))))))
     (buffer-substring-no-properties (point-min) (point-max))))
 
+(defun eden-assoc-in (map keys value)
+  "Associate VALUE in nested MAP (a hash-table) at the path specified by KEYS."
+  (let ((current-map map)
+        (keys (append keys nil)))
+    (while (cdr keys)
+      (let* ((key (pop keys))
+             (next-map (gethash key current-map)))
+        (if (hash-table-p next-map)
+            (setq current-map next-map)
+          (puthash key (make-hash-table :test 'equal) current-map)
+          (setq current-map (gethash key current-map)))))
+    (puthash (car keys) value current-map)
+    map))
+
 ;;;; Prompt and Request history
 
 (defvar eden-request-history nil
