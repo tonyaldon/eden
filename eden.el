@@ -2200,25 +2200,12 @@ Request paths are ordered chronologically.
 See `eden-request-conversation-path' and `eden-request-timestamp'."
   (let* ((today (calendar-current-date))
          (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
-         (timestamp-start
-          (thread-last (days-to-time (1- num-of-days))
-                       (time-subtract midnight)
-                       (float-time)))
+         (timestamp (thread-last (days-to-time (1- num-of-days))
+                                 (time-subtract midnight)
+                                 (float-time)))
          (timestamp-files
           (directory-files-recursively eden-dir "timestamp-.*")))
-    (thread-last
-      timestamp-files
-      (mapcar (lambda (f)
-                (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                (cons (match-string 1 f)
-                      (string-to-number (match-string 2 f)))))
-      (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
-      (mapcar (lambda (r)
-                (when (< timestamp-start (cdr r))
-                  (let ((req `(:dir ,eden-dir
-                               :uuid ,(car r))))
-                    (eden-request-conversation-path req)))))
-      (delq nil))))
+    (eden-paths-since timestamp)))
 
 (defun eden-last-requests (num-of-days)
   "Return the list of requests from `eden-dir' for the last NUM-OF-DAYS days.
