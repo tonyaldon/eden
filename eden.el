@@ -2213,7 +2213,7 @@ Request are ordered chronologically (see `eden-request-timestamp')."
           (eden-last-paths num-of-days)))
 
 (defun eden-paths-maximal (paths)
-  "Return paths in PATHS that are maximal.
+  "Return maximal paths in PATHS.
 
 For instance:
 
@@ -2235,6 +2235,32 @@ For instance:
           (push path-vec maximals)
           (eden-assoc-in maximals-map path-vec t))))
     maximals))
+
+(defun eden-paths-branches (node paths)
+  "Return maximal paths in PATHS that contain NODE.
+
+For instance:
+
+    (let ((paths \\='([\"uuid-req-1\"]
+                   [\"uuid-req-1\" \"uuid-req-2\"]
+                   [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
+                   [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
+                   [\"uuid-req-2\" \"uuid-req-5\"]
+                   [\"uuid-req-6\"])))
+      (eden-paths-branches \"uuid-req-2\" paths))
+    ;; ([\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
+    ;;  [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
+    ;;  [\"uuid-req-2\" \"uuid-req-5\"])"
+  (let ((tail (reverse paths))
+        (maximals-map (make-hash-table :test 'equal))
+        branches)
+    (while tail
+      (let ((path-vec (pop tail)))
+        (when (not (eden-get-in maximals-map path-vec))
+          (eden-assoc-in maximals-map path-vec t)
+          (when (seq-contains-p path-vec node)
+            (push path-vec branches)))))
+    branches))
 
 (defun eden-last-conversations (num-of-days)
   "Return the latest requests of conversations from `eden-dir' for the last NUM-OF-DAYS days.

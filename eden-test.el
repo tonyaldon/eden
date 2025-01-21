@@ -2896,6 +2896,23 @@ baz-assistant-content
         ["uuid-req-11" "uuid-req-12"]
         ["uuid-req-13"])))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-paths-branches-test")))
+(ert-deftest eden-paths-branches-test ()
+  (should-not (eden-paths-maximal nil))
+  (let ((paths '(["uuid-req-1"]
+                 ["uuid-req-1" "uuid-req-2"]
+                 ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+                 ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                 ["uuid-req-2" "uuid-req-5"]
+                 ["uuid-req-6"])))
+    (should
+     (equal
+      (eden-paths-branches "uuid-req-2" paths)
+      '(["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+        ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+        ["uuid-req-2" "uuid-req-5"])))))
+
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-last-paths/conversations/requests-test")))
 (ert-deftest eden-last-paths/conversations/requests-test ()
 
   ;; ["uuid-req-1"]                           ;; not a conversation
