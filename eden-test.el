@@ -2866,8 +2866,8 @@ baz-assistant-content
 
 ;;;; Main menu
 
-(ert-deftest eden-last-conversations-keep-test ()
-  (should-not (eden-last-conversations-keep nil))
+(ert-deftest eden-paths-maximal-test ()
+  (should-not (eden-paths-maximal nil))
   (let ((paths '(["uuid-req-1"]
                  ["uuid-req-1" "uuid-req-2"]
                  ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
@@ -2883,7 +2883,7 @@ baz-assistant-content
                  ["uuid-req-13"])))
     (should
      (equal
-      (eden-last-conversations-keep paths)
+      (eden-paths-maximal paths)
       '("uuid-req-3"
         "uuid-req-4"
         "uuid-req-5"

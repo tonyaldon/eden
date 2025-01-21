@@ -366,7 +366,7 @@ For instance, we have the following:
     (eden-request-conversation-path-alist [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"])
     ;; ((\"uuid-foo\" . ((\"uuid-bar\" . ((\"uuid-baz\" . t))))))
 
-See `eden-request-conversation-path' and `eden-last-conversations-keep'."
+See `eden-request-conversation-path' and `eden-paths-maximal'."
   (when path
     (let* ((tail (append (reverse path) '()))
            (alist (list (cons (pop tail) t))))
@@ -2217,7 +2217,7 @@ Request are ordered chronologically (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
           (eden-last-paths num-of-days)))
 
-(defun eden-last-conversations-keep (paths)
+(defun eden-paths-maximal (paths)
   "Return last entry of paths in PATHS that are maximal.
 
 For instance:
@@ -2227,7 +2227,7 @@ For instance:
                    [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
                    [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
                    [\"uuid-req-2\" \"uuid-req-5\"])))
-      (eden-last-conversations-keep paths))
+      (eden-paths-maximal paths))
     ;; (\"uuid-req-3\" \"uuid-req-4\" \"uuid-req-5\")"
   (let ((tail (reverse paths))
         alist-paths-of-kept
@@ -2249,7 +2249,7 @@ The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
-  (eden-last-conversations-keep (eden-last-paths num-of-days)))
+  (eden-paths-maximal (eden-last-paths num-of-days)))
 
 (defun eden-show-last-conversations ()
   "Show last conversations from `eden-dir' for a period of time entered in the minibuffer.
