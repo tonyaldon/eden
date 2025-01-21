@@ -426,17 +426,6 @@
       (eden-request-conversation-path `(:dir ,dir :uuid "uuid-baz"))
       ["uuid-foo" "uuid-bar" "uuid-baz"]))))
 
-(ert-deftest eden-request-conversation-path-alist-test ()
-  (should-not (eden-request-conversation-path-alist nil))
-  (should
-   (equal
-    (eden-request-conversation-path-alist ["uuid-foo"])
-    '(("uuid-foo" . t))))
-  (should
-   (equal
-    (eden-request-conversation-path-alist ["uuid-foo" "uuid-bar" "uuid-baz"])
-    '(("uuid-foo" . (("uuid-bar" . (("uuid-baz" . t)))))))))
-
 (ert-deftest eden-request-perplexity-citations-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error

@@ -355,25 +355,6 @@ the following:
            (last-uuid (list (plist-get req :uuid))))
       (apply 'vector (append uuids last-uuid)))))
 
-(defun eden-request-conversation-path-alist (path)
-  "Convert PATH of a conversation in a nested alist.
-
-For instance, we have the following:
-
-    (eden-request-conversation-path-alist [\"uuid-foo\"])
-    ;; ((\"uuid-foo\" . t))
-
-    (eden-request-conversation-path-alist [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"])
-    ;; ((\"uuid-foo\" . ((\"uuid-bar\" . ((\"uuid-baz\" . t))))))
-
-See `eden-request-conversation-path' and `eden-paths-maximal'."
-  (when path
-    (let* ((tail (append (reverse path) '()))
-           (alist (list (cons (pop tail) t))))
-      (while tail
-        (setq alist (list (cons (pop tail) alist))))
-      alist)))
-
 (defun eden-request-perplexity-citations (req)
   "Return the list of Perplexity citations of the conversation REQ.
 
@@ -2245,12 +2226,14 @@ For instance:
     ;; ([\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
     ;;  [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
     ;;  [\"uuid-req-2\" \"uuid-req-5\"])"
-  (let ((tail (reverse paths)) maximals-alist maximals)
+  (let ((tail (reverse paths))
+        (maximals-map (make-hash-table :test 'equal))
+        maximals)
     (while tail
       (let ((path-vec (pop tail)))
-        (when (not (eden-get-in maximals-alist path-vec))
+        (when (not (eden-get-in maximals-map path-vec))
           (push path-vec maximals)
-          (push (car (eden-request-conversation-path-alist path-vec)) maximals-alist))))
+          (eden-assoc-in maximals-map path-vec t))))
     maximals))
 
 (defun eden-last-conversations (num-of-days)
