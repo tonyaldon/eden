@@ -2191,8 +2191,8 @@ For instance:
     (mapcar (lambda (p) (aref p (1- (length p))))
             maximals)))
 
-(defun eden-paths-branches (node paths)
-  "Return last entry of maximal paths in PATHS that contain NODE.
+(defun eden-paths-branches (uuid paths)
+  "Return last entry of maximal paths in PATHS that contain UUID.
 
 For instance:
 
@@ -2211,7 +2211,7 @@ For instance:
       (let ((path-vec (pop tail)))
         (when (not (eden-get-in maximals-map path-vec))
           (eden-assoc-in maximals-map path-vec t)
-          (when (seq-contains-p path-vec node)
+          (when (seq-contains-p path-vec uuid)
             (push path-vec branches)))))
     (mapcar (lambda (p) (aref p (1- (length p))))
             branches)))
