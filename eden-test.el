@@ -3048,7 +3048,7 @@ baz-assistant-content
                          "uuid-req-4"
                          "uuid-req-6"
                          "uuid-req-7")))
-        (should (equal (eden-last-paths 1) '(["uuid-req-7"])))
+        (should (equal (eden-last-requests 1) '("uuid-req-7")))
         (should (equal (eden-last-requests 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
