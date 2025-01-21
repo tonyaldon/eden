@@ -172,8 +172,12 @@ property ~eden-org-property-req~ (by default ~EDEN_REQ~), indicating that
 a request exists at that position, you can apply one of the action
 listed in the menu.
 
-For instance pressing ~c~ will continue a conversation whose last
-request is the request at point.
+For instance:
+
+- Pressing ~c~ will continue a conversation whose last request is the
+  request at point,
+- Pressing ~b~ will show the conversation branches of the request at
+  point (all the conversations containing the request at point).
 
 * Managing settings with eden command
 
@@ -259,8 +263,8 @@ start by adding its description to the ~eden-apis~ variable as follows:
 Then you need to store your X.ai API key in either the ~~/.authinfo.gpg~
 file (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
-- After funding your [[https://console.x.ai][X.ai]] ($5.00 is enough to get started), create an
-  X.ai API key in that same console.
+- After funding your [[https://console.x.ai][X.ai account]] ($5.00 is enough to get started),
+  create an X.ai API key in that same console.
 - Add the API key in the selected file as follows:
 
   #+BEGIN_SRC authinfo
