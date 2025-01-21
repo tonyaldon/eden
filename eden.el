@@ -75,6 +75,205 @@
 ;; 7) Finally, the response will asynchronously show up in a dedicated
 ;;    buffer upon receipt.
 ;;
+;;;; Utility requirements
+;;
+;; Ensure the following utilities are installed and present in one
+;; of your `exec-path' directories:
+;;
+;; - curl
+;; - uuidgen
+;; - pandoc
+;;
+;;;; Eden interface is simple
+;;
+;; 1) You want to ask something to ChatGPT, call `eden' command, enter your
+;;    prompt, press `C-c C-c' and you're done.
+;; 2) You want to integrate the response in your `org-mode' notes, just
+;;    copy/paste it.
+;; 3) You want to manage your settings, call `eden' from the prompt buffer
+;;    and explore the options in its transient menu.  For instance, you
+;;    can:
+;;
+;;    - Show the current settings by pressing `S',
+;;    - Set the current API by pressing `a' or
+;;    - Set the system message by pressing `''.
+;;
+;; 4) You want to manage your conversations, call `eden' from the prompt
+;;    buffer and explore the options in its transient menu.  For instance,
+;;    you can:
+;;
+;;    - Start a new conversation by pressing `n',
+;;    - Switch to an existing conversation by pressing `TAB' or
+;;    - Paused a conversation by pressing `SPC'.
+;;
+;; 5) Finally, you can also continue or inspect a conversation from a
+;;    request at point by calling `eden' with the prefix argument `C-u'.
+;;    This will bring up `eden-req-at-point-menu', offering various actions
+;;    related to the request at point.
+;;
+;;;; Eden keeps track of all your interactions with ChatGPT
+;;
+;; Another key feature of Eden is its ability to keep track of all your
+;; interactions with ChatGPT or any OpenAI-compatible API.
+;;
+;; Each request is stored in the `eden-dir' directory, which defaults to
+;; the `eden' subdirectory within your `user-emacs-directory', providing a
+;; range of benefits:
+;;
+;; 1) Requests are always preserved, ensuring you can retrieve them at
+;;    any time.
+;; 2) With the request's UUID, you can track down the associated
+;;    request and check details like the API, model, system prompt, and
+;;    timestamp.
+;; 3) Should an error occur during processing, the corresponding
+;;    `error.json' file can be consulted for troubleshooting.
+;; 4) You can start or continue a conversation from any existing request
+;;    (a feature known as "branching"):
+;;    - Either from a request at point in your notes,
+;;    - Or navigating through history in the prompt buffer using `M-p' and
+;;      `M-n' to find the desired request, opening the menu with `eden', and
+;;      pressing `c' to continue the conversation or `s' to start a new
+;;      conversation from the request.
+;; 5) All data is stored in JSON (or text format), facilitating
+;;    integration with other software for further analysis.
+;;
+;;;; Eden focuses on conversations without enforcing them
+;;
+;; Eden strikes the perfect balance by focusing on conversations without
+;; enforcing them; defaulting to independent requests, it makes starting
+;; new conversations or continuing from previous ones easy!
+;;
+;; There are several ways to engage in a conversation while in the prompt
+;; buffer:
+;;
+;; 1) To start a new conversation, call the `eden' command, press `n',
+;;    and enter a title.  This creates a new empty conversation, setting
+;;    it as the current one for all new requests.
+;;
+;; 2) To start a conversation from the current request in history
+;;    (excluding earlier exchanges), navigate through the history using
+;;    `M-p' and `M-n' to find the desired request.  Then, call the `eden'
+;;    command, press `s', and enter a title.  This creates a new
+;;    conversation that already include one exchange.
+;;
+;; 3) To continue an existing conversation call the `eden' command, press
+;;    `c', and enter a title.  This will include all previous exchanges of
+;;    the current request in history.
+;;
+;; You can pause the current conversation by calling `eden' and pressing
+;; `SPC'.  Subsequent requests sent to ChatGPT or any OpenAI-compatible API
+;; will then be independent again.
+;;
+;; Note that conversation titles and IDs are not stored; they only exist
+;; during your Emacs session.  However, you can retrieve any conversation
+;; later either by saving its UUID in your notes or navigating the prompt
+;; history with `M-p' and `M-n'.
+;;
+;;;; What are requests at point?
+;;
+;; Calling `eden' with the `C-u' prefix argument opens a menu with available
+;; actions related to the request at point.
+;;
+;; If the point is on an `org-mode' heading which includes the
+;; property `eden-org-property-req' (by default `EDEN_REQ'), indicating that
+;; a request exists at that position, you can apply one of the action
+;; listed in the menu.
+;;
+;; For instance:
+;;
+;; - Pressing `c' will continue a conversation whose last request is the
+;;   request at point,
+;; - Pressing `b' will show the conversation branches of the request at
+;;   point (all the conversations containing the request at point).
+;;
+;;;; Managing settings with eden command
+;;
+;; In the prompt buffer, you can call `eden' and press `S' to show the current
+;; settings.
+;;
+;; From the menu provided by `eden', you can modify the current settings
+;; using the following actions:
+;;
+;; - Press `a' to set the current API (`eden-api-set'),
+;; - Press `m' to set the model for the current API (`eden-model-set'),
+;; - Press `T' to set the temperature (`eden-temperature-set'),
+;; - Press `'' to set the system message (`eden-system-message-set'),
+;; - Press `t' to toggle the pop-up response (`eden-pops-up-upon-receipt-toggle').
+;;
+;; The complete list of user variables you may want to adjust includes:
+;;
+;; - `eden-api'
+;; - `eden-apis'
+;; - `eden-model'
+;; - `eden-temperature'
+;; - `eden-system-message'
+;; - `eden-system-messages'
+;; - `eden-system-message->developer-for-models'
+;; - `eden-dir'
+;; - `eden-org-property-date'
+;; - `eden-org-property-req'
+;; - `eden-pops-up-upon-receipt'
+;; - `eden-prompt-buffer-name'
+;;
+;; For more information on these variables, consult their documentation
+;; in the `*Help*' buffer using `describe-variable' command, bound by default
+;; to `C-h v'.
+;;
+;;;; Adding Perplexity API key
+;;
+;; To use Perplexity API, you can either set `eden-api' to
+;;
+;;     (:service "perplexity"
+;;      :endpoint "https://api.perplexity.ai/chat/completions")
+;;
+;; and `eden-model' to a model supported by Perplexity API like this
+;;
+;;     "llama-3.1-sonar-small-128k-online"
+;;
+;; or you can select Perplexity API by calling `eden' in the prompt buffer,
+;; pressing the key `a' and selecting `perplexity'.
+;;
+;; In both cases you need to store your Perplexity API key in either the
+;; ~/.authinfo.gpg file (encrypted with `gpg') or the ~/.authinfo file
+;; (plaintext):
+;;
+;; - After funding your Perplexity account (https://www.perplexity.ai)
+;;   ($5.00 is enough to get started), create a Perplexity API key
+;;   visiting https://www.perplexity.ai/settings/api.
+;; - Add the API key in the selected file as follows:
+;;
+;;       machine perplexity password <perplexity-api-key>
+;;
+;;   where `<perplexity-api-key>' is your API key.
+;;
+;;;; Adding an OpenAI-compatible API to eden-apis
+;;
+;; Let's take an example with X.ai API, an OpenAI-compatible API.
+;;
+;; If you want to use X.ai API alongside other OpenAI-compatible APIs,
+;; start by adding its description to the `eden-apis' variable as follows:
+;;
+;;     (add-to-list 'eden-apis
+;;                  '(:service "x.ai"
+;;                    :endpoint "https://api.x.ai/v1/chat/completions"
+;;                    :default-model "grok-2"
+;;                    :models ("grok-beta" "grok-2-latest" "grok-2" "grok-2-12-12")))
+;;
+;; Then you need to store your X.ai API key in either the ~/.authinfo.gpg
+;; file (encrypted with `gpg') or the ~/.authinfo file (plaintext):
+;;
+;; - After funding your X.ai account (https://console.x.ai)
+;;   ($5.00 is enough to get started), create an X.ai API key
+;;   in that same console.
+;; - Add the API key in the selected file as follows:
+;;
+;;       machine x.ai password <x.ai-api-key>
+;;
+;;   where `<x.ai-api-key>' is your API key.
+;;
+;; Finally, you can select X.ai API with `grok-2' default model by calling
+;; `eden' in the prompt buffer, pressing the key `a' and selecting `x.ai'.
+;;
 ;;; Code:
 
 (require 'json)
