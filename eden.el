@@ -2234,10 +2234,11 @@ For instance:
         (when (not (eden-get-in maximals-map path-vec))
           (push path-vec maximals)
           (eden-assoc-in maximals-map path-vec t))))
-    maximals))
+    (mapcar (lambda (p) (aref p (1- (length p))))
+            maximals)))
 
 (defun eden-paths-branches (node paths)
-  "Return maximal paths in PATHS that contain NODE.
+  "Return last entry of maximal paths in PATHS that contain NODE.
 
 For instance:
 
@@ -2248,9 +2249,7 @@ For instance:
                    [\"uuid-req-2\" \"uuid-req-5\"]
                    [\"uuid-req-6\"])))
       (eden-paths-branches \"uuid-req-2\" paths))
-    ;; ([\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
-    ;;  [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
-    ;;  [\"uuid-req-2\" \"uuid-req-5\"])"
+    ;; (\"uuid-req-3\" \"uuid-req-4\" \"uuid-req-5\")"
   (let ((tail (reverse paths))
         (maximals-map (make-hash-table :test 'equal))
         branches)
@@ -2269,8 +2268,7 @@ The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
-  (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-paths-maximal (eden-last-paths num-of-days))))
+  (eden-paths-maximal (eden-last-paths num-of-days)))
 
 (defun eden-show-last-conversations ()
   "Show last conversations from `eden-dir' for a period of time entered in the minibuffer.
