@@ -2218,7 +2218,7 @@ Request are ordered chronologically (see `eden-request-timestamp')."
           (eden-last-paths num-of-days)))
 
 (defun eden-paths-maximal (paths)
-  "Return last entry of paths in PATHS that are maximal.
+  "Return paths in PATHS that are maximal.
 
 For instance:
 
@@ -2228,19 +2228,16 @@ For instance:
                    [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
                    [\"uuid-req-2\" \"uuid-req-5\"])))
       (eden-paths-maximal paths))
-    ;; (\"uuid-req-3\" \"uuid-req-4\" \"uuid-req-5\")"
-  (let ((tail (reverse paths))
-        alist-paths-of-kept
-        kept)
+    ;; ([\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-3\"]
+    ;;  [\"uuid-req-1\" \"uuid-req-2\" \"uuid-req-4\"]
+    ;;  [\"uuid-req-2\" \"uuid-req-5\"])"
+  (let ((tail (reverse paths)) maximals-alist maximals)
     (while tail
       (let ((path-vec (pop tail)))
-        (when (not (map-nested-elt alist-paths-of-kept path-vec))
-          (push path-vec kept)
-          (setq alist-paths-of-kept
-                (append alist-paths-of-kept
-                        (eden-request-conversation-path-alist path-vec))))))
-    (mapcar (lambda (path) (aref path (1- (length path))))
-            kept)))
+        (when (not (eden-get-in maximals-alist path-vec))
+          (push path-vec maximals)
+          (push (car (eden-request-conversation-path-alist path-vec)) maximals-alist))))
+    maximals))
 
 (defun eden-last-conversations (num-of-days)
   "Return the latest requests of conversations from `eden-dir' for the last NUM-OF-DAYS days.
@@ -2249,7 +2246,8 @@ The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
-  (eden-paths-maximal (eden-last-paths num-of-days)))
+  (mapcar (lambda (p) (aref p (1- (length p))))
+          (eden-paths-maximal (eden-last-paths num-of-days))))
 
 (defun eden-show-last-conversations ()
   "Show last conversations from `eden-dir' for a period of time entered in the minibuffer.

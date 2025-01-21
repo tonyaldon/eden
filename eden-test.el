@@ -2884,14 +2884,14 @@ baz-assistant-content
     (should
      (equal
       (eden-paths-maximal paths)
-      '("uuid-req-3"
-        "uuid-req-4"
-        "uuid-req-5"
-        "uuid-req-6"
-        "uuid-req-8"
-        "uuid-req-10"
-        "uuid-req-12"
-        "uuid-req-13")))))
+      '(["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+        ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+        ["uuid-req-2" "uuid-req-5"]
+        ["uuid-req-6"]
+        ["uuid-req-7" "uuid-req-8"]
+        ["uuid-req-5" "uuid-req-9" "uuid-req-10"]
+        ["uuid-req-11" "uuid-req-12"]
+        ["uuid-req-13"])))))
 
 (ert-deftest eden-last-paths/conversations/requests-test ()
 
