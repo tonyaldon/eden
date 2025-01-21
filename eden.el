@@ -2217,7 +2217,11 @@ For instance:
             branches)))
 
 (defun eden-paths-since (timestamp)
-  "..."
+  "Return the list of request paths from `eden-dir' since TIMESTAMP.
+
+Request paths are ordered chronologically.
+
+See `eden-request-conversation-path' and `eden-request-timestamp'."
   (let* ((timestamp-files
           (directory-files-recursively eden-dir "timestamp-.*")))
     (thread-last
@@ -2242,7 +2246,7 @@ representing today and yesterday, and so on.
 
 Request paths are ordered chronologically.
 
-See `eden-request-conversation-path' and `eden-request-timestamp'."
+See `eden-paths-since' and `eden-request-timestamp'."
   (let* ((today (calendar-current-date))
          (midnight (encode-time `(0 0 0 ,(nth 1 today) ,(nth 0 today) ,(nth 2 today))))
          (timestamp (thread-last (days-to-time (1- num-of-days))
