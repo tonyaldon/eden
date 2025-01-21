@@ -2908,9 +2908,7 @@ baz-assistant-content
     (should
      (equal
       (eden-paths-branches "uuid-req-2" paths)
-      '(["uuid-req-1" "uuid-req-2" "uuid-req-3"]
-        ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-        ["uuid-req-2" "uuid-req-5"])))))
+      '("uuid-req-3" "uuid-req-4" "uuid-req-5")))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-last-paths/conversations/requests-test")))
 (ert-deftest eden-last-paths/conversations/requests-test ()

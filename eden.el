@@ -2213,7 +2213,7 @@ Request are ordered chronologically (see `eden-request-timestamp')."
           (eden-last-paths num-of-days)))
 
 (defun eden-paths-maximal (paths)
-  "Return maximal paths in PATHS.
+  "Return last entry of maximal paths in PATHS.
 
 For instance:
 
@@ -2259,7 +2259,8 @@ For instance:
           (eden-assoc-in maximals-map path-vec t)
           (when (seq-contains-p path-vec node)
             (push path-vec branches)))))
-    branches))
+    (mapcar (lambda (p) (aref p (1- (length p))))
+            branches)))
 
 (defun eden-last-conversations (num-of-days)
   "Return the latest requests of conversations from `eden-dir' for the last NUM-OF-DAYS days.
