@@ -1667,7 +1667,8 @@ This function should be called from `eden-prompt-buffer-name' buffer."
           (if (eden-prompt-discard-current-p)
               (eden-prompt-history direction)
             (erase-buffer)
-            (insert (or (eden-prompt-current) ""))))))))
+            (save-excursion
+              (insert (or (eden-prompt-current) "")))))))))
 
 (defun eden-prompt-previous ()
   "Replace current buffer content with previous prompt.
