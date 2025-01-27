@@ -224,7 +224,7 @@ To use Perplexity API, you can either set ~eden-api~ to
 and ~eden-model~ to a model supported by Perplexity API like this
 
 #+BEGIN_SRC emacs-lisp
-"llama-3.1-sonar-small-128k-online"
+"sonar"
 #+END_SRC
 
 or you can select Perplexity API by calling ~eden~ in the prompt buffer,

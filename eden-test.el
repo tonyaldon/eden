@@ -447,7 +447,7 @@
 
   ;; conversation with no previous messages
   (let* ((req `(:req (:stream :false
-                      :model "llama-3.1-sonar-small-128k-online"
+                      :model "sonar"
                       :temperature 1
                       :messages [(:role "user" :content "foo user")])
                 :api (:service "perplexity"
@@ -459,7 +459,7 @@
          (resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                  :object "chat.completion"
                  :created 1735366499
-                 :model "llama-3.1-sonar-small-128k-online"
+                 :model "sonar"
                  :citations ["https://foo-1.com"
                              "https://foo-2.com"
                              "https://foo-3.com"]
@@ -480,7 +480,7 @@
   ;;    it is removed inadvertently
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (foo-req `(:req (:stream :false
-                          :model "llama-3.1-sonar-small-128k-online"
+                          :model "sonar"
                           :temperature 1
                           :messages [(:role "user" :content "foo user")])
                     :api (:service "perplexity"
@@ -491,7 +491,7 @@
          (foo-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
                      :created 1735366499
-                     :model "llama-3.1-sonar-small-128k-online"
+                     :model "sonar"
                      :citations ["https://foo-1.com"
                                  "https://foo-2.com"
                                  "https://foo-3.com"]
@@ -501,7 +501,7 @@
                                 :finish_reason "stop")]))
          (foo-resp-str (eden-json-encode foo-resp))
          (bar-req `(:req (:stream :false
-                          :model "llama-3.1-sonar-small-128k-online"
+                          :model "sonar"
                           :temperature 1
                           :messages [(:role "user" :content "foo user")
                                      (:role "assistant" :content "foo assistant[1][3]")
@@ -520,14 +520,14 @@
          (bar-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
                      :created 1735366499
-                     :model "llama-3.1-sonar-small-128k-online"
+                     :model "sonar"
                      :choices [(:index 0
                                 :message (:role "assistant"
                                           :content "bar assistant")
                                 :finish_reason "stop")]))
          (bar-resp-str (eden-json-encode bar-resp))
          (err-req `(:req (:stream :false
-                          :model "llama-3.1-sonar-small-128k-online"
+                          :model "sonar"
                           :temperature 1
                           :messages [(:role "user" :content "foo user")
                                      (:role "assistant" :content "foo assistant[1][3]")
@@ -550,7 +550,7 @@
                     :dir ,dir
                     :uuid "uuid-err"))
          (baz-req `(:req (:stream :false
-                          :model "llama-3.1-sonar-small-128k-online"
+                          :model "sonar"
                           :temperature 1
                           :messages [(:role "system" :content "baz system")
                                      (:role "user" :content "foo user")
@@ -584,7 +584,7 @@
          (baz-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
                      :created 1735366499
-                     :model "llama-3.1-sonar-small-128k-online"
+                     :model "sonar"
                      :citations ["https://baz-1.com" "https://baz-2.com"]
                      :choices [(:index 0
                                 :message (:role "assistant"
@@ -835,7 +835,7 @@ arr[0]
          (resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                  :object "chat.completion"
                  :created 1735366499
-                 :model "llama-3.1-sonar-small-128k-online"
+                 :model "sonar"
                  :citations ["https://foo.com"
                              "https://bar.com"
                              "https://baz.com"]

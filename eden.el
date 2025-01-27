@@ -228,7 +228,7 @@
 ;;
 ;; and `eden-model' to a model supported by Perplexity API like this
 ;;
-;;     "llama-3.1-sonar-small-128k-online"
+;;     "sonar"
 ;;
 ;; or you can select Perplexity API by calling `eden' in the prompt buffer,
 ;; pressing the key `a' and selecting `perplexity'.
@@ -1265,10 +1265,8 @@ formatted as:
      :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
     (:service "perplexity"
      :endpoint "https://api.perplexity.ai/chat/completions"
-     :default-model "llama-3.1-sonar-small-128k-online"
-     :models ("llama-3.1-sonar-small-128k-online"
-              "llama-3.1-sonar-large-128k-online"
-              "llama-3.1-sonar-huge-128k-online")))
+     :default-model "sonar"
+     :models ("sonar" "sonar-pro")))
   "List of OpenAI-compatible APIs available for selection when using `eden-api-set'.
 
 See `eden-api', for detailed descriptions of each element.
@@ -1284,10 +1282,8 @@ Example listing OpenAI API and Perplexity configurations:
       :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
      (:service \"perplexity\"
       :endpoint \"https://api.perplexity.ai/chat/completions\"
-      :default-model \"llama-3.1-sonar-small-128k-online\"
-      :models (\"llama-3.1-sonar-small-128k-online\"
-               \"llama-3.1-sonar-large-128k-online\"
-               \"llama-3.1-sonar-huge-128k-online\")))")
+      :default-model \"sonar\"
+      :models (\"sonar\" \"sonar-pro\")))")
 
 (defvar eden-model "gpt-4o-mini"
   "Model used by `eden-send' to send requests to `eden-api'.
@@ -2583,10 +2579,8 @@ it becomes the value of `eden-model'."
   :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
  (:service \"perplexity\"
   :endpoint \"https://api.perplexity.ai/chat/completions\"
-  :default-model \"llama-3.1-sonar-small-128k-online\"
-  :models (\"llama-3.1-sonar-small-128k-online\"
-           \"llama-3.1-sonar-large-128k-online\"
-           \"llama-3.1-sonar-huge-128k-online\")))\n\n"
+  :default-model \"sonar\"
+  :models (\"sonar\" \"sonar-pro\")))\n\n"
               "not `%S'")
       eden-apis))))
 
