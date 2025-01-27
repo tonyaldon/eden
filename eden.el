@@ -2929,8 +2929,7 @@ mode-specific capabilities."
                               (truncate-string-to-width
                                system-message-title 24 nil nil t)))))
      (:eval (when eden-conversation-id
-              (concat (propertize " ** " 'face '(:weight bold))
-                      (format "%s" (eden-conversation-title eden-conversation-id)))))
+              (format " [%s]" (eden-conversation-title eden-conversation-id))))
      " "
      mode-line-misc-info))
   (eden-request-history-set)
