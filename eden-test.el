@@ -3056,3 +3056,13 @@ baz-assistant-content
         (should (equal (eden-last-conversations 1) '("uuid-req-7")))
         (should (equal (eden-last-conversations 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
+
+(ert-deftest eden-menu-args-test ()
+  (should
+   (equal
+    (eden-menu-args '("url=foo" "date=bar" "namespace=baz"))
+    '(:url "foo" :date "bar" :namespace "baz")))
+  (should
+   (equal
+    (eden-menu-args '("url=foo bar=baz"))
+    '(:url "foo bar=baz"))))

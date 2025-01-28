@@ -2665,6 +2665,17 @@ This also sets `eden-system-message' with this new system message."
       (message "The response's buffer will pop up in next calls to `eden-api'.")
     (message "The response's buffer won't pop up in next calls to `eden-api'.")))
 
+(defun eden-menu-args (transient-args)
+  ""
+  (thread-last
+    transient-args
+    (mapcar (lambda (arg)
+              (seq-let (key val) (progn (string-match "\\([^=]+\\)=\\(.*\\)" arg)
+                                        (list (match-string 1 arg)
+                                              (match-string 2 arg)))
+                (list (intern (concat ":" key)) val))))
+    (apply 'append)))
+
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
 
