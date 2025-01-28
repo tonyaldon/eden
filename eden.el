@@ -2552,56 +2552,45 @@ See `eden-conversation-id' and `eden-conversations'."
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
-(defun eden-api-set ()
-  "Set `eden-api' selecting from `eden-apis' OpenAI-compatible APIs.
-
-Moreover, if `:default-value' key of the selected API is non-nil,
-it becomes the value of `eden-model'."
+(defun eden-api-read (_prompt _initial-input _history)
+  "..."
   (interactive)
-  (if-let* ((services
-             (mapcar (lambda (api) (plist-get api :service)) eden-apis)))
-      (let* ((service (completing-read
-                       "Choose an API from the following services: "
-                       services nil 'require-match))
-             (api (seq-some (lambda (api)
-                              (when (string= (plist-get api :service) service)
-                                api))
-                            eden-apis))
-             (default-model (plist-get api :default-model)))
-        (setq eden-api api)
-        (when default-model (setq eden-model default-model)))
-    (error
-     (format
-      (concat "`eden-apis' variable must be a list of API specifications like this\n\n"
-              "((:service \"openai\"
-  :endpoint \"https://api.openai.com/v1/chat/completions\"
-  :default-model \"gpt-4o-mini\"
-  :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
- (:service \"perplexity\"
-  :endpoint \"https://api.perplexity.ai/chat/completions\"
-  :default-model \"sonar\"
-  :models (\"sonar\" \"sonar-pro\")))\n\n"
-              "not `%S'")
-      eden-apis))))
+  (let* ((error-fmt
+          (format
+           (concat "`eden-apis' variable must be a list of API specifications, not `%S'.  See its documentation for an example.")
+           eden-apis))
+         (services (condition-case nil
+                       (delq nil
+                             (mapcar (lambda (api) (plist-get api :service)) eden-apis))
+                     (error
+                      (error error-fmt eden-apis)))))
+    (if services
+        (completing-read
+         "Choose an API from the following services: "
+         services nil 'require-match)
+      (error error-fmt eden-apis))))
 
-(defun eden-model-set ()
-  "Set `eden-model' selecting from `:models' of `eden-api'."
+(defun eden-model-read (_prompt _initial-input _history)
+  "..."
   (interactive)
-  (let* ((service (plist-get eden-api :service))
-         (models (plist-get eden-api :models))
-         (model (completing-read
-                 (format "Choose a model for the service `%s': " service)
-                 models)))
-    (setq eden-model model)))
+  (let* ((models (seq-reduce
+                  (lambda (acc api)
+                    (let ((service (plist-get api :service)))
+                      (dolist (model (plist-get api :models))
+                        (push (format "%s (%s)" model service) acc)))
+                    acc)
+                  eden-apis
+                  '()))
+         (model (completing-read "Choose a model: " models)))
+    (car (split-string model " "))))
 
-(defun eden-temperature-set ()
-  "Set `eden-temperature' interactively."
+(defun eden-temperature-read (_prompt _initial-input _history)
+  "..."
   (interactive)
   (let ((temperature
-         (read-string "Enter a float number [0-2] or (leave blank for none) to set model temperature: ")))
-    (setq eden-temperature
-          (when (not (string-empty-p temperature))
-            (string-to-number temperature)))))
+         (read-string "Enter a float number [0-2] or (-1 for none) to set model temperature: ")))
+    (when (not (string-empty-p temperature))
+      temperature)))
 
 (defun eden-system-message-set ()
   "Set `eden-system-message' selecting from `eden-system-messages'."
@@ -2676,6 +2665,25 @@ This also sets `eden-system-message' with this new system message."
                 (list (intern (concat ":" key)) val))))
     (apply 'append)))
 
+(defun eden-menu-apply-settings ()
+  "..."
+  (interactive)
+  (let* ((args (eden-menu-args (transient-args 'eden-menu)))
+         (service (plist-get args :service))
+         (api (seq-some (lambda (api)
+                          (when (string= (plist-get api :service) service)
+                            api))
+                        eden-apis))
+         (model (plist-get args :model))
+         (default-model (plist-get api :default-model))
+         (temperature (plist-get args :temperature)))
+    (setq eden-api (or api eden-api))
+    (setq eden-model (or model default-model eden-model))
+    (setq eden-temperature (pcase temperature
+                             ('nil eden-temperature)
+                             ("-1" nil)
+                             (_ (string-to-number temperature))))))
+
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
 
@@ -2694,9 +2702,9 @@ This also sets `eden-system-message' with this new system message."
   - `eden-kill-last-request'
   - `eden-prompt-current-goto'
 - Settings
-  - `eden-api-set'
-  - `eden-model-set'
-  - `eden-temperature-set'
+  - `eden-api-read'
+  - `eden-model-read'
+  - `eden-temperature-read'
   - `eden-pops-up-upon-receipt-toggle'
   - `eden-show-current-settings'
 - System messages
@@ -2719,11 +2727,13 @@ This also sets `eden-system-message' with this new system message."
     ("k" "Kill last request" eden-kill-last-request)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["Settings"
-    ("a" "Set current API" eden-api-set)
-    ("m" "Set model for current API" eden-model-set)
-    ("T" "Set temperature" eden-temperature-set)
-    ("t" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
-    ("S" "Show current settings" eden-show-current-settings)]]
+    ("a" "Set API" "service=" eden-api-read)
+    ("m" "Set model" "model=" eden-model-read)
+    ("t" "Set temperature" "temperature=" eden-temperature-read)
+    ("R" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
+    ("S" "Show current settings" eden-show-current-settings)
+    ("RET" "Apply settings & quit" eden-menu-apply-settings)
+    ]]
   [["System messages"
     ("." "Set system message (SM)" eden-system-message-set)]
    ["" ("'" "Reset SM" eden-system-message-reset)]
