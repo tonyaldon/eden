@@ -2732,11 +2732,11 @@ This also sets `eden-system-message' with this new system message."
     ("t" "Set temperature" "temperature=" eden-temperature-read)
     ("R" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)
-    ("RET" "Apply settings & quit" eden-menu-apply-settings)
+    ("RET" "Apply settings" eden-menu-apply-settings)
     ]]
   [["System messages"
-    ("." "Set system message (SM)" eden-system-message-set)]
-   ["" ("'" "Reset SM" eden-system-message-reset)]
+    ("'" "Set system message (SM)" eden-system-message-set)]
+   ["" ("." "Reset SM" eden-system-message-reset)]
    ["" ("+" "Add SM" eden-system-message-add)]
    ["" ("u" "Update SM" eden-system-message-update)]]
   )
@@ -2896,7 +2896,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
-    ("." "Show system message of request at point" eden-req-at-point-show-system-message)
+    ("'" "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
