@@ -1835,15 +1835,15 @@ Signal an error if NEW-TITLE is already used by another conversation."
                 (remove (assoc conversation-id eden-conversations)
                         eden-conversations)))))
 
-(transient-define-suffix eden-conversation-rename-current ()
-  "Rename current conversation and its associated buffer based on user's input.
+(transient-define-suffix eden-conversation-edit-title ()
+  "Edit title of current conversation and its associated buffer based on user's input.
 
 See `eden-conversation-id' and `eden-conversation-rename'."
   :transient t
   (interactive)
   (if-let ((buff-name (eden-conversation-buffer-name eden-conversation-id)))
       (let* ((old-title (eden-conversation-title eden-conversation-id))
-             (new-title (read-string (format "Rename conversation `%s' to: " old-title))))
+             (new-title (read-string (format "Edit conversation title `%s': " old-title))))
         (if (string-empty-p new-title)
             (message "Cannot rename current conversation with an empty title.  Please enter a non empty string.")
           (eden-conversation-rename eden-conversation-id new-title)
@@ -2016,7 +2016,7 @@ See `eden-request-conversation'."
       (insert
        ;; If we change how we insert the title below, we may also
        ;; have to change how we rename conversation title in
-       ;; `eden-conversation-rename-current' command.
+       ;; `eden-conversation-edit-title' command.
        "** " (or title "Conversation") "\n"
        ":PROPERTIES:\n"
        ":" eden-org-property-date ": " (or (eden-request-date req) "")
@@ -2743,7 +2743,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-conversation-start-from-req-history'
   - `eden-conversation-continue-from-req-history'
   - `eden-conversation-switch'
-  - `eden-conversation-rename-current'
+  - `eden-conversation-edit-title'
   - `eden-conversation-pause'
 - Conversations and requests
   - `eden-show-current-conversation'
@@ -2767,7 +2767,7 @@ This also sets `eden-system-message' with this new system message."
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
     ("TAB" "Switch conversation" eden-conversation-switch)
-    ("r" "Rename current conversation" eden-conversation-rename-current)
+    ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("SPC" "Pause current conversation" eden-conversation-pause)]]
   [["Conversations and requests"
     ("v" "Show current conversation" eden-show-current-conversation)
