@@ -1893,10 +1893,11 @@ See `eden-conversations', `eden-send-request' and `eden-send'."
                     (remove (assoc conversation-id eden-conversations)
                             eden-conversations)))))))
 
-(defun eden-conversation-switch ()
+(transient-define-suffix eden-conversation-switch ()
   "Switch current conversation based on user's selection from `eden-conversations'.
 
 See `eden-conversation-id'."
+  :transient t
   (interactive)
   (if (null eden-conversations)
       (message "No conversation to switch to yet.")
