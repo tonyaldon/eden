@@ -1909,13 +1909,13 @@ See `eden-conversation-id'."
       (setq eden-conversation-id
             (alist-get title conversations nil nil #'string=)))))
 
-(defun eden-conversation-start ()
+(transient-define-suffix eden-conversation-start ()
   "Start a new conversation with title based on user's input.
 
 See `eden-conversation', `eden-conversations' and `eden-conversation-id'."
+  :transient t
   (interactive)
-  (eden-conversation
-   'start (read-string "Enter a conversation title: ")))
+  (eden-conversation 'start (read-string "Enter a conversation title: ")))
 
 (defun eden-conversation-start-from-req-history ()
   "Start a conversation from current request in history excluding previous exchanges.
@@ -2767,7 +2767,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-system-message-add'
   - `eden-system-message-update'"
   [["Conversation"
-    ("n" "Start new conversation" eden-conversation-start)
+    ("n" "New conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
     ("TAB" "Switch conversation" eden-conversation-switch)
