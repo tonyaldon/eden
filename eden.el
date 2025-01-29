@@ -2646,9 +2646,7 @@ it becomes the value of `eden-model'."
                             eden-apis))
              (default-model (plist-get api :default-model)))
         (setq eden-api api)
-        (setq eden-model (or default-model eden-model))
-        (message "Set current API to `%s' and current model to `%s'"
-                 service eden-model))
+        (setq eden-model (or default-model eden-model)))
     (error "`eden-apis' variable must be a list of API specifications, not `%S'.  See its documentation for an example.")))
 
 (transient-define-suffix eden-model-set ()
