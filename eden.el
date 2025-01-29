@@ -2670,47 +2670,6 @@ it becomes the value of `eden-model'."
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
 
-
-(defun eden-api-read (_prompt _initial-input _history)
-  "..."
-  (interactive)
-  (let* ((error-fmt
-          (format
-           (concat "`eden-apis' variable must be a list of API specifications, not `%S'.  See its documentation for an example.")
-           eden-apis))
-         (services (condition-case nil
-                       (delq nil
-                             (mapcar (lambda (api) (plist-get api :service)) eden-apis))
-                     (error
-                      (error error-fmt eden-apis)))))
-    (if services
-        (completing-read
-         "Choose an API from the following services: "
-         services nil 'require-match)
-      (error error-fmt eden-apis))))
-
-(defun eden-model-read (_prompt _initial-input _history)
-  "..."
-  (interactive)
-  (let* ((models (seq-reduce
-                  (lambda (acc api)
-                    (let ((service (plist-get api :service)))
-                      (dolist (model (plist-get api :models))
-                        (push (format "%s (%s)" model service) acc)))
-                    acc)
-                  eden-apis
-                  '()))
-         (model (completing-read "Choose a model: " models)))
-    (car (split-string model " "))))
-
-(defun eden-temperature-read (_prompt _initial-input _history)
-  "..."
-  (interactive)
-  (let ((temperature
-         (read-string "Enter a float number [0-2] or (-1 for none) to set model temperature: ")))
-    (when (not (string-empty-p temperature))
-      temperature)))
-
 (defun eden-system-message-set ()
   "Set `eden-system-message' selecting from `eden-system-messages'."
   (interactive)
