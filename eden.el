@@ -2772,12 +2772,12 @@ This also sets `eden-system-message' with this new system message."
     ("TAB" "Switch conversation" eden-conversation-switch)
     ("SPC" "Pause current conversation" eden-conversation-pause)]]
   [["Conversations and requests"
+    ("k" "Kill last request" eden-kill-last-request)
     ("v" "Show current conversation" eden-show-current-conversation)
     ("h" "Show current conversation in history" eden-show-current-conversation-in-req-history)
     ("l" "Show last conversations" eden-show-last-conversations)
     ("L" "Show last requests" eden-show-last-requests)
-    ("g" "Go to current request in history" eden-prompt-current-goto)
-    ("k" "Kill last request" eden-kill-last-request)]
+    ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["Configuration"
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
