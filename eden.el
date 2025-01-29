@@ -2722,8 +2722,9 @@ This also sets `eden-system-message' with this new system message."
         (push (cons title message) eden-system-messages)
         (setq eden-system-message (assoc title eden-system-messages))))))
 
-(defun eden-pops-up-upon-receipt-toggle ()
+(transient-define-suffix eden-pops-up-upon-receipt-toggle ()
   "Toggle `eden-pops-up-upon-receipt' value."
+  :transient t
   (interactive)
   (setq eden-pops-up-upon-receipt (not eden-pops-up-upon-receipt))
   (if eden-pops-up-upon-receipt
@@ -2808,7 +2809,7 @@ This also sets `eden-system-message' with this new system message."
     ("t" "Set temperature" "temperature=" eden-temperature-read)
     ("R" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)
-    ("RET" "Apply settings" eden-menu-apply-settings)
+    ("RET" "Apply settings & quit" eden-menu-apply-settings)
     ]]
   [["System messages"
     ("'" "Set system message (SM)" eden-system-message-set)]
