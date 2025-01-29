@@ -2071,10 +2071,11 @@ See `eden-mode-line-waiting'.")
   (when-let ((proc (plist-get (car-safe eden-pending-requests) :proc)))
     (and (processp proc) (buffer-name (process-buffer proc)) t)))
 
-(defun eden-kill-last-request ()
+(transient-define-suffix eden-kill-last-request ()
   "Kill last request sent with `eden-send'.
 
 See `eden-pending-requests' and `eden-send-request'."
+  :transient t
   (interactive)
   (when (eden-running-p)
     (message "Killing last request")
