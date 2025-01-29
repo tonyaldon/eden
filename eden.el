@@ -2730,15 +2730,6 @@ This also sets `eden-system-message' with this new system message."
         (push (cons title message) eden-system-messages)
         (setq eden-system-message (assoc title eden-system-messages))))))
 
-(transient-define-suffix eden-pops-up-upon-receipt-toggle ()
-  "Toggle `eden-pops-up-upon-receipt' value."
-  :transient t
-  (interactive)
-  (setq eden-pops-up-upon-receipt (not eden-pops-up-upon-receipt))
-  (if eden-pops-up-upon-receipt
-      (message "The response's buffer will pop up in next calls to `eden-api'.")
-    (message "The response's buffer won't pop up in next calls to `eden-api'.")))
-
 (defun eden-menu-quit ()
   "..."
   (interactive)
@@ -2765,7 +2756,6 @@ This also sets `eden-system-message' with this new system message."
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
-  - `eden-pops-up-upon-receipt-toggle'
   - `eden-show-current-settings'
 - System messages
   - `eden-system-message-set'
@@ -2790,7 +2780,6 @@ This also sets `eden-system-message' with this new system message."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("R" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)
     ("RET" "Quit" eden-menu-quit)
     ]]
