@@ -2699,8 +2699,9 @@ it becomes the value of `eden-model'."
               (setq eden-system-message (assoc title eden-system-messages)))
           (error err))))))
 
-(defun eden-system-message-reset ()
+(transient-define-suffix eden-system-message-reset ()
   "Set `eden-system-message' to nil."
+  :transient t
   (interactive)
   (setq eden-system-message nil))
 
