@@ -2676,8 +2676,9 @@ it becomes the value of `eden-model'."
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
 
-(defun eden-system-message-set ()
+(transient-define-suffix eden-system-message-set ()
   "Set `eden-system-message' selecting from `eden-system-messages'."
+  :transient t
   (interactive)
   (let ((err
          (format
