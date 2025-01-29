@@ -2602,8 +2602,8 @@ See `eden-last-request'."
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
-(defun eden-show-current-settings ()
-  "Show current settings.
+(defun eden-show-current-configuration ()
+  "Show current Configuration.
 
 This incudes informations about `eden-dir', `eden-api', `eden-model',
 `eden-temperature', `eden-system-message' and the current conversation.
@@ -2756,7 +2756,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
-  - `eden-show-current-settings'
+  - `eden-show-current-configuration'
 - System messages
   - `eden-system-message-set'
   - `eden-system-message-reset'
@@ -2776,11 +2776,11 @@ This also sets `eden-system-message' with this new system message."
     ("L" "Show last requests" eden-show-last-requests)
     ("k" "Kill last request" eden-kill-last-request)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
-   ["Settings"
+   ["Configuration"
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("S" "Show current settings" eden-show-current-settings)
+    ("C" "Show current configuration" eden-show-current-configuration)
     ("RET" "Quit" eden-menu-quit)
     ]]
   [["System messages"
