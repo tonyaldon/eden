@@ -1945,8 +1945,9 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
-(defun eden-conversation-pause ()
+(transient-define-suffix eden-conversation-pause ()
   "Pause the current conversation by setting `eden-conversation-id' to nil."
+  :transient t
   (interactive)
   (setq eden-conversation-id nil))
 
