@@ -2312,6 +2312,82 @@ See `eden-send-request'."
   (message "Eden sent a request to %s."
            (plist-get eden-api :service)))
 
+;;;; Profiles
+
+(defvar eden-profile-ring (make-ring 32)
+  "A ring containing the history of profiles.
+
+Profiles are defined in `eden-profile-current'.
+
+This ring is updated each time we modify the conversations,
+the system messages or other settings using `eden-menu' command.
+Specifically, this is done by `eden-profile-push' which we added
+to `transient-exit-hook'.")
+
+(defun eden-profile-current ()
+  "Return current profile.
+
+It is a plist with the following key/value pairs:
+
+- :api             - See `eden-api'
+- :model           - See `eden-model'
+- :temperature     - See `eden-temperature'
+- :conversation-id - See `eden-conversation-id'
+- :system-message  - See `eden-system-message'
+
+See `eden-profile-push'."
+  (list :api eden-api
+        :model eden-model
+        :temperature eden-temperature
+        :conversation-id eden-conversation-id
+        :system-message eden-system-message))
+
+(defun eden-profile-push ()
+  "Push current profile into `eden-profile-ring'.
+
+See `eden-profile-current'."
+  (ring-remove+insert+extend eden-profile-ring (eden-profile-current) 'grow))
+
+(defun eden-profile-previous ()
+  "Turn previous profile into the current one.
+
+See `eden-profile-ring' and `eden-profile-current'."
+  (interactive)
+  (let ((profile-prev
+         (condition-case nil
+             (ring-next eden-profile-ring (eden-profile-current))
+           (error
+            (eden-profile-push)
+            (ring-next eden-profile-ring (eden-profile-current))))))
+    (setq eden-api (plist-get profile-prev :api))
+    (setq eden-model (plist-get profile-prev :model))
+    (setq eden-temperature (plist-get profile-prev :temperature))
+    (setq eden-conversation-id (plist-get profile-prev :conversation-id))
+    (setq eden-system-message (plist-get profile-prev :system-message))
+    (when (= (ring-length eden-profile-ring) 1)
+      (message "There's only one profile in the ring."))
+    (force-mode-line-update)))
+
+(defun eden-profile-next ()
+  "Turn previous profile into the current one.
+
+See `eden-profile-ring' and `eden-profile-current'."
+  (interactive)
+  (let ((profile-next
+         (condition-case nil
+             (ring-previous eden-profile-ring (eden-profile-current))
+           (error
+            (eden-profile-push)
+            (ring-previous eden-profile-ring (eden-profile-current))))))
+    (setq eden-api (plist-get profile-next :api))
+    (setq eden-model (plist-get profile-next :model))
+    (setq eden-temperature (plist-get profile-next :temperature))
+    (setq eden-conversation-id (plist-get profile-next :conversation-id))
+    (setq eden-system-message (plist-get profile-next :system-message))
+    (when (= (ring-length eden-profile-ring) 1)
+      (message "There's only one profile in the ring."))
+    (force-mode-line-update)))
+
 ;;;; Main menu
 
 (defun eden-show-current-conversation ()
@@ -2907,6 +2983,8 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-p") 'eden-prompt-previous)
     (define-key map (kbd "M-n") 'eden-prompt-next)
+    (define-key map (kbd "C-M-p") 'eden-profile-previous)
+    (define-key map (kbd "C-M-n") 'eden-profile-next)
     (define-key map (kbd "C-c C-c") #'eden-send)
     map)
   "Keymap for `eden-mode'.")
@@ -2914,18 +2992,20 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 (define-derived-mode eden-mode org-mode "Eden"
   "Eden mode.
 
-Upon activation, this mode sets `mode-line-format' and calls
-`eden-request-history-set' and `eden-prompt-history-state-set'
-functions.
+Upon activation, this mode sets `mode-line-format' and `eden-profile-ring'
+variables, adds `eden-profile-push' to `transient-exit-hook' and calls
+`eden-request-history-set' and `eden-prompt-history-state-set'functions.
 
 It is used within `eden-prompt-buffer-name' for user prompt input.
 
 Derived from `org-mode', this mode maintains most keybindings from
 `org-mode', with the following exceptions in `eden-mode-map':
 
-- `M-p'     -  `eden-prompt-previous',
-- `M-n'     -  `eden-prompt-next',
-- `C-c C-c' -  `eden-send'.
+- `M-p'     - `eden-prompt-previous',
+- `M-n'     - `eden-prompt-next',
+- `C-M-p'   - `eden-profile-previous'
+- `C-M-n'   - `eden-profile-next'
+- `C-c C-c' - `eden-send'.
 
 Overall, you can use most `org-mode' features alongside these
 mode-specific capabilities."
@@ -2947,6 +3027,8 @@ mode-specific capabilities."
               (format " [%s]" (eden-conversation-title eden-conversation-id))))
      " "
      mode-line-misc-info))
+  (eden-profile-push)
+  (add-hook 'transient-exit-hook 'eden-profile-push nil t)
   (eden-request-history-set)
   (eden-prompt-history-state-set))
 
