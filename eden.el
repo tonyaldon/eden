@@ -2766,16 +2766,16 @@ This also sets `eden-system-message' with this new system message."
     ("n" "New conversation" eden-conversation-start)
     ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
-    ("TAB" "Switch conversation" eden-conversation-switch)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
+    ("TAB" "Switch conversation" eden-conversation-switch)
     ("SPC" "Pause current conversation" eden-conversation-pause)]]
   [["Conversations and requests"
     ("v" "Show current conversation" eden-show-current-conversation)
     ("h" "Show current conversation in history" eden-show-current-conversation-in-req-history)
     ("l" "Show last conversations" eden-show-last-conversations)
     ("L" "Show last requests" eden-show-last-requests)
-    ("k" "Kill last request" eden-kill-last-request)
-    ("g" "Go to current request in history" eden-prompt-current-goto)]
+    ("g" "Go to current request in history" eden-prompt-current-goto)
+    ("k" "Kill last request" eden-kill-last-request)]
    ["Configuration"
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
@@ -2784,8 +2784,8 @@ This also sets `eden-system-message' with this new system message."
     ("RET" "Quit" eden-menu-quit)
     ]]
   [["System messages"
-    ("'" "Set system message (SM)" eden-system-message-set)]
-   ["" ("." "Reset SM" eden-system-message-reset)]
+    ("S" "Set system message (SM)" eden-system-message-set)]
+   ["" ("_" "Reset SM" eden-system-message-reset)]
    ["" ("+" "Add SM" eden-system-message-add)]
    ["" ("u" "Update SM" eden-system-message-update)]]
   )
