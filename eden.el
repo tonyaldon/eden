@@ -1835,14 +1835,15 @@ Signal an error if NEW-TITLE is already used by another conversation."
                 (remove (assoc conversation-id eden-conversations)
                         eden-conversations)))))
 
-(defun eden-conversation-rename-current ()
+(transient-define-suffix eden-conversation-rename-current ()
   "Rename current conversation and its associated buffer based on user's input.
 
 See `eden-conversation-id' and `eden-conversation-rename'."
+  :transient t
   (interactive)
   (if-let ((buff-name (eden-conversation-buffer-name eden-conversation-id)))
-      (let ((old-title (eden-conversation-title eden-conversation-id))
-            (new-title (read-string "Rename conversation (to new name): ")))
+      (let* ((old-title (eden-conversation-title eden-conversation-id))
+             (new-title (read-string (format "Rename conversation `%s' to: " old-title))))
         (if (string-empty-p new-title)
             (message "Cannot rename current conversation with an empty title.  Please enter a non empty string.")
           (eden-conversation-rename eden-conversation-id new-title)
@@ -2790,7 +2791,7 @@ This also sets `eden-system-message' with this new system message."
     ("t" "Set temperature" eden-temperature-set)
     ("R" "Toggle pop-up response" eden-pops-up-upon-receipt-toggle)
     ("S" "Show current settings" eden-show-current-settings)
-    ("q" "Quit" eden-menu-quit)
+    ("RET" "Quit" eden-menu-quit)
     ]]
   [["System messages"
     ("'" "Set system message (SM)" eden-system-message-set)]
