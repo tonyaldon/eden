@@ -2719,7 +2719,9 @@ it becomes the value of `eden-model'."
                             eden-apis))
              (default-model (plist-get api :default-model)))
         (setq eden-api api)
-        (setq eden-model (or default-model eden-model)))
+        (setq eden-model (or default-model eden-model))
+        (message "Set current API to `%s' and current model to `%s'"
+                 service eden-model))
     (error "`eden-apis' variable must be a list of API specifications, not `%S'.  See its documentation for an example.")))
 
 (transient-define-suffix eden-model-set ()
@@ -2731,7 +2733,8 @@ it becomes the value of `eden-model'."
          (model (completing-read
                  (format "Choose a model for the service `%s': " service)
                  models)))
-    (setq eden-model model)))
+    (setq eden-model model)
+    (message "Current model has been set to `%s'." eden-model)))
 
 (transient-define-suffix eden-temperature-set ()
   "Set `eden-temperature' interactively."
@@ -2741,7 +2744,8 @@ it becomes the value of `eden-model'."
          (read-string "Enter a float number [0-2] or (leave blank for none) to set model temperature: ")))
     (setq eden-temperature
           (when (not (string-empty-p temperature))
-            (string-to-number temperature)))))
+            (string-to-number temperature)))
+    (message "Current temperature has been set to `%s'." eden-temperature)))
 
 (transient-define-suffix eden-dir-set ()
   "Set `eden-dir' interactively."
@@ -2836,7 +2840,7 @@ This also sets `eden-system-message' with this new system message."
         (eden-menu)))))
 
 (defun eden-menu-quit ()
-  "..."
+  "Quit `eden-menu'."
   (interactive)
   nil)
 
