@@ -1959,7 +1959,8 @@ See `eden-conversation-id'."
                                    (mapcar #'car conversations)
                                    nil 'require-match)))
       (setq eden-conversation-id
-            (alist-get title conversations nil nil #'string=)))))
+            (alist-get title conversations nil nil #'string=))
+      (message "Switched to conversation `%s'." title))))
 
 (transient-define-suffix eden-conversation-start ()
   "Start a new conversation with title based on user's input.
@@ -1967,7 +1968,9 @@ See `eden-conversation-id'."
 See `eden-conversation', `eden-conversations' and `eden-conversation-id'."
   :transient t
   (interactive)
-  (eden-conversation 'start (read-string "Enter a conversation title: ")))
+  (let ((title (read-string "New conversation with title: ")))
+    (eden-conversation 'start title)
+    (message "Conversation `%s' initialized." title)))
 
 (transient-define-suffix eden-conversation-start-from-req-history ()
   "Start a conversation from current request in history excluding previous exchanges.
@@ -1977,8 +1980,9 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
   :transient t
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
-      (eden-conversation
-       'start-from (read-string "Enter a conversation title: ") req-uuid)
+      (let ((title (read-string "Start conversation with title: ")))
+        (eden-conversation 'start-from title req-uuid)
+        (message "Conversation `%s' initialized." title))
     (message (concat "Current prompt is not associated with a request.  "
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
@@ -1991,8 +1995,9 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
   :transient t
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
-      (eden-conversation
-       'continue-from (read-string "Enter a conversation title: ") req-uuid)
+      (let ((title (read-string "Continue conversation with title: ")))
+        (eden-conversation 'continue-from title req-uuid)
+        (message "Conversation `%s' initialized." title))
     (message (concat "Current prompt is not associated with a request.  "
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
@@ -2001,6 +2006,9 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
   "Pause the current conversation by setting `eden-conversation-id' to nil."
   :transient t
   (interactive)
+  (if-let ((title (eden-conversation-title eden-conversation-id)))
+      (message "Conversation `%s' paused." title)
+    (message "No current conversation."))
   (setq eden-conversation-id nil))
 
 (defun eden-conversation-insert (req title &optional append start-from)
