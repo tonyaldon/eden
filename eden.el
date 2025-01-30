@@ -2735,6 +2735,14 @@ it becomes the value of `eden-model'."
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
 
+(transient-define-suffix eden-dir-set ()
+  "Set `eden-dir' interactively."
+  :transient t
+  (interactive)
+  (let ((dir (read-directory-name "Set request directory to: ")))
+    (setq eden-dir (file-name-as-directory (expand-file-name dir)))
+    (message "Next requests will be stored in `%s' directory." eden-dir)))
+
 (transient-define-suffix eden-conversation-include-reasoning-toggle ()
   "Toggle `eden-conversation-include-reasoning' value."
   :transient t
@@ -2843,6 +2851,7 @@ This also sets `eden-system-message' with this new system message."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
+    ("d" "Set request directory" eden-dir-set)
     ("i" "Include reasoning information" eden-conversation-include-reasoning-toggle)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
