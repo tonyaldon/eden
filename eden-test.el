@@ -2090,6 +2090,91 @@ foo bar baz assistant response
 
 "))
 
+  ;; conversation:
+  ;; - with no previous exchanges
+  ;; - with reasoning content
+  ;; - with `eden-conversation-show-reasoning' sets to t
+  (should
+   (string=
+    (with-temp-buffer
+      (org-mode)
+      (cl-letf (((symbol-function 'eden-uuid)
+                 (lambda nil "uuid")))
+        (let ((eden-conversation-show-reasoning t)
+              (eden-org-property-date "EDEN_DATE")
+              (eden-org-property-req "EDEN_REQ")
+              (req (eden-request
+                    :prompt "foo bar baz"
+                    :dir (concat (make-temp-file "eden-" t) "/")))
+              (resp '(:model "deepseek-reasoner"
+                      :choices [(:index 0
+                                 :message (:role "assistant"
+                                           :content "foo bar baz assistant response"
+                                           :reasoning_content "foo bar baz assistant reasoning"))])))
+          (eden-write-request req)
+          (eden-write-response (eden-json-encode resp) resp req)
+          (eden-test-add-or-replace-timestamp-file req)
+          (eden-conversation-insert req "Conversation")))
+      (buffer-substring-no-properties (point-min) (point-max)))
+    "** Conversation
+:PROPERTIES:
+:EDEN_DATE: [2024-12-20 Fri]
+:EDEN_REQ: uuid
+:END:
+*** Prompt
+
+foo bar baz
+
+*** Reasoning
+
+foo bar baz assistant reasoning
+
+*** Response
+
+foo bar baz assistant response
+
+"))
+
+  ;; conversation:
+  ;; - with no previous exchanges
+  ;; - with reasoning content
+  ;; - with `eden-conversation-show-reasoning' sets to nil
+  (should
+   (string=
+    (with-temp-buffer
+      (org-mode)
+      (cl-letf (((symbol-function 'eden-uuid)
+                 (lambda nil "uuid")))
+        (let ((eden-conversation-show-reasoning nil)
+              (eden-org-property-date "EDEN_DATE")
+              (eden-org-property-req "EDEN_REQ")
+              (req (eden-request
+                    :prompt "foo bar baz"
+                    :dir (concat (make-temp-file "eden-" t) "/")))
+              (resp '(:model "deepseek-reasoner"
+                      :choices [(:index 0
+                                 :message (:role "assistant"
+                                           :content "foo bar baz assistant response"
+                                           :reasoning_content "foo bar baz assistant reasoning"))])))
+          (eden-write-request req)
+          (eden-write-response (eden-json-encode resp) resp req)
+          (eden-test-add-or-replace-timestamp-file req)
+          (eden-conversation-insert req "Conversation")))
+      (buffer-substring-no-properties (point-min) (point-max)))
+    "** Conversation
+:PROPERTIES:
+:EDEN_DATE: [2024-12-20 Fri]
+:EDEN_REQ: uuid
+:END:
+*** Prompt
+
+foo bar baz
+
+*** Response
+
+foo bar baz assistant response
+
+"))
 
   ;; conversation with no previous exchanges to which we add a title
   ;; in the top level heading

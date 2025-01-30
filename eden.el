@@ -2050,8 +2050,11 @@ See `eden-request-conversation'."
   (let* ((uuid (plist-get req :uuid))
          (format-exchange
           (lambda (exchange)
-            (list (eden-org-demote (plist-get exchange :prompt) 4)
-                  (eden-org-demote (plist-get exchange :response) 4))))
+            (delq nil
+                  (list (eden-org-demote (plist-get exchange :prompt) 4)
+                        (eden-org-demote (plist-get exchange :response) 4)
+                        (when-let ((reasoning (plist-get exchange :reasoning)))
+                          (eden-org-demote reasoning 4))))))
          (conversation
           (mapcar format-exchange (eden-request-conversation req)))
          (conversation
@@ -2074,12 +2077,18 @@ See `eden-request-conversation'."
        ":" eden-org-property-req ": " uuid "\n"
        ":END:\n"))
     (dolist (exchange conversation)
-      (seq-let (prompt response) exchange
+      (seq-let (prompt response reasoning) exchange
         (insert "*** Prompt\n\n" prompt)
         (cond
          ((looking-back "\n\n" nil) nil)
          ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))
+        (when (and eden-conversation-show-reasoning reasoning)
+          (insert "*** Reasoning\n\n" reasoning)
+          (cond
+           ((looking-back "\n\n" nil) nil)
+           ((looking-back "\n" nil) (insert "\n"))
+           (t (insert "\n\n"))))
         (insert "*** Response\n\n" response)
         (cond
          ((looking-back "\n\n" nil) nil)
