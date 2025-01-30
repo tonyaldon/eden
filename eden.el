@@ -1410,7 +1410,7 @@ See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 
 See `eden-send'.")
 
-(defvar eden-conversation-show-reasoning nil
+(defvar eden-conversation-include-reasoning nil
   "If t, show model's reasonings alongside the conversation's prompts and responses.
 
 It only applies to models such as \"deepseek-reasoner\" from Deepseek
@@ -2083,7 +2083,7 @@ See `eden-request-conversation'."
          ((looking-back "\n\n" nil) nil)
          ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))
-        (when (and eden-conversation-show-reasoning reasoning)
+        (when (and eden-conversation-include-reasoning reasoning)
           (insert "*** Reasoning\n\n" reasoning)
           (cond
            ((looking-back "\n\n" nil) nil)
@@ -2736,11 +2736,11 @@ it becomes the value of `eden-model'."
             (string-to-number temperature)))))
 
 (transient-define-suffix eden-conversation-include-reasoning-toggle ()
-  "Toggle `eden-conversation-show-reasoning' value."
+  "Toggle `eden-conversation-include-reasoning' value."
   :transient t
   (interactive)
-  (setq eden-conversation-show-reasoning (not eden-conversation-show-reasoning))
-  (if eden-conversation-show-reasoning
+  (setq eden-conversation-include-reasoning (not eden-conversation-include-reasoning))
+  (if eden-conversation-include-reasoning
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 

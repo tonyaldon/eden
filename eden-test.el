@@ -2093,14 +2093,14 @@ foo bar baz assistant response
   ;; conversation:
   ;; - with no previous exchanges
   ;; - with reasoning content
-  ;; - with `eden-conversation-show-reasoning' sets to t
+  ;; - with `eden-conversation-include-reasoning' sets to t
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-conversation-show-reasoning t)
+        (let ((eden-conversation-include-reasoning t)
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
@@ -2138,14 +2138,14 @@ foo bar baz assistant response
   ;; conversation:
   ;; - with no previous exchanges
   ;; - with reasoning content
-  ;; - with `eden-conversation-show-reasoning' sets to nil
+  ;; - with `eden-conversation-include-reasoning' sets to nil
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-conversation-show-reasoning nil)
+        (let ((eden-conversation-include-reasoning nil)
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
