@@ -2801,12 +2801,21 @@ This also updates its value in `eden-system-messages' list."
   (interactive)
   (if-let ((title (car-safe eden-system-message))
            (message (cdr-safe eden-system-message)))
-      (let ((new-message
+      (let ((_ (eden-maybe-delete-window-prompt-buffer))
+            (new-message
              (read-string-from-buffer
               (format "Modifying \"%s\" system message" title)
               message)))
-        (setf (cdr eden-system-message) new-message))
-    (message "Cannot update a system message not set.  Try instead to set or add a system message with respectively `eden-system-message-set' or `eden-system-message-add'.")))
+        (setf (cdr eden-system-message) new-message)
+        (select-window
+         (display-buffer-at-bottom
+          (get-buffer-create eden-prompt-buffer-name)
+          '(display-buffer-below-selected
+            (window-height . 6))))
+        (eden-menu)
+        (message "System message `%s' has been updated." title))
+    (message "Cannot update a system message not set.  Try instead to pick or add a system message via `eden-menu'.")
+    (eden-menu)))
 
 (defun eden-system-message-add ()
   "Interactively add a new system message to `eden-system-messages'.
