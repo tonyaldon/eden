@@ -424,6 +424,30 @@ OpenAI API) we have:
     ;; \"foo assistant\""
   (eden-get-in resp [:choices 0 :message :content]))
 
+(defun eden-request-assistant-reasoning (resp)
+  "Return the reasoning content of RESP response from Deepseek-compatible API.
+
+A Deepseek-compatible API is an OpenAI-compatible in which
+`:reasoning_content' key has been added at the same level of `:content'
+key for reasoning models like \"deepseek-reasoner\".
+
+For instance (with some keys omitted from a real response from
+Deepseek API) we have:
+
+    (let ((resp \\='(:id \"5b5178d0-9cca-4a8b-86f9-6971ce2c1788\"
+                  :object \"chat.completion\"
+                  :created 1738222989
+                  :model \"deepseek-reasoner\"
+                  :choices [(:index 0
+                             :message (:role \"assistant\"
+                                       :content \"foo assistant\"
+                                       :reasoning_content \"foo reasoning\")
+                             :logprobs nil
+                             :finish_reason \"stop\")])))
+      (eden-request-assistant-reasoning resp))
+    ;; \"foo reasoning\""
+  (eden-get-in resp [:choices 0 :message :reasoning_content]))
+
 (defun eden-request-user-content (request)
   "Return the last message of REQUEST, an OpenAI-compatible API request.
 

@@ -179,6 +179,20 @@
     (should
      (string= (eden-request-assistant-content resp) "foo assistant"))))
 
+(ert-deftest eden-request-assistant-reasoning-test ()
+  (let ((resp '(:id "5b5178d0-9cca-4a8b-86f9-6971ce2c1788"
+                :object "chat.completion"
+                :created 1738222989
+                :model "deepseek-reasoner"
+                :choices [(:index 0
+                           :message (:role "assistant"
+                                     :content "foo assistant"
+                                     :reasoning_content "foo reasoning")
+                           :logprobs nil
+                           :finish_reason "stop")])))
+    (should
+     (string= (eden-request-assistant-reasoning resp) "foo reasoning"))))
+
 (ert-deftest eden-request-user-content-test ()
   (let* ((request '(:stream :false
                     :model "gpt-4o-mini"
