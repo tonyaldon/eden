@@ -334,8 +334,8 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
 
 Signal an error if FILE-TYPE is not one of the following symbols:
 
-    error, response, response-org, request, api, prompt,
-    system-message, exchanges, command.
+    error, response, response-org, reasoning, request, api,
+    prompt, system-message, exchanges, command.
 
 For instance
 
@@ -346,6 +346,7 @@ For instance
   (let* ((filenames '((error          . "error.json")
                       (response       . "response.json")
                       (response-org   . "response.org")
+                      (reasoning      . "reasoning.org")
                       (request        . "request.json")
                       (api            . "api.json")
                       (prompt         . "prompt.org")
@@ -395,9 +396,6 @@ user prompt was \"foo bar baz\") we get something like this:
 
     (eden-request-read \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
     ;; \"foo bar baz\""
-
-
-
   (let* ((file (eden-request-file file-type req)))
     (if (not (file-exists-p file))
         (error "Missing `%s' file" file)
