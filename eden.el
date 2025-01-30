@@ -2735,6 +2735,15 @@ it becomes the value of `eden-model'."
           (when (not (string-empty-p temperature))
             (string-to-number temperature)))))
 
+(transient-define-suffix eden-conversation-include-reasoning-toggle ()
+  "Toggle `eden-conversation-show-reasoning' value."
+  :transient t
+  (interactive)
+  (setq eden-conversation-show-reasoning (not eden-conversation-show-reasoning))
+  (if eden-conversation-show-reasoning
+      (message "Include reasoning information in conversations.")
+    (message "Do not include reasoning information in conversations.")))
+
 (transient-define-suffix eden-system-message-set ()
   "Set `eden-system-message' selecting from `eden-system-messages'."
   :transient t
@@ -2834,6 +2843,7 @@ This also sets `eden-system-message' with this new system message."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
+    ("i" "Include reasoning information" eden-conversation-include-reasoning-toggle)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
