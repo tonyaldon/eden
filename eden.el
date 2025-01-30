@@ -511,15 +511,20 @@ Signal an error in the following cases:
 The return value is a vector of plists (exchanges) containing the
 following keys:
 
-- :uuid      - uuid of the request for that exchange
-- :prompt    - prompt of that exchange (`org-mode' string)
-- :user      - prompt of that exchange sent to OpenAI-compatible API
-               (markdown string)
-- :assitant  - content message of the response of that exchange
-               received from OpenAI-compatible API (markdown string)
-- :response  - content message of the response of that exchange
-               received from OpenAI-compatible API converted to Org
-               (`org-mode' string)
+- :uuid                 - UUID of the request for that exchange
+- :prompt               - prompt of that exchange (`org-mode' string)
+- :user                 - prompt of that exchange sent to OpenAI-compatible API
+                          (markdown string)
+- :assistant            - content message of the response of that exchange
+                          received from OpenAI-compatible API (markdown string)
+- :response             - content message of the response of that exchange
+                          received from OpenAI-compatible API converted to Org
+                          (`org-mode' string)
+- :assistant-reasoning  - (optional) reasoning content of the response of that exchange
+                          received from Deepseek-compatible API (markdown string)
+- :reasoning            - (optional) reasoning content of the response of that exchange
+                          received from Deepseek-compatible API converted to Org
+                          (`org-mode' string)
 
 Signal an error if REQ doesn't pass `eden-request-check' check.
 
@@ -549,14 +554,21 @@ gives use the following conversation:
       :response \"baz assistant\")]"
   (eden-request-check req)
   (let* ((exchanges (eden-request-read 'exchanges req))
+         (resp (eden-request-read 'response req))
          (last-exchange
-          `((:uuid ,(plist-get req :uuid)
-             :prompt ,(eden-request-read 'prompt req)
-             :user ,(eden-request-user-content
-                     (eden-request-read 'request req))
-             :assistant ,(eden-request-assistant-content
-                          (eden-request-read 'response req))
-             :response ,(eden-request-read 'response-org req)))))
+          (list
+           (delq nil
+                 `(:uuid ,(plist-get req :uuid)
+                   :prompt ,(eden-request-read 'prompt req)
+                   :user ,(eden-request-user-content
+                           (eden-request-read 'request req))
+                   :assistant ,(eden-request-assistant-content resp)
+                   :response ,(eden-request-read 'response-org req)
+                   ,@(when-let ((assistant-reasoning
+                                 (eden-request-assistant-reasoning resp)))
+                       `(:assistant-reasoning ,assistant-reasoning))
+                   ,@(when (file-exists-p (eden-request-file 'reasoning req))
+                       `(:reasoning ,(eden-request-read 'reasoning req))))))))
     (apply 'vector (append exchanges last-exchange))))
 
 (defun eden-request-conversation-path (req)
