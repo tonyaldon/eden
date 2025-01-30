@@ -2824,12 +2824,17 @@ This also sets `eden-system-message' with this new system message."
   - `eden-system-message-add'
   - `eden-system-message-update'"
   [["Conversation"
-    ("n" "New conversation" eden-conversation-start)
-    ("s" "Start conversation from current request in history" eden-conversation-start-from-req-history)
-    ("c" "Continue conversation from current request in history" eden-conversation-continue-from-req-history)
+    ("n" "New conversation (cv)" eden-conversation-start)
+    ("s" "Start cv from current request in history" eden-conversation-start-from-req-history)
+    ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("TAB" "Switch conversation" eden-conversation-switch)
-    ("SPC" "Pause current conversation" eden-conversation-pause)]]
+    ("SPC" "Pause current conversation" eden-conversation-pause)]
+   ["Configuration"
+    ("a" "Set API" eden-api-set)
+    ("m" "Set model" eden-model-set)
+    ("t" "Set temperature" eden-temperature-set)
+    ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
     ("v" "Show current conversation" eden-show-current-conversation)
@@ -2837,18 +2842,13 @@ This also sets `eden-system-message' with this new system message."
     ("l" "Show last conversations" eden-show-last-conversations)
     ("L" "Show last requests" eden-show-last-requests)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
-   ["Configuration"
-    ("a" "Set API" eden-api-set)
-    ("m" "Set model" eden-model-set)
-    ("t" "Set temperature" eden-temperature-set)
-    ("C" "Show current configuration" eden-show-current-configuration)
-    ("RET" "Quit" eden-menu-quit)
-    ]]
-  [["System messages"
-    ("S" "Set system message (SM)" eden-system-message-set)]
-   ["" ("_" "Reset SM" eden-system-message-reset)]
-   ["" ("+" "Add SM" eden-system-message-add)]
-   ["" ("u" "Update SM" eden-system-message-update)]]
+   ["System messages"
+    ("+" "Add system message" eden-system-message-add)
+    ("u" "Update system message" eden-system-message-update)
+    ("p" "Pick system message" eden-system-message-set)
+    ("_" "Reset system message" eden-system-message-reset)
+    "..............."
+    ("RET" "Quit menu" eden-menu-quit)]]
   )
 
 ;;;; Request at point menu
