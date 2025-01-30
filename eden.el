@@ -2991,6 +2991,25 @@ See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
       (message "No citations for `%s' conversation"
                (eden-request-dir req)))))
 
+(defun eden-req-at-point-show-reasoning ()
+  "Show reasoning of the request at point.
+
+See `eden-req-at-point-uuid' and `eden-request-assistant-reasoning'."
+  (interactive)
+  (when-let* ((req-uuid (eden-req-at-point-uuid))
+              (req `(:dir ,eden-dir :uuid ,req-uuid)))
+    (eden-request-check req)
+    (if (file-exists-p (eden-request-file 'reasoning req))
+        (let ((buff (get-buffer-create
+                     (eden-buffer-name "reasoning of request at point"))))
+          (with-current-buffer buff
+            (erase-buffer)
+            (org-mode)
+            (insert-file-contents (eden-request-file 'reasoning req)))
+          (select-window
+           (display-buffer buff '(display-buffer-reuse-window))))
+      (message "No reasoning for `%s' request" (eden-request-dir req)))))
+
 (defun eden-req-at-point-goto ()
   "Go to the directory of the request at point.
 
@@ -3010,6 +3029,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 - `eden-req-at-point-show-branches'
 - `eden-req-at-point-show-system-message'
 - `eden-req-at-point-show-perplexity-citations'
+- `eden-req-at-point-show-reasoning'
 - `eden-req-at-point-goto'"
   [["Conversation/Request at point"
     ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
@@ -3018,6 +3038,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
     ("S" "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
+    ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
 
