@@ -2780,14 +2780,19 @@ it becomes the value of `eden-model'."
             (let ((title (completing-read
                           "System message title (leave blank for none): "
                           system-message-titles)))
-              (setq eden-system-message (assoc title eden-system-messages)))
+              (setq eden-system-message (assoc title eden-system-messages))
+              (message "System message `%s' selected." title))
           (error err))))))
 
 (transient-define-suffix eden-system-message-reset ()
   "Set `eden-system-message' to nil."
   :transient t
   (interactive)
-  (setq eden-system-message nil))
+  (if eden-system-message
+      (progn
+        (message "Reset system message.")
+        (setq eden-system-message nil))
+    (message "System message is not set, no need to reset it.")))
 
 (defun eden-system-message-update ()
   "Interactively update `eden-system-message'.
