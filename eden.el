@@ -406,7 +406,7 @@ user prompt was \"foo bar baz\") we get something like this:
           (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun eden-request-assistant-content (resp)
-  "Return the first message in RESP response from OpenAI-compatible API.
+  "Return the content of RESP response from OpenAI-compatible API.
 
 For instance (with some keys omitted from a real response from
 OpenAI API) we have:
