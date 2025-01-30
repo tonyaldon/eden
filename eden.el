@@ -2928,6 +2928,30 @@ in a conversation (see `eden-request-conversation')."
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
+(defun eden-req-at-point-show-branches ()
+  "Show conversation branches containing request at point.
+
+See `eden-req-at-point-uuid' and `eden-paths-branches'."
+  (interactive)
+  (when-let* ((req-uuid (eden-req-at-point-uuid))
+              (req `(:dir ,eden-dir :uuid ,req-uuid))
+              (timestamp (eden-request-timestamp req))
+              (branches
+               (eden-paths-branches req-uuid (eden-paths-since timestamp)))
+              (requests (mapcar
+                         (lambda (uuid) `(:dir ,eden-dir :uuid ,uuid))
+                         branches))
+              (buff (get-buffer-create
+                     (eden-buffer-name "branches of request at point"))))
+    (with-current-buffer buff
+      (erase-buffer)
+      (org-mode)
+      (save-excursion
+        (dolist (req requests)
+          (eden-conversation-insert req "Branch"))))
+    (select-window
+     (display-buffer buff '(display-buffer-reuse-window)))))
+
 (defun eden-req-at-point-show-system-message ()
   "Show system message of the request at point.
 
@@ -2966,30 +2990,6 @@ See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
            (display-buffer buff '(display-buffer-reuse-window))))
       (message "No citations for `%s' conversation"
                (eden-request-dir req)))))
-
-(defun eden-req-at-point-show-branches ()
-  "Show conversation branches containing request at point.
-
-See `eden-req-at-point-uuid' and `eden-paths-branches'."
-  (interactive)
-  (when-let* ((req-uuid (eden-req-at-point-uuid))
-              (req `(:dir ,eden-dir :uuid ,req-uuid))
-              (timestamp (eden-request-timestamp req))
-              (branches
-               (eden-paths-branches req-uuid (eden-paths-since timestamp)))
-              (requests (mapcar
-                         (lambda (uuid) `(:dir ,eden-dir :uuid ,uuid))
-                         branches))
-              (buff (get-buffer-create
-                     (eden-buffer-name "branches of request at point"))))
-    (with-current-buffer buff
-      (erase-buffer)
-      (org-mode)
-      (save-excursion
-        (dolist (req requests)
-          (eden-conversation-insert req "Branch"))))
-    (select-window
-     (display-buffer buff '(display-buffer-reuse-window)))))
 
 (defun eden-req-at-point-goto ()
   "Go to the directory of the request at point.
