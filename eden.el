@@ -2822,13 +2822,18 @@ This also updates its value in `eden-system-messages' list."
 
 This also sets `eden-system-message' with this new system message."
   (interactive)
-  (let ((title (read-string "Enter title for new system message: ")))
+  (let ((title (read-string "New system message title: ")))
     (if (seq-contains-p (mapcar 'car-safe eden-system-messages) title)
-        (message "Cannot use `%s' as system message title which is already taken." title)
-      (let ((message (read-string-from-buffer
+        (progn
+          (message "Cannot use `%s' as system message title which is already taken." title)
+          (eden-menu))
+      (let ((_ (eden-maybe-delete-window-prompt-buffer))
+            (message (read-string-from-buffer
                       (format "Enter \"%s\" system message" title) "")))
         (push (cons title message) eden-system-messages)
-        (setq eden-system-message (assoc title eden-system-messages))))))
+        (setq eden-system-message (assoc title eden-system-messages))
+        (message "System message `%s' has been added." title)
+        (eden-menu)))))
 
 (defun eden-menu-quit ()
   "..."
