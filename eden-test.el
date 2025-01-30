@@ -861,7 +861,25 @@ arr[0]
     (eden-write-response resp-str resp req)
     (should (equal (eden-request-read 'response req) resp))
     (should (equal (eden-request-read 'response-org req)
-                   "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n"))))
+                   "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n")))
+  ;; response from deepseek.com with reasoning content
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (resp '(:id "5b5178d0-9cca-4a8b-86f9-6971ce2c1788"
+                 :object "chat.completion"
+                 :created 1738222989
+                 :model "deepseek-reasoner"
+                 :choices [(:index 0
+                            :message (:role "assistant"
+                                      :content "### foo assistant\n"
+                                      :reasoning_content "### foo reasoning\n")
+                            :logprobs nil
+                            :finish_reason "stop")]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response resp-str resp req)
+    (should (equal (eden-request-read 'response req) resp))
+    (should (equal (eden-request-read 'response-org req) "*** foo assistant\n"))
+    (should (equal (eden-request-read 'reasoning req) "*** foo reasoning\n"))))
 
 (ert-deftest eden-sentinel-test ()
   ;; we let-bind requests, callbacks and infos with the variables

@@ -905,6 +905,9 @@ The markdown content from RESP response is converted to `org-mode'
 format, replacing citation references with actual citations when using
 Perplexity API, and then saved as `response-org' file type.
 
+If RESP includes reasoning content, it is converted to `org-mode'
+format and saved as `reasoning' file type.
+
 Note that RESP is just the object representation of the JSON string
 RESP-STR.
 
@@ -918,7 +921,10 @@ See `eden-request-file', `eden-markdown-to-org' and
           (if (and citations (vectorp citations))
               (eden-org-replace-perplexity-citations response-org citations)
             response-org)))
-    (eden-request-write 'response-org req response-org)))
+    (eden-request-write 'response-org req response-org))
+  (when-let* ((assistant-reasoning (eden-request-assistant-reasoning resp))
+              (reasoning (eden-markdown-to-org assistant-reasoning)))
+    (eden-request-write 'reasoning req reasoning)))
 
 (defun eden-write-error (err req)
   "Write ERR error in REQ's directory.
