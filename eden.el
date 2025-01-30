@@ -278,6 +278,7 @@
 
 (require 'json)
 (require 'ox-md)
+(require 'transient)
 
 (defalias 'eden-get-in 'map-nested-elt)
 
