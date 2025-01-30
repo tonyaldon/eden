@@ -1410,6 +1410,15 @@ See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 
 See `eden-send'.")
 
+(defvar eden-conversation-show-reasoning nil
+  "If t, show model's reasonings alongside the conversation's prompts and responses.
+
+It only applies to models such as \"deepseek-reasoner\" from Deepseek
+which generate responses based on their internal reasoning process while
+providing access to that reasoning.
+
+See `eden-request-assistant-reasoning' and `eden-conversation-insert'.")
+
 (defvar eden-prompt-buffer-name "*eden*"
   "Name of the buffer used for user prompt input.")
 
