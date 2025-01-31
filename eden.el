@@ -2934,9 +2934,9 @@ This also sets `eden-system-message' with this new system message."
   - `eden-show-current-configuration'
 - System messages
   - `eden-system-message-add'
-  - `eden-system-message-update'"
+  - `eden-system-message-update'
   - `eden-system-message-set'
-  - `eden-system-message-reset'
+  - `eden-system-message-reset'"
   [["Conversation"
     ("n" "New conversation (cv)" eden-conversation-start)
     ("s" "Start cv from current request in history" eden-conversation-start-from-req-history)
