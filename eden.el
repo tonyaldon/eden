@@ -16,14 +16,14 @@
 ;; It seamlessly facilitates branching conversations making it the
 ;; perfect tool for effective thinking and brainstorming.
 ;;
-;; Eden interface is simple:
+;; Eden's interface is simple:
 ;;
 ;; - You want to ask something to ChatGPT, call `eden' command, enter your
 ;;   prompt, press C-c C-c and you're done.
 ;; - You want to integrate the response in your `org-mode' notes, just
 ;;   copy/paste it.
-;; - You want to manage your settings, call `eden' and explore the options
-;;   in its transient menu.
+;; - You want to manage your configuration, call `eden' and explore the
+;;   options in its transient menu.
 ;;
 ;; Eden strikes the perfect balance by focusing on conversations without
 ;; enforcing them; defaulting to independent requests, it makes starting
@@ -84,19 +84,19 @@
 ;; - uuidgen
 ;; - pandoc
 ;;
-;;;; Eden interface is simple
+;;;; Eden's interface is simple
 ;;
 ;; 1) You want to ask something to ChatGPT, call `eden' command, enter your
 ;;    prompt, press `C-c C-c' and you're done.
 ;; 2) You want to integrate the response in your `org-mode' notes, just
 ;;    copy/paste it.
-;; 3) You want to manage your settings, call `eden' from the prompt buffer
-;;    and explore the options in its transient menu.  For instance, you
-;;    can:
+;; 3) You want to manage your configuration, call `eden' from the prompt
+;;    buffer and explore the options in its transient menu.  For instance,
+;;    you can:
 ;;
-;;    - Show the current settings by pressing `S',
+;;    - Show the current settings by pressing `C',
 ;;    - Set the current API by pressing `a' or
-;;    - Set the system message by pressing `''.
+;;    - Pick a system message by pressing `p'.
 ;;
 ;; 4) You want to manage your conversations, call `eden' from the prompt
 ;;    buffer and explore the options in its transient menu.  For instance,
@@ -186,19 +186,26 @@
 ;; - Pressing `b' will show the conversation branches of the request at
 ;;   point (all the conversations containing the request at point).
 ;;
-;;;; Managing settings with eden command
+;;;; Managing the configuration with eden command
 ;;
-;; In the prompt buffer, you can call `eden' and press `S' to show the current
-;; settings.
+;; In the prompt buffer, you can call `eden' and press `C' to show the current
+;; configuration.
 ;;
-;; From the menu provided by `eden', you can modify the current settings
-;; using the following actions:
+;; From the menu provided by `eden', you can modify the current configuration
+;; doing the following
 ;;
 ;; - Press `a' to set the current API (`eden-api-set'),
 ;; - Press `m' to set the model for the current API (`eden-model-set'),
-;; - Press `T' to set the temperature (`eden-temperature-set'),
-;; - Press `'' to set the system message (`eden-system-message-set'),
-;; - Press `t' to toggle the pop-up response (`eden-pops-up-upon-receipt-toggle').
+;; - Press `t' to set the temperature (`eden-temperature-set'),
+;; - Press `d' to set the request directory (`eden-dir-set'),
+;; - Press `i' to include reasoning information (`eden-conversation-include-reasoning-toggle'),
+;;
+;; or the following for modifying the system message:
+;;
+;; - Press `+' to add a system message (`eden-system-message-add'),
+;; - Press `u' to update the system message (`eden-system-message-update'),
+;; - Press `p' to pick a system message (`eden-system-message-set'),
+;; - Press `_' to reset the system message (`eden-system-message-reset').
 ;;
 ;; The complete list of user variables you may want to adjust includes:
 ;;
@@ -213,6 +220,7 @@
 ;; - `eden-org-property-date'
 ;; - `eden-org-property-req'
 ;; - `eden-pops-up-upon-receipt'
+;; - `eden-conversation-include-reasoning'
 ;; - `eden-prompt-buffer-name'
 ;;
 ;; For more information on these variables, consult their documentation
