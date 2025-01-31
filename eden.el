@@ -288,6 +288,20 @@
 ;;
 ;;   where `<perplexity-api-key>' is your API key.
 ;;
+;;;; Adding Deepseek API key
+;;
+;; Store your Deepseek API key in either the ~/.authinfo.gpg file
+;; (encrypted with ~gpg~) or the ~/.authinfo file (plaintext):
+;;
+;; - After funding your Deespeek account (https://platform.deepseek.com)
+;;   ($5.00 is enough to get started), create a Deepseek API key
+;;   visiting https://platform.deepseek.com/api_keys.
+;; - Add the API key in the selected file as follows:
+;;
+;;       machine deepseek password <deepseek-api-key>
+;;
+;; where <deepseek-api-key> is your API key.
+;;
 ;;;; Adding an OpenAI-compatible API to eden-apis
 ;;
 ;; Let's take an example with X.ai API, an OpenAI-compatible API.
