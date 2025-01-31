@@ -207,6 +207,25 @@
 ;; - Press `p' to pick a system message (`eden-system-message-set'),
 ;; - Press `_' to reset the system message (`eden-system-message-reset').
 ;;
+;;;;; Navigating the profile history
+;;
+;; Each time you quit Eden's menu, the current profile which includes
+;;
+;; - the API,
+;; - the request directory,
+;; - the model,
+;; - the temperature,
+;; - the current conversation if any, and,
+;; - the system message if any
+;;
+;; is pushed to an history that you can navigate from the prompt buffer
+;; with:
+;;
+;; - `C-M-p' bound to `eden-profile-previous' and
+;; - `C-M-n' bound to `eden-profile-next'.
+;;
+;;;;; The complete list of user variables
+;;
 ;; The complete list of user variables you may want to adjust includes:
 ;;
 ;; - `eden-api'
