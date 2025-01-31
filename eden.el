@@ -2403,6 +2403,7 @@ to `transient-exit-hook'.")
 It is a plist with the following key/value pairs:
 
 - :api             - See `eden-api'
+- :dir             - See `eden-dir'
 - :model           - See `eden-model'
 - :temperature     - See `eden-temperature'
 - :conversation-id - See `eden-conversation-id'
@@ -2410,6 +2411,7 @@ It is a plist with the following key/value pairs:
 
 See `eden-profile-push'."
   (list :api eden-api
+        :dir eden-dir
         :model eden-model
         :temperature eden-temperature
         :conversation-id eden-conversation-id
@@ -2433,6 +2435,7 @@ See `eden-profile-ring' and `eden-profile-current'."
             (eden-profile-push)
             (ring-next eden-profile-ring (eden-profile-current))))))
     (setq eden-api (plist-get profile-prev :api))
+    (setq eden-dir (plist-get profile-prev :dir))
     (setq eden-model (plist-get profile-prev :model))
     (setq eden-temperature (plist-get profile-prev :temperature))
     (setq eden-conversation-id (plist-get profile-prev :conversation-id))
@@ -2453,6 +2456,7 @@ See `eden-profile-ring' and `eden-profile-current'."
             (eden-profile-push)
             (ring-previous eden-profile-ring (eden-profile-current))))))
     (setq eden-api (plist-get profile-next :api))
+    (setq eden-dir (plist-get profile-next :dir))
     (setq eden-model (plist-get profile-next :model))
     (setq eden-temperature (plist-get profile-next :temperature))
     (setq eden-conversation-id (plist-get profile-next :conversation-id))
