@@ -1411,7 +1411,7 @@ See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 See `eden-send'.")
 
 (defvar eden-conversation-include-reasoning nil
-  "If t, show model's reasonings alongside the conversation's prompts and responses.
+  "If t, include model's reasonings alongside the conversation's prompts and responses.
 
 It only applies to models such as \"deepseek-reasoner\" from Deepseek
 which generate responses based on their internal reasoning process while
@@ -2445,7 +2445,7 @@ See `eden-profile-ring' and `eden-profile-current'."
     (force-mode-line-update)))
 
 (defun eden-profile-next ()
-  "Turn previous profile into the current one.
+  "Turn next profile into the current one.
 
 See `eden-profile-ring' and `eden-profile-current'."
   (interactive)
@@ -2865,16 +2865,18 @@ This also sets `eden-system-message' with this new system message."
   - `eden-show-last-requests'
   - `eden-kill-last-request'
   - `eden-prompt-current-goto'
-- Settings
+- Configuration
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
+  - `eden-dir-set'
+  - `eden-conversation-include-reasoning-toggle'
   - `eden-show-current-configuration'
 - System messages
-  - `eden-system-message-set'
-  - `eden-system-message-reset'
   - `eden-system-message-add'
   - `eden-system-message-update'"
+  - `eden-system-message-set'
+  - `eden-system-message-reset'
   [["Conversation"
     ("n" "New conversation (cv)" eden-conversation-start)
     ("s" "Start cv from current request in history" eden-conversation-start-from-req-history)
