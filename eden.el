@@ -186,7 +186,7 @@
 ;; - Pressing `b' will show the conversation branches of the request at
 ;;   point (all the conversations containing the request at point).
 ;;
-;;;; Managing the configuration with eden command
+;;;; Configuring Eden
 ;;
 ;; In the prompt buffer, you can call `eden' and press `C' to show the current
 ;; configuration.
