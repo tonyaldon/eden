@@ -186,6 +186,21 @@
 ;; - Pressing `b' will show the conversation branches of the request at
 ;;   point (all the conversations containing the request at point).
 ;;
+;;;; Including reasoning for Deepseek-compatible APIs
+;;
+;; Some models, such as `deepseek-reasoner' from https://www.deepseek.com,
+;; generate responses based on their internal reasoning process and provide
+;; access to this reasoning.
+;;
+;; To include this reasoning in Eden conversations for
+;; Deepseek-compatible APIs, set the variable
+;; `eden-conversation-include-reasoning' to `t'.
+;;
+;; Additionally, regardless of this setting, you can display the
+;; reasoning of a request at point by calling `eden' with the `C-u' prefix
+;; argument and pressing `R'.  A buffer will pop up with the corresponding
+;; reasoning.
+;;
 ;;;; Configuring Eden
 ;;
 ;; In the prompt buffer, you can call `eden' and press `C' to show the current
@@ -454,7 +469,7 @@ OpenAI API) we have:
 (defun eden-request-assistant-reasoning (resp)
   "Return the reasoning content of RESP response from Deepseek-compatible API.
 
-A Deepseek-compatible API is an OpenAI-compatible in which
+A Deepseek-compatible API is an OpenAI-compatible API in which
 `:reasoning_content' key has been added at the same level of `:content'
 key for reasoning models like \"deepseek-reasoner\".
 
