@@ -1307,7 +1307,11 @@ formatted as:
     (:service "perplexity"
      :endpoint "https://api.perplexity.ai/chat/completions"
      :default-model "sonar"
-     :models ("sonar" "sonar-pro")))
+     :models ("sonar" "sonar-pro" "sonar-reasoning"))
+    (:service "deepseek"
+     :endpoint "https://api.deepseek.com/chat/completions"
+     :default-model "deepseek-reasoner"
+     :models ("deepseek-chat" "deepseek-reasoner")))
   "List of OpenAI-compatible APIs available for selection when using `eden-api-set'.
 
 See `eden-api', for detailed descriptions of each element.
