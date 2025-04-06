@@ -69,6 +69,8 @@
 ;;
 ;;      where <openai-api-key> is your API key.
 ;;
+;;    - Restart Emacs to apply this change.
+;;
 ;; 4) Call the command `eden' to switch to *eden* prompt buffer,
 ;; 5) Enter your prompt,
 ;; 6) Press C-c C-c to send your prompt to OpenAI API,
