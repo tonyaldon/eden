@@ -11,7 +11,7 @@
 ;; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ;;
 ;; Author: Tony Aldon <tony@tonyaldon.com>
-;; Version: 1.9
+;; Version: 1.10
 ;; Package-Requires: ((emacs "28.1"))
 ;; Homepage: https://tonyaldon.com
 ;;
