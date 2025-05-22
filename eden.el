@@ -1,4 +1,4 @@
-;;; eden.el --- The intuitive ChatGPT integration designed for Emacs users -*- lexical-binding: t; -*-
+;;; eden.el --- A simple ChatGPT client for Emacs -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2025 Tony Aldon
 ;;
