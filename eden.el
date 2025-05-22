@@ -17,12 +17,9 @@
 ;;
 ;;; Commentary:
 ;;
-;; Boost your productivity with Eden, the intuitive ChatGPT
-;; integration designed for Emacs users craving a clean, text-focused
-;; interface that adapts to various workflows.
-;;
-;; It seamlessly facilitates branching conversations making it the
-;; perfect tool for effective thinking and brainstorming.
+;; Eden is a ChatGPT client for Emacs that facilitates branching
+;; conversations making it the perfect tool for effective thinking and
+;; brainstorming.
 ;;
 ;; Eden's interface is simple:
 ;;
