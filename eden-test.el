@@ -157,6 +157,7 @@
     (should-error (eden-request-read 'response req))))
 
 (ert-deftest eden-request-assistant-content-test ()
+  ;; OpenAI API
   (let ((resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
                 :object "chat.completion"
                 :created 1733030031
@@ -176,6 +177,37 @@
                                                     :accepted_prediction_tokens 0
                                                     :rejected_prediction_tokens 0))
                 :system_fingerprint "fp_0705bf87c0")))
+    (should
+     (string= (eden-request-assistant-content resp) "foo assistant")))
+  ;; Anthropic API (no reasoning)
+  (let ((resp '(:id "msg_011Cm7DW1Gz27innVYwhuWi9"
+                :type "message"
+                :role "assistant"
+                :model "claude-3-5-haiku-20241022"
+                :content [(:type "text" :text "foo assistant")]
+                :stop_reason "end_turn"
+                :stop_sequence nil
+                :usage (:input_tokens 11
+                        :cache_creation_input_tokens 0
+                        :cache_read_input_tokens 0
+                        :output_tokens 149
+                        :service_tier "standard"))))
+    (should
+     (string= (eden-request-assistant-content resp) "foo assistant")))
+  ;; Anthropic API (with reasoning)
+  (let ((resp '(:id "msg_011Cm7DW1Gz27innVYwhuWi9"
+                :type "message"
+                :role "assistant"
+                :model "claude-3-7-sonnet-20250219"
+                :content [(:type "thinking" :thinking "foo thinking" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
+                          (:type "text" :text "foo assistant")]
+                :stop_reason "end_turn"
+                :stop_sequence nil
+                :usage (:input_tokens 11
+                        :cache_creation_input_tokens 0
+                        :cache_read_input_tokens 0
+                        :output_tokens 149
+                        :service_tier "standard"))))
     (should
      (string= (eden-request-assistant-content resp) "foo assistant"))))
 
@@ -802,6 +834,7 @@
 (defvar eden-api-key-someservice-name)
 
 (ert-deftest eden-request-command-test ()
+  ;; OpenAI-compatible API
   (let* ((eden-api-key-someservice-name "secret-api-key")
          (req '(:api (:service "someservice-name"
                       :endpoint "https://someservice-endpoint")
@@ -815,6 +848,23 @@
      (equal (eden-request-command req)
             (list
              (format command-fmt eden-api-key-someservice-name request-file)
+             (format command-fmt "<api-key>" request-file)))))
+  ;; Anthropic API
+  (let* ((eden-api-key-anthropic "secret-api-key")
+         (req '(:api (:service "anthropic"
+                      :endpoint "https://someservice-endpoint"
+                      :anthropic-version "2023-06-01")
+                :dir "/tmp/eden/"
+                :uuid "uuid-bar"))
+         (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
+                              "-H 'x-api-key: %s' "
+                              "-H 'anthropic-version: 2023-06-01' "
+                              "-H 'Content-Type: application/json' -d @%s"))
+         (request-file (eden-request-file 'request req)))
+    (should
+     (equal (eden-request-command req)
+            (list
+             (format command-fmt eden-api-key-anthropic request-file)
              (format command-fmt "<api-key>" request-file))))))
 
 (ert-deftest eden-org-replace-perplexity-citations-test ()
@@ -3044,7 +3094,14 @@ baz-assistant-content
                       :endpoint "https://openai-endpoint"))))
     (should (equal (plist-get req :api)
                    '(:service "openai-service"
-                     :endpoint "https://openai-endpoint")))))
+                     :endpoint "https://openai-endpoint"))))
+
+  ;; Test :api when service is anthropic
+  (let* ((eden-anthropic-max-tokens 4096)
+         (eden-api '(:service "anthropic"
+                     :endpoint "https://api.anthropic.com/v1/messages"))
+         (req (eden-request :prompt "foo prompt")))
+    (should (equal (eden-get-in req [:req :max_tokens]) 4096))))
 
 ;;;; Main menu
 

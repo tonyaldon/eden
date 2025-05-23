@@ -476,8 +476,46 @@ OpenAI API) we have:
                              :logprobs nil
                              :finish_reason \"stop\")])))
       (eden-request-assistant-content resp))
-    ;; \"foo assistant\""
-  (eden-get-in resp [:choices 0 :message :content]))
+    ;; \"foo assistant\"
+
+Also works with Anthropic API which responses are like this
+
+    (:id \"msg_011Cm7DW1Gz27innVYwhuWi9\"
+     :type \"message\"
+     :role \"assistant\"
+     :model \"claude-3-5-haiku-20241022\"
+     :content [(:type \"text\"
+                :text \"foo assistant\")]
+     :stop_reason \"end_turn\"
+     :stop_sequence nil
+     :usage (:input_tokens 11
+             :cache_creation_input_tokens 0
+             :cache_read_input_tokens 0
+             :output_tokens 149
+             :service_tier \"standard\"))
+
+or this with reasoning models:
+
+    (:id \"msg_011Cm7DW1Gz27innVYwhuWi9\"
+       :type \"message\"
+       :role \"assistant\"
+       :model \"claude-3-7-sonnet-20250219\"
+       :content [(:type \"thinking\" :thinking \"foo thinking\" :signature \"...\")
+                 (:type \"text\" :text \"foo assistant\")]
+       :stop_reason \"end_turn\"
+       :stop_sequence nil
+       :usage (:input_tokens 11
+               :cache_creation_input_tokens 0
+               :cache_read_input_tokens 0
+               :output_tokens 149
+               :service_tier \"standard\"))"
+  (or (eden-get-in resp [:choices 0 :message :content])
+      ;; For Anthropic API
+      (catch 'found
+        (dolist (elt (append (plist-get resp :content) nil))
+          (when (equal (plist-get elt :type) "text")
+            (throw 'found (plist-get elt :text))))
+        nil)))
 
 (defun eden-request-assistant-reasoning (resp)
   "Return the reasoning content of RESP response from Deepseek-compatible API.
@@ -877,9 +915,15 @@ lines but also
          (service (eden-get-in req [:api :service]))
          (api-key-symbol (eden-api-key-symbol service))
          (request-file (eden-request-file 'request req))
-         (command-fmt (concat "curl -s -X POST %s "
-                              "-H 'Authorization: Bearer %s' "
-                              "-H 'Content-Type: application/json' -d @%s")))
+         (command-fmt (if (string= service "anthropic")
+                          (concat "curl -s -X POST %s "
+                                  "-H 'x-api-key: %s' "
+                                  (format "-H 'anthropic-version: %s' "
+                                          (eden-get-in req [:api :anthropic-version]))
+                                  "-H 'Content-Type: application/json' -d @%s")
+                        (concat "curl -s -X POST %s "
+                                "-H 'Authorization: Bearer %s' "
+                                "-H 'Content-Type: application/json' -d @%s"))))
     (when (not (boundp api-key-symbol))
       ;; because we need a dynamic variable
       (defvar-1 api-key-symbol nil))
@@ -1367,7 +1411,17 @@ formatted as:
     machine openai password <openai-api-key>")
 
 (defvar eden-apis
-  '((:service "openai"
+  '((:service "anthropic"
+     :endpoint "https://api.anthropic.com/v1/messages"
+     :anthropic-version "2023-06-01"
+     :default-model "claude-sonnet-4-0"
+     :models ("claude-opus-4-0"
+              "claude-sonnet-4-0"
+              "claude-3-7-sonnet-latest"
+              "claude-3-5-sonnet-latest"
+              "claude-3-5-haiku-latest"
+              "claude-3-opus-latest"))
+    (:service "openai"
      :endpoint "https://api.openai.com/v1/chat/completions"
      :default-model "gpt-4o-mini"
      :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
@@ -1459,6 +1513,11 @@ data.
 
 See `eden-write-request', `eden-write-command', `eden-write-response'
 and `eden-write-error'.")
+
+(defvar eden-anthropic-max-tokens 4096
+  "Value of max_tokens for Anthropic API.
+
+It's a required field in requests.")
 
 (defvar eden-org-property-date "EDEN_DATE"
   "Org property used for the date a request has been issued.
@@ -2381,12 +2440,19 @@ or a temporary directory."
                exchanges
                '())
             (:role "user" :content ,(eden-org-to-markdown prompt))))
-         (req-messages (apply 'vector (remq nil -messages))))
-    `(:req (:stream ,(or (and stream t) :false)
-            :model ,-model
-            :temperature ,(or temperature eden-temperature)
-            :messages ,req-messages)
-      :api ,(or api eden-api)
+         (req-messages (apply 'vector (remq nil -messages)))
+         (-api (or api eden-api))
+         (service (plist-get -api :service))
+         (request `(:stream ,(or (and stream t) :false)
+                    :model ,-model
+                    :messages ,req-messages)))
+    (when-let ((-temperature (or temperature eden-temperature)))
+      (plist-put request :temperature -temperature))
+    (when (string= service "anthropic")
+      (plist-put request
+                 :max_tokens eden-anthropic-max-tokens))
+    `(:req ,request
+      :api ,-api
       :prompt ,prompt
       :system-message ,-system-message
       :exchanges ,exchanges
