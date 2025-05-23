@@ -191,7 +191,18 @@
                            :logprobs nil
                            :finish_reason "stop")])))
     (should
-     (string= (eden-request-assistant-reasoning resp) "foo reasoning"))))
+     (string= (eden-request-assistant-reasoning resp) "foo reasoning")))
+  ;; Because Perplexity do it differently
+  (let ((resp '(:id "35413197-0bfe-4ee3-a27b-61e6f8e0335e"
+                :object "chat.completion"
+                :created 1747915264
+                :model "r1-1776"
+                :choices [(:index 0
+                           :message (:role "assistant"
+                                     :content "<think>foo\nbar reasoning</think>foo assistant")
+                           :finish_reason "stop")])))
+    (should
+     (string= (eden-request-assistant-reasoning resp) "foo\nbar reasoning"))))
 
 (ert-deftest eden-request-user-content-test ()
   (let* ((request '(:stream :false
@@ -897,6 +908,22 @@ arr[0]
     (should (equal (eden-request-read 'response req) resp))
     (should (equal (eden-request-read 'response-org req)
                    "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n")))
+  ;; response from perplexity.ai with reasoning content
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (resp '(:id "35413197-0bfe-4ee3-a27b-61e6f8e0335e"
+                 :object "chat.completion"
+                 :created 1747915264
+                 :model "r1-1776"
+                 :choices [(:index 0
+                            :message (:role "assistant"
+                                      :content "<think>### foo reasoning\n</think>\n### foo assistant\n")
+                            :finish_reason "stop")]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response resp-str resp req)
+    (should (equal (eden-request-read 'response req) resp))
+    (should (equal (eden-request-read 'response-org req) "*** foo assistant\n"))
+    (should (equal (eden-request-read 'reasoning req) "*** foo reasoning\n")))
   ;; response from deepseek.com with reasoning content
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))

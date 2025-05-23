@@ -500,8 +500,14 @@ Deepseek API) we have:
                              :logprobs nil
                              :finish_reason \"stop\")])))
       (eden-request-assistant-reasoning resp))
-    ;; \"foo reasoning\""
-  (eden-get-in resp [:choices 0 :message :reasoning_content]))
+    ;; \"foo reasoning\"
+
+We support Perplexity even if they do it a bit differently.  See source code."
+  (or (eden-get-in resp [:choices 0 :message :reasoning_content])
+      ;; Because Perplexity do it differently and I use Perplexity
+      (when-let ((msg (eden-get-in resp [:choices 0 :message :content])))
+        (when (string-match "\\`<think>\\(\\(.\\|\n\\)*?\\)</think>" msg)
+          (match-string 1 msg)))))
 
 (defun eden-request-user-content (request)
   "Return the last message of REQUEST, an OpenAI-compatible API request.
@@ -982,7 +988,13 @@ See `eden-request-file', `eden-markdown-to-org' and
 `eden-org-replace-perplexity-citations'."
   (eden-request-write 'response req resp-str)
   (let* ((assistant-content (eden-request-assistant-content resp))
-         (response-org (eden-markdown-to-org assistant-content))
+         ;; Because Perplexity do it differently and I use Perplexity
+         (assistant-content-filtered
+          (if (string-match "\\`<think>\\(?:.\\|\n\\)*?</think>\\(\\(.\\|\n\\)*\\)"
+                            assistant-content)
+              (match-string 1 assistant-content)
+            assistant-content))
+         (response-org (eden-markdown-to-org assistant-content-filtered))
          (citations (plist-get resp :citations))
          (response-org
           (if (and citations (vectorp citations))
