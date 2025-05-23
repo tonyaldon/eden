@@ -2399,7 +2399,7 @@ conversation, INFO argument must be structured as:
         (eden-mode-line-waiting 'maybe-start)))))
 
 (cl-defun eden-request (&key prompt system-message exchanges
-                             stream model temperature
+                             model temperature
                              api dir)
   "Return a request as defined in `eden-request-send'.
 
@@ -2443,7 +2443,7 @@ or a temporary directory."
          (req-messages (apply 'vector (remq nil -messages)))
          (-api (or api eden-api))
          (service (plist-get -api :service))
-         (request `(:stream ,(or (and stream t) :false)
+         (request `(:stream :false
                     :model ,-model
                     :messages ,req-messages)))
     (when-let ((-temperature (or temperature eden-temperature)))

@@ -3046,17 +3046,6 @@ baz-assistant-content
                    [(:role "developer" :content "foo system")
                     (:role "user" :content "foo prompt")])))
 
-  ;; Test :stream
-  (let ((req (eden-request :prompt "foo prompt")))
-    (should (equal
-             (plist-get (plist-get req :req) :stream)
-             :false)))
-  (let ((req (eden-request :prompt "foo prompt"
-                           :stream t)))
-    (should (equal
-             (plist-get (plist-get req :req) :stream)
-             t)))
-
   ;; Test :model
   (let* ((eden-model "gpt-4o")
          (req (eden-request :prompt "foo prompt")))
