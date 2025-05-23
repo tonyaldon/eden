@@ -540,12 +540,18 @@ Deepseek API) we have:
       (eden-request-assistant-reasoning resp))
     ;; \"foo reasoning\"
 
-We support Perplexity even if they do it a bit differently.  See source code."
+We also support Perplexity and Anthropic even if they do it a bit differently."
   (or (eden-get-in resp [:choices 0 :message :reasoning_content])
       ;; Because Perplexity do it differently and I use Perplexity
       (when-let ((msg (eden-get-in resp [:choices 0 :message :content])))
         (when (string-match "\\`<think>\\(\\(.\\|\n\\)*?\\)</think>" msg)
-          (match-string 1 msg)))))
+          (match-string 1 msg)))
+      ;; Because Perplexity do it differently
+      (catch 'found
+        (dolist (elt (append (plist-get resp :content) nil))
+          (when (equal (plist-get elt :type) "thinking")
+            (throw 'found (plist-get elt :thinking))))
+        nil)))
 
 (defun eden-request-user-content (request)
   "Return the last message of REQUEST, an OpenAI-compatible API request.
@@ -1519,6 +1525,12 @@ and `eden-write-error'.")
 
 It's a required field in requests.")
 
+(defvar eden-anthropic-thinking-budget-tokens 2048
+  "Value of thinking.budget_tokens for Anthropic API.
+
+Only applied when using an Anthropic reasoning model and
+`eden-conversation-include-reasoning' is t.")
+
 (defvar eden-org-property-date "EDEN_DATE"
   "Org property used for the date a request has been issued.
 
@@ -2449,8 +2461,11 @@ or a temporary directory."
     (when-let ((-temperature (or temperature eden-temperature)))
       (plist-put request :temperature -temperature))
     (when (string= service "anthropic")
-      (plist-put request
-                 :max_tokens eden-anthropic-max-tokens))
+      (plist-put request :max_tokens eden-anthropic-max-tokens)
+      (when eden-conversation-include-reasoning
+        (plist-put request
+                   :thinking `(:type "enabled"
+                               :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
     `(:req ,request
       :api ,-api
       :prompt ,prompt

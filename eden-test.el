@@ -224,7 +224,7 @@
                            :finish_reason "stop")])))
     (should
      (string= (eden-request-assistant-reasoning resp) "foo reasoning")))
-  ;; Because Perplexity do it differently
+  ;; Because Perplexity does it differently
   (let ((resp '(:id "35413197-0bfe-4ee3-a27b-61e6f8e0335e"
                 :object "chat.completion"
                 :created 1747915264
@@ -234,7 +234,18 @@
                                      :content "<think>foo\nbar reasoning</think>foo assistant")
                            :finish_reason "stop")])))
     (should
-     (string= (eden-request-assistant-reasoning resp) "foo\nbar reasoning"))))
+     (string= (eden-request-assistant-reasoning resp) "foo\nbar reasoning")))
+  ;; Because Anthropic does it differently
+  (let ((resp '(:id "msg_01Lk1BzP7iZg5JSkQmSZWRhq"
+                :type "message"
+                :role "assistant"
+                :model "claude-3-7-sonnet-20250219"
+                :content
+                [(:type "thinking" :thinking "foo reasoning" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
+                 (:type "text" :text "foo assistant")]
+                :stop_reason "end_turn")))
+    (should
+     (string= (eden-request-assistant-reasoning resp) "foo reasoning"))))
 
 (ert-deftest eden-request-user-content-test ()
   (let* ((request '(:stream :false
@@ -3090,7 +3101,18 @@ baz-assistant-content
          (eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
          (req (eden-request :prompt "foo prompt")))
-    (should (equal (eden-get-in req [:req :max_tokens]) 4096))))
+    (should (equal (eden-get-in req [:req :max_tokens]) 4096)))
+
+  ;; Test :api when service is anthropic with reasoning
+  ;; `eden-conversation-include-reasoning' is t
+  (let* ((eden-anthropic-max-tokens 4096)
+         (eden-anthropic-thinking-budget-tokens 2048)
+         (eden-api '(:service "anthropic"
+                     :endpoint "https://api.anthropic.com/v1/messages"))
+         (eden-conversation-include-reasoning t)
+         (req (eden-request :prompt "foo prompt")))
+    (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
+    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
 
 ;;;; Main menu
 
