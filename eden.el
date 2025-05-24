@@ -1538,6 +1538,13 @@ This is used when inserting requests/conversations into buffers.
 
 See `eden-conversation-insert'.")
 
+(defvar eden-org-property-model "EDEN_MODEL"
+  "Org property used for the service and model of the request.
+
+This is used when inserting requests/conversations into buffers.
+
+See `eden-conversation-insert'.")
+
 (defvar eden-org-property-req "EDEN_REQ"
   "Org property used for request's UUID.
 
@@ -2166,14 +2173,16 @@ only the last one being REQ itself.
 Signal an error if REQ fails `eden-request-check'.
 Signal an error if TITLE and APPEND are both non-nil.
 
-The `org-mode' properties used for the date of the conversation and
-REQ's UUID are defined respectively by the variables `eden-org-property-date'
-and `eden-org-property-req'.
+The `org-mode' properties used for the date of the conversation, the
+service/model and the REQ's UUID are defined respectively by the variables
+`eden-org-property-date', `eden-org-property-model' and
+`eden-org-property-req'.
 
 For instance, given a valid request with \"foo-uuid\" in `/tmp/eden/'
-directory, with a prompt \"foo bar baz\" and the response
+directory, with a prompt \"foo bar baz\", the response
 \"foo bar baz assistant response\", dated Friday, December 20, 2024,
-evaluating the following expression
+and that has been issued to \"openai\" service and the model
+\"gpt-4o-mini-2024-07-18\", evaluating the following expression
 
     (eden-conversation-insert '(:dir \"/tmp/eden/\" :uuid \"foo-uuid\")
                               \"Foo Title\")
@@ -2183,6 +2192,7 @@ inserts the following in the current buffer
     ** Foo Title
     :PROPERTIES:
     :EDEN_DATE: [2024-12-20 Fri]
+    :EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
     :EDEN_REQ: foo-uuid
     :END:
     *** Prompt
@@ -2198,6 +2208,10 @@ See `eden-request-conversation'."
   (when (and (null title) (null append))
     (error "`title' argument can be nil only when `append' argument is non-nil"))
   (let* ((uuid (plist-get req :uuid))
+         (service-model
+          (format "%s/%s"
+                  (plist-get (eden-request-read 'api req) :service)
+                  (plist-get (eden-request-read 'response req) :model)))
          (format-exchange
           (lambda (exchange)
             (delq nil
@@ -2215,6 +2229,9 @@ See `eden-request-conversation'."
                      (format "^:%s: \\(.*\\)" eden-org-property-req) nil t)))
         (progn
           (replace-match uuid nil nil nil 1)
+          (when (re-search-backward
+                 (format "^:%s: \\(.*\\)" eden-org-property-model) nil t)
+            (replace-match service-model nil nil nil 1))
           (goto-char (point-max)))
       (insert
        ;; If we change how we insert the title below, we may also
@@ -2222,8 +2239,8 @@ See `eden-request-conversation'."
        ;; `eden-conversation-edit-title' command.
        "** " (or title "Conversation") "\n"
        ":PROPERTIES:\n"
-       ":" eden-org-property-date ": " (or (eden-request-date req) "")
-       "\n"
+       ":" eden-org-property-date ": " (or (eden-request-date req) "") "\n"
+       ":" eden-org-property-model ": " service-model "\n"
        ":" eden-org-property-req ": " uuid "\n"
        ":END:\n"))
     (dolist (exchange conversation)

@@ -2150,10 +2150,12 @@ foo bar baz
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let ((eden-org-property-date "EDEN_DATE")
+              (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "openai")))
               (resp '(:model "gpt-4o-mini-2024-07-18"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2166,6 +2168,7 @@ foo bar baz
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2191,9 +2194,11 @@ foo bar baz assistant response
         (let ((eden-conversation-include-reasoning t)
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "EDEN_REQ")
+              (eden-org-property-model "EDEN_MODEL")
               (req (eden-request
                     :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "deepseek")))
               (resp '(:model "deepseek-reasoner"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2207,6 +2212,7 @@ foo bar baz assistant response
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: deepseek/deepseek-reasoner
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2235,10 +2241,12 @@ foo bar baz assistant response
                  (lambda nil "uuid")))
         (let ((eden-conversation-include-reasoning nil)
               (eden-org-property-date "EDEN_DATE")
+              (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "deepseek")))
               (resp '(:model "deepseek-reasoner"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2252,6 +2260,7 @@ foo bar baz assistant response
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: deepseek/deepseek-reasoner
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2273,10 +2282,12 @@ foo bar baz assistant response
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let ((eden-org-property-date "EDEN_DATE")
+              (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")))
+                    :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "openai")))
               (resp '(:model "o1-mini-2024-09-12"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2290,6 +2301,7 @@ foo bar baz assistant response
     "** Title of the request
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2328,10 +2340,12 @@ bar baz
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
         (let ((eden-org-property-date "EDEN_DATE")
+              (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "openai")
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                  :user "foo user"
@@ -2355,6 +2369,7 @@ bar baz
     "** Conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid-baz
 :END:
 *** Prompt
@@ -2415,10 +2430,12 @@ baz-assistant-content
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid-baz")))
         (let ((eden-org-property-date "EDEN_DATE")
+              (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
+                    :api '(:service "openai")
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                  :user "foo user"
@@ -2436,6 +2453,7 @@ baz-assistant-content
           (insert "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [date]
+:EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
 :EDEN_REQ: uuid-bar
 :END:
 *** Prompt
@@ -2476,6 +2494,7 @@ bar-assistant-content
     "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [date]
+:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid-baz
 :END:
 *** Prompt
@@ -2536,10 +2555,12 @@ baz-assistant-content
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
         (let* ((eden-org-property-date "EDEN_DATE")
+               (eden-org-property-model "EDEN_MODEL")
                (eden-org-property-req "EDEN_REQ")
                (eden-dir (concat (make-temp-file "eden-" t) "/"))
                (req (eden-request
                      :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
+                     :api '(:service "openai")
                      :exchanges [(:uuid "uuid-foo"
                                   :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                   :user "foo user"
@@ -2563,6 +2584,7 @@ baz-assistant-content
     (concat "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
+:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2580,7 +2602,8 @@ baz-content
 
 baz-assistant-content
 
-"))))
+")))
+  )
 
 ;;;; Sending Requests
 
