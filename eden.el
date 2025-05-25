@@ -3012,6 +3012,23 @@ This also sets `eden-system-message' with this new system message."
         (message "System message `%s' has been added." title)
         (eden-menu)))))
 
+(transient-define-suffix eden-anthropic-max-tokens-set ()
+  "Set `eden-anthropic-max-tokens' interactively."
+  :transient t
+  (interactive)
+  (setq eden-anthropic-max-tokens
+        (read-number "Set Anthropic `max_tokens' to: "))
+  (message "Anthropic `max_tokens' has been set to `%s'."
+           eden-anthropic-max-tokens))
+
+(transient-define-suffix eden-anthropic-thinking-budget-tokens-set ()
+  "Set `eden-anthropic-thinking-budget-tokens' interactively."
+  :transient t
+  (interactive)
+  (setq eden-anthropic-thinking-budget-tokens-set
+        (read-number "Set Anthropic `thinking.budget_tokens' to: "))
+  (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
+           eden-anthropic-thinking-budget-tokens-set))
 (defun eden-menu-quit ()
   "Quit `eden-menu'."
   (interactive)
