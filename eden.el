@@ -3068,10 +3068,10 @@ This also sets `eden-system-message' with this new system message."
     ("L" "Show last requests" eden-show-last-requests)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["System messages"
-    ("+" "Add system message" eden-system-message-add)
+    ("S" "Add system message" eden-system-message-add)
     ("u" "Update system message" eden-system-message-update)
     ("p" "Pick system message" eden-system-message-set)
-    ("_" "Reset system message" eden-system-message-reset)
+    ("r" "Reset system message" eden-system-message-reset)
     "..............."
     ("RET" "Quit menu" eden-menu-quit)]]
   )
