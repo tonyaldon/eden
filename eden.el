@@ -3029,6 +3029,14 @@ This also sets `eden-system-message' with this new system message."
         (read-number "Set Anthropic `thinking.budget_tokens' to: "))
   (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
            eden-anthropic-thinking-budget-tokens-set))
+
+(transient-define-prefix eden-more-options-menu ()
+  "Transient command for additional options."
+  [[("d" "Set request directory" eden-dir-set)
+    ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
+    ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
+    ("q" "Quit 'More options' menu" transient-quit-one)]])
+
 (defun eden-menu-quit ()
   "Quit `eden-menu'."
   (interactive)
