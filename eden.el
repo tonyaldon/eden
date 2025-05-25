@@ -3082,8 +3082,8 @@ This also sets `eden-system-message' with this new system message."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("d" "Set request directory" eden-dir-set)
     ("i" "Include reasoning information" eden-conversation-include-reasoning-toggle)
+    ("o" "More options" eden-more-options-menu)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
