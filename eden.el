@@ -1531,6 +1531,11 @@ It's a required field in requests.")
 Only applied when using an Anthropic reasoning model and
 `eden-conversation-include-reasoning' is t.")
 
+(defvar eden-perplexity-web-search-context-size "medium"
+  "Value of web_search_options.search_context_size for Perplexity API.
+
+Can be \"low\", \"medium\" or \"high\".")
+
 (defvar eden-org-property-date "EDEN_DATE"
   "Org property used for the date a request has been issued.
 
@@ -2483,6 +2488,10 @@ or a temporary directory."
         (plist-put request
                    :thinking `(:type "enabled"
                                :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
+    (when (string= service "perplexity")
+      (plist-put request
+                 :web_search_options
+                 `(:search_context_size ,eden-perplexity-web-search-context-size)))
     `(:req ,request
       :api ,-api
       :prompt ,prompt

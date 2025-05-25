@@ -3135,7 +3135,15 @@ baz-assistant-content
          (eden-conversation-include-reasoning t)
          (req (eden-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
-    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
+    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048)))
+
+  ;; Test :api when service is perplexity
+  (let* ((eden-perplexity-web-search-context-size "low")
+         (eden-api '(:service "perplexity"
+                     :endpoint "https://api.perplexity.ai/chat/completions"))
+         (req (eden-request :prompt "foo prompt")))
+    (should (equal (eden-get-in req [:req :web_search_options :search_context_size])
+                   "low"))))
 
 ;;;; Main menu
 
