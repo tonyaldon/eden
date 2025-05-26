@@ -2929,6 +2929,7 @@ baz-assistant-content
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-test")))
 (ert-deftest eden-request-test ()
   ;; Test :uuid
   (should
@@ -3138,7 +3139,7 @@ baz-assistant-content
     (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048)))
 
   ;; Test :api when service is perplexity
-  (let* ((eden-perplexity-web-search-context-size "low")
+  (let* ((eden-web-search-context-size "low")
          (eden-api '(:service "perplexity"
                      :endpoint "https://api.perplexity.ai/chat/completions"))
          (req (eden-request :prompt "foo prompt")))

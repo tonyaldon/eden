@@ -497,18 +497,18 @@ Also works with Anthropic API which responses are like this
 or this with reasoning models:
 
     (:id \"msg_011Cm7DW1Gz27innVYwhuWi9\"
-       :type \"message\"
-       :role \"assistant\"
-       :model \"claude-3-7-sonnet-20250219\"
-       :content [(:type \"thinking\" :thinking \"foo thinking\" :signature \"...\")
-                 (:type \"text\" :text \"foo assistant\")]
-       :stop_reason \"end_turn\"
-       :stop_sequence nil
-       :usage (:input_tokens 11
-               :cache_creation_input_tokens 0
-               :cache_read_input_tokens 0
-               :output_tokens 149
-               :service_tier \"standard\"))"
+     :type \"message\"
+     :role \"assistant\"
+     :model \"claude-3-7-sonnet-20250219\"
+     :content [(:type \"thinking\" :thinking \"foo thinking\" :signature \"...\")
+               (:type \"text\" :text \"foo assistant\")]
+     :stop_reason \"end_turn\"
+     :stop_sequence nil
+     :usage (:input_tokens 11
+             :cache_creation_input_tokens 0
+             :cache_read_input_tokens 0
+             :output_tokens 149
+             :service_tier \"standard\"))"
   (or (eden-get-in resp [:choices 0 :message :content])
       ;; For Anthropic API
       (catch 'found
@@ -546,7 +546,7 @@ We also support Perplexity and Anthropic even if they do it a bit differently."
       (when-let ((msg (eden-get-in resp [:choices 0 :message :content])))
         (when (string-match "\\`<think>\\(\\(.\\|\n\\)*?\\)</think>" msg)
           (match-string 1 msg)))
-      ;; Because Perplexity do it differently
+      ;; Because Anthropic do it differently
       (catch 'found
         (dolist (elt (append (plist-get resp :content) nil))
           (when (equal (plist-get elt :type) "thinking")
@@ -1565,8 +1565,8 @@ It's a required field in requests.")
 Only applied when using an Anthropic reasoning model and
 `eden-include-reasoning' is t.")
 
-(defvar eden-perplexity-web-search-context-size "medium"
-  "Value of web_search_options.search_context_size for Perplexity API.
+(defvar eden-web-search-context-size "medium"
+  "Value of web_search_options.search_context_size in requests.
 
 Can be \"low\", \"medium\" or \"high\".")
 
@@ -2609,7 +2609,7 @@ or a temporary directory."
     (when (string= service "perplexity")
       (plist-put request
                  :web_search_options
-                 `(:search_context_size ,eden-perplexity-web-search-context-size)))
+                 `(:search_context_size ,eden-web-search-context-size)))
     `(:req ,request
       :api ,-api
       :prompt ,prompt
@@ -2903,7 +2903,7 @@ This includes informations about `eden-dir', `eden-api', `eden-model',
 `eden-system-message' and the current conversation.
 
 Depending on the service, it also includes information about
-`eden-perplexity-web-search-context-size', `eden-anthropic-max-tokens'
+`eden-web-search-context-size', `eden-anthropic-max-tokens'
 and `eden-anthropic-thinking-budget-tokens'.
 
 See `eden-conversation-id' and `eden-conversations'."
@@ -2925,7 +2925,7 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
                   ,(if (string= service "perplexity")
-                       `("Perplexity search context size" . ,eden-perplexity-web-search-context-size))
+                       `("web search context size" . ,eden-web-search-context-size))
                   ,(if (string= service "anthropic")
                        `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
                   ,(if (string= service "anthropic")
@@ -3099,22 +3099,22 @@ This also sets `eden-system-message' with this new system message."
   (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
            eden-anthropic-thinking-budget-tokens))
 
-(transient-define-suffix eden-perplexity-web-search-context-size-set ()
-  "Set `eden-perplexity-web-search-context-size' interactively."
+(transient-define-suffix eden-web-search-context-size-set ()
+  "Set `eden-web-search-context-size' interactively."
   :transient t
   (interactive)
-  (setq eden-perplexity-web-search-context-size
-        (completing-read "Set Perplexity `web_search_options.search_context_size' to: "
+  (setq eden-web-search-context-size
+        (completing-read "Set `web_search_options.search_context_size' to: "
                          '("low" "medium" "high") nil 'require-match))
-  (message "Perplexity `web_search_options.search_context_size' has been set to `%s'."
-           eden-perplexity-web-search-context-size))
+  (message "`web_search_options.search_context_size' has been set to `%s'."
+           eden-web-search-context-size))
 
 (transient-define-prefix eden-more-options-menu ()
   "Transient command for additional options."
   [[("d" "Set request directory" eden-dir-set)
     ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
     ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
-    ("c" "Set Perplexity web_search_options.search_context_size" eden-perplexity-web-search-context-size-set)
+    ("c" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
     ("RET" "Quit 'More options' menu" transient-quit-one)]])
 
 (defun eden-menu-quit ()
