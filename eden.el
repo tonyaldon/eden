@@ -1427,18 +1427,43 @@ formatted as:
               "claude-3-5-sonnet-latest"
               "claude-3-5-haiku-latest"
               "claude-3-opus-latest"))
-    (:service "openai"
-     :endpoint "https://api.openai.com/v1/chat/completions"
-     :default-model "gpt-4o-mini"
-     :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
-    (:service "perplexity"
-     :endpoint "https://api.perplexity.ai/chat/completions"
-     :default-model "sonar"
-     :models ("sonar" "sonar-pro" "sonar-reasoning"))
     (:service "deepseek"
      :endpoint "https://api.deepseek.com/chat/completions"
      :default-model "deepseek-reasoner"
-     :models ("deepseek-chat" "deepseek-reasoner")))
+     :models ("deepseek-chat"
+              "deepseek-reasoner"))
+    (:service "openai"
+     :endpoint "https://api.openai.com/v1/chat/completions"
+     :default-model "gpt-4.1"
+     :models ("gpt-4.1"
+              "gpt-4.1-mini"
+              "gpt-4.1-nano"
+              "gpt-4o"
+              "gpt-4o-mini"
+              "chatgpt-4o-latest"
+              "gpt-4o-search-preview"
+              "gpt-4o-mini-search-preview"
+              "o1"
+              "o3"
+              "o3-mini"
+              "o4-mini"))
+    (:service "perplexity"
+     :endpoint "https://api.perplexity.ai/chat/completions"
+     :default-model "sonar"
+     :models ("sonar-deep-research"
+              "sonar-reasoning-pro"
+              "sonar-reasoning"
+              "sonar-pro"
+              "sonar"
+              "r1-1776"))
+    (:service "x.ai"
+     :endpoint "https://api.x.ai/v1/chat/completions"
+     :default-model "grok-3"
+     :models ("grok-3"
+              "grok-3-fast"
+              "grok-3-mini"
+              "grok-3-mini-fast"
+              "grok-2")))
   "List of OpenAI-compatible APIs available for selection when using `eden-api-set'.
 
 See `eden-api', for detailed descriptions of each element.
@@ -1450,12 +1475,21 @@ Example listing OpenAI API and Perplexity configurations:
 
     ((:service \"openai\"
       :endpoint \"https://api.openai.com/v1/chat/completions\"
-      :default-model \"gpt-4o-mini\"
-      :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
+      :default-model \"gpt-4.1\"
+      :models (\"gpt-4.1\" \"gpt-4o\" \"o1\" \"o3-mini\"))
      (:service \"perplexity\"
       :endpoint \"https://api.perplexity.ai/chat/completions\"
       :default-model \"sonar\"
-      :models (\"sonar\" \"sonar-pro\")))")
+      :models (\"sonar\" \"sonar-pro\")))
+
+More information about the APIs and models:
+
+- https://docs.x.ai/docs/models
+- https://platform.openai.com/docs/models
+- https://docs.anthropic.com/en/docs/about-claude/models/overview
+- https://docs.perplexity.ai/models/model-cards
+- https://api-docs.deepseek.com/quick_start/pricing
+")
 
 (defvar eden-model "gpt-4o-mini"
   "Model used by `eden-send' to send requests to `eden-api'.
