@@ -2638,6 +2638,12 @@ See `eden-send-request'."
                           (plist-get eden-api :service)
                           (- (float-time) (plist-get info :created))
                           buff-name))))
+  ;; When we select a profile with `eden-profile-next' or
+  ;; `eden-profile-previous', the profile, if not recently accessed,
+  ;; might be deeper in the ring.  As we are interesting in using it now,
+  ;; we reordered it to be the most recent, grouping it with other currently
+  ;; engaged profiles.
+  (eden-profile-push)
   (erase-buffer)
   (eden-maybe-delete-window-prompt-buffer)
   (message "Eden sent a request to %s."
