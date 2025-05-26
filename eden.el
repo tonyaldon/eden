@@ -2606,7 +2606,11 @@ or a temporary directory."
         (plist-put request
                    :thinking `(:type "enabled"
                                :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
-    (when (string= service "perplexity")
+    (when (or (string= service "perplexity")
+              (and (string= service "openai")
+                   (member -model
+                           '("gpt-4o-search-preview"
+                             "gpt-4o-mini-search-preview"))))
       (plist-put request
                  :web_search_options
                  `(:search_context_size ,eden-web-search-context-size)))
