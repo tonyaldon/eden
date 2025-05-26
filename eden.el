@@ -699,11 +699,28 @@ the following:
 
 More precisely of the conversation whose last request is REQ.
 
-When using Perplexity API, the JSON response to a request may
-contain citations (urls).  These citations are accessible
-under the key \"citations\" represented as an array.
+When using Perplexity API or OpenAI web search models, the JSON response
+to a request may contain citations (urls).  These citations are accessible
 
-The function `eden-request-perplexity-citations' returns the
+- for Perplexity API under the key \"citations\" represented as an array.
+
+      [\"https://foo-1.com\" \"https://foo-2.com\"]
+
+- for OpenAI web search models under the key \"annotations\" of the
+  message represented as an array:
+
+      [(:type \"url_citation\"
+        :url_citation (:end_index 559
+                       :start_index 448
+                       :title \"foo-1 title\"
+                       :url \"https://foo-1.com\"))
+       (:type \"url_citation\"
+        :url_citation (:end_index 894
+                       :start_index 818
+                       :title \"foo-2\"
+                       :url \"https://foo-2.com\"))]
+
+The function `eden-request-citations' returns the
 concatenation of all these citations for the conversation
 whose last request is REQ.
 
@@ -727,7 +744,7 @@ gives use the following citations:
     (\"https://foo-1.com\" \"https://foo-2.com\" \"https://foo-3.com\"
      \"https://baz-1.com\" \"https://baz-2.com\")
 
-See `eden-req-at-point-show-perplexity-citations'."
+See `eden-req-at-point-show-citations'."
   (let ((dir (plist-get req :dir)))
     (seq-reduce
      (lambda (acc exchange)
@@ -3298,7 +3315,7 @@ See `eden-req-at-point-uuid' and `eden-system-message'."
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))))))
 
-(defun eden-req-at-point-show-perplexity-citations ()
+(defun eden-req-at-point-show-citations ()
   "Show Perplexity citations of the request at point.
 
 See `eden-req-at-point-uuid' and `eden-request-citations'."
@@ -3356,7 +3373,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 - `eden-req-at-point-show-requests'
 - `eden-req-at-point-show-branches'
 - `eden-req-at-point-show-system-message'
-- `eden-req-at-point-show-perplexity-citations'
+- `eden-req-at-point-show-citations'
 - `eden-req-at-point-show-reasoning'
 - `eden-req-at-point-goto'"
   [["Conversation/Request at point"
@@ -3365,7 +3382,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
     ("S" "Show system message of request at point" eden-req-at-point-show-system-message)
-    ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-perplexity-citations)
+    ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-citations)
     ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
