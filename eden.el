@@ -3039,12 +3039,23 @@ This also sets `eden-system-message' with this new system message."
   (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
            eden-anthropic-thinking-budget-tokens-set))
 
+(transient-define-suffix eden-perplexity-web-search-context-size-set ()
+  "Set `eden-perplexity-web-search-context-size' interactively."
+  :transient t
+  (interactive)
+  (setq eden-perplexity-web-search-context-size
+        (completing-read "Set Perplexity `web_search_options.search_context_size' to: "
+                         '("low" "medium" "high") nil 'require-match))
+  (message "Perplexity `web_search_options.search_context_size' has been set to `%s'."
+           eden-perplexity-web-search-context-size))
+
 (transient-define-prefix eden-more-options-menu ()
   "Transient command for additional options."
   [[("d" "Set request directory" eden-dir-set)
     ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
     ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
-    ("q" "Quit 'More options' menu" transient-quit-one)]])
+    ("c" "Set Perplexity web_search_options.search_context_size" eden-perplexity-web-search-context-size-set)
+    ("RET" "Quit 'More options' menu" transient-quit-one)]])
 
 (defun eden-menu-quit ()
   "Quit `eden-menu'."
