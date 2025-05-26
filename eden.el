@@ -3056,10 +3056,10 @@ This also sets `eden-system-message' with this new system message."
   "Set `eden-anthropic-thinking-budget-tokens' interactively."
   :transient t
   (interactive)
-  (setq eden-anthropic-thinking-budget-tokens-set
+  (setq eden-anthropic-thinking-budget-tokens
         (read-number "Set Anthropic `thinking.budget_tokens' to: "))
   (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
-           eden-anthropic-thinking-budget-tokens-set))
+           eden-anthropic-thinking-budget-tokens))
 
 (transient-define-suffix eden-perplexity-web-search-context-size-set ()
   "Set `eden-perplexity-web-search-context-size' interactively."
