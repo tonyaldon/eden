@@ -3382,7 +3382,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
     ("S" "Show system message of request at point" eden-req-at-point-show-system-message)
-    ("C" "Show Perplexity citations of conversation at point" eden-req-at-point-show-citations)
+    ("C" "Show citations of conversation at point" eden-req-at-point-show-citations)
     ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]])
