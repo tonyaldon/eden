@@ -2267,6 +2267,86 @@ See `eden-request-conversation'."
          ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))))))
 
+;;;; Profiles
+
+(defvar eden-profile-ring (make-ring 32)
+  "A ring containing the history of profiles.
+
+Profiles are defined in `eden-profile-current'.
+
+This ring is updated each time we modify the conversations,
+the system messages or other settings using `eden-menu' command.
+Specifically, this is done by `eden-profile-push' which we added
+to `transient-exit-hook'.")
+
+(defun eden-profile-current ()
+  "Return current profile.
+
+It is a plist with the following key/value pairs:
+
+- :api             - See `eden-api'
+- :dir             - See `eden-dir'
+- :model           - See `eden-model'
+- :temperature     - See `eden-temperature'
+- :conversation-id - See `eden-conversation-id'
+- :system-message  - See `eden-system-message'
+
+See `eden-profile-push'."
+  (list :api eden-api
+        :dir eden-dir
+        :model eden-model
+        :temperature eden-temperature
+        :conversation-id eden-conversation-id
+        :system-message eden-system-message))
+
+(defun eden-profile-push ()
+  "Push current profile into `eden-profile-ring'.
+
+See `eden-profile-current'."
+  (ring-remove+insert+extend eden-profile-ring (eden-profile-current) 'grow))
+
+(defun eden-profile-previous ()
+  "Turn previous profile into the current one.
+
+See `eden-profile-ring' and `eden-profile-current'."
+  (interactive)
+  (let ((profile-prev
+         (condition-case nil
+             (ring-next eden-profile-ring (eden-profile-current))
+           (error
+            (eden-profile-push)
+            (ring-next eden-profile-ring (eden-profile-current))))))
+    (setq eden-api (plist-get profile-prev :api))
+    (setq eden-dir (plist-get profile-prev :dir))
+    (setq eden-model (plist-get profile-prev :model))
+    (setq eden-temperature (plist-get profile-prev :temperature))
+    (setq eden-conversation-id (plist-get profile-prev :conversation-id))
+    (setq eden-system-message (plist-get profile-prev :system-message))
+    (when (= (ring-length eden-profile-ring) 1)
+      (message "There's only one profile in the ring."))
+    (force-mode-line-update)))
+
+(defun eden-profile-next ()
+  "Turn next profile into the current one.
+
+See `eden-profile-ring' and `eden-profile-current'."
+  (interactive)
+  (let ((profile-next
+         (condition-case nil
+             (ring-previous eden-profile-ring (eden-profile-current))
+           (error
+            (eden-profile-push)
+            (ring-previous eden-profile-ring (eden-profile-current))))))
+    (setq eden-api (plist-get profile-next :api))
+    (setq eden-dir (plist-get profile-next :dir))
+    (setq eden-model (plist-get profile-next :model))
+    (setq eden-temperature (plist-get profile-next :temperature))
+    (setq eden-conversation-id (plist-get profile-next :conversation-id))
+    (setq eden-system-message (plist-get profile-next :system-message))
+    (when (= (ring-length eden-profile-ring) 1)
+      (message "There's only one profile in the ring."))
+    (force-mode-line-update)))
+
 ;;;; Sending Requests
 
 (defvar eden-pending-requests nil
@@ -2562,86 +2642,6 @@ See `eden-send-request'."
   (eden-maybe-delete-window-prompt-buffer)
   (message "Eden sent a request to %s."
            (plist-get eden-api :service)))
-
-;;;; Profiles
-
-(defvar eden-profile-ring (make-ring 32)
-  "A ring containing the history of profiles.
-
-Profiles are defined in `eden-profile-current'.
-
-This ring is updated each time we modify the conversations,
-the system messages or other settings using `eden-menu' command.
-Specifically, this is done by `eden-profile-push' which we added
-to `transient-exit-hook'.")
-
-(defun eden-profile-current ()
-  "Return current profile.
-
-It is a plist with the following key/value pairs:
-
-- :api             - See `eden-api'
-- :dir             - See `eden-dir'
-- :model           - See `eden-model'
-- :temperature     - See `eden-temperature'
-- :conversation-id - See `eden-conversation-id'
-- :system-message  - See `eden-system-message'
-
-See `eden-profile-push'."
-  (list :api eden-api
-        :dir eden-dir
-        :model eden-model
-        :temperature eden-temperature
-        :conversation-id eden-conversation-id
-        :system-message eden-system-message))
-
-(defun eden-profile-push ()
-  "Push current profile into `eden-profile-ring'.
-
-See `eden-profile-current'."
-  (ring-remove+insert+extend eden-profile-ring (eden-profile-current) 'grow))
-
-(defun eden-profile-previous ()
-  "Turn previous profile into the current one.
-
-See `eden-profile-ring' and `eden-profile-current'."
-  (interactive)
-  (let ((profile-prev
-         (condition-case nil
-             (ring-next eden-profile-ring (eden-profile-current))
-           (error
-            (eden-profile-push)
-            (ring-next eden-profile-ring (eden-profile-current))))))
-    (setq eden-api (plist-get profile-prev :api))
-    (setq eden-dir (plist-get profile-prev :dir))
-    (setq eden-model (plist-get profile-prev :model))
-    (setq eden-temperature (plist-get profile-prev :temperature))
-    (setq eden-conversation-id (plist-get profile-prev :conversation-id))
-    (setq eden-system-message (plist-get profile-prev :system-message))
-    (when (= (ring-length eden-profile-ring) 1)
-      (message "There's only one profile in the ring."))
-    (force-mode-line-update)))
-
-(defun eden-profile-next ()
-  "Turn next profile into the current one.
-
-See `eden-profile-ring' and `eden-profile-current'."
-  (interactive)
-  (let ((profile-next
-         (condition-case nil
-             (ring-previous eden-profile-ring (eden-profile-current))
-           (error
-            (eden-profile-push)
-            (ring-previous eden-profile-ring (eden-profile-current))))))
-    (setq eden-api (plist-get profile-next :api))
-    (setq eden-dir (plist-get profile-next :dir))
-    (setq eden-model (plist-get profile-next :model))
-    (setq eden-temperature (plist-get profile-next :temperature))
-    (setq eden-conversation-id (plist-get profile-next :conversation-id))
-    (setq eden-system-message (plist-get profile-next :system-message))
-    (when (= (ring-length eden-profile-ring) 1)
-      (message "There's only one profile in the ring."))
-    (force-mode-line-update)))
 
 ;;;; Main menu
 
