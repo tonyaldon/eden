@@ -2924,7 +2924,11 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("include reasoning" . ,(format "%s" eden-include-reasoning))
                   ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
-                  ,(if (string= service "perplexity")
+                  ,(if (or (string= service "perplexity")
+                           (and (string= service "openai")
+                                (member eden-model
+                                        '("gpt-4o-search-preview"
+                                          "gpt-4o-mini-search-preview"))))
                        `("web search context size" . ,eden-web-search-context-size))
                   ,(if (string= service "anthropic")
                        `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
