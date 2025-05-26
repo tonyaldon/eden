@@ -529,24 +529,24 @@
       (eden-request-conversation-path `(:dir ,dir :uuid "uuid-baz"))
       ["uuid-foo" "uuid-bar" "uuid-baz"]))))
 
-(ert-deftest eden-request-perplexity-citations-test ()
+(ert-deftest eden-request-citations-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-request-perplexity-citations req)))
+     (eden-request-citations req)))
 
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write 'error req "")
-    (should-error (eden-request-perplexity-citations req)))
+    (should-error (eden-request-citations req)))
 
   ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-request-perplexity-citations req)))
+    (should-error (eden-request-citations req)))
 
   ;; conversation with no previous messages
   (let* ((req `(:req (:stream :false
@@ -576,7 +576,7 @@
     (eden-write-response resp-str resp req)
     (should
      (equal
-      (eden-request-perplexity-citations `(:dir ,dir :uuid "uuid-foo"))
+      (eden-request-citations `(:dir ,dir :uuid "uuid-foo"))
       '("https://foo-1.com" "https://foo-2.com" "https://foo-3.com"))))
   ;; 1) `bar-req' request has no citations in its response
   ;; 2) `err-req' request has no response.json file, this can happen if
@@ -704,7 +704,7 @@
     (eden-write-response baz-resp-str baz-resp baz-req)
     (should
      (equal
-      (eden-request-perplexity-citations `(:dir ,dir :uuid "uuid-baz"))
+      (eden-request-citations `(:dir ,dir :uuid "uuid-baz"))
       '("https://foo-1.com"
         "https://foo-2.com"
         "https://foo-3.com"

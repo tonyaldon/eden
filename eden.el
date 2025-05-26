@@ -694,8 +694,8 @@ the following:
            (last-uuid (list (plist-get req :uuid))))
       (apply 'vector (append uuids last-uuid)))))
 
-(defun eden-request-perplexity-citations (req)
-  "Return the list of Perplexity citations of the conversation REQ.
+(defun eden-request-citations (req)
+  "Return the list of citations of the conversation REQ.
 
 More precisely of the conversation whose last request is REQ.
 
@@ -720,7 +720,7 @@ request has the citations
 
 then the following function call
 
-    (eden-request-perplexity-citations \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
+    (eden-request-citations \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
 
 gives use the following citations:
 
@@ -3301,11 +3301,11 @@ See `eden-req-at-point-uuid' and `eden-system-message'."
 (defun eden-req-at-point-show-perplexity-citations ()
   "Show Perplexity citations of the request at point.
 
-See `eden-req-at-point-uuid' and `eden-request-perplexity-citations'."
+See `eden-req-at-point-uuid' and `eden-request-citations'."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
-    (if-let ((citations (eden-request-perplexity-citations req)))
+    (if-let ((citations (eden-request-citations req)))
         (let ((buff (get-buffer-create
                      (eden-buffer-name "perplexity citations"))))
           (with-current-buffer buff
