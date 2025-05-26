@@ -2184,14 +2184,14 @@ foo bar baz assistant response
   ;; conversation:
   ;; - with no previous exchanges
   ;; - with reasoning content
-  ;; - with `eden-conversation-include-reasoning' sets to t
+  ;; - with `eden-include-reasoning' sets to t
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-conversation-include-reasoning t)
+        (let ((eden-include-reasoning t)
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "EDEN_REQ")
               (eden-org-property-model "EDEN_MODEL")
@@ -2232,14 +2232,14 @@ foo bar baz assistant response
   ;; conversation:
   ;; - with no previous exchanges
   ;; - with reasoning content
-  ;; - with `eden-conversation-include-reasoning' sets to nil
+  ;; - with `eden-include-reasoning' sets to nil
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil "uuid")))
-        (let ((eden-conversation-include-reasoning nil)
+        (let ((eden-include-reasoning nil)
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
@@ -3127,12 +3127,12 @@ baz-assistant-content
     (should (equal (eden-get-in req [:req :max_tokens]) 4096)))
 
   ;; Test :api when service is anthropic with reasoning
-  ;; `eden-conversation-include-reasoning' is t
+  ;; `eden-include-reasoning' is t
   (let* ((eden-anthropic-max-tokens 4096)
          (eden-anthropic-thinking-budget-tokens 2048)
          (eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
-         (eden-conversation-include-reasoning t)
+         (eden-include-reasoning t)
          (req (eden-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
     (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048)))

@@ -186,7 +186,7 @@ to this reasoning.
 
 To include this reasoning in Eden conversations for
 Deepseek-compatible APIs, set the variable
-~eden-conversation-include-reasoning~ to ~t~.
+~eden-include-reasoning~ to ~t~.
 
 Additionally, regardless of this setting, you can display the
 reasoning of a request at point by calling ~eden~ with the ~C-u~ prefix
@@ -205,7 +205,7 @@ configuration doing the following
 - Press ~m~ to set the model for the current API (~eden-model-set~),
 - Press ~t~ to set the temperature (~eden-temperature-set~),
 - Press ~d~ to set the request directory (~eden-dir-set~),
-- Press ~i~ to include reasoning information (~eden-conversation-include-reasoning-toggle~),
+- Press ~i~ to include reasoning information (~eden-include-reasoning-toggle~),
 
 or the following for modifying the system message:
 
@@ -246,7 +246,7 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-org-property-date~
 - ~eden-org-property-req~
 - ~eden-pops-up-upon-receipt~
-- ~eden-conversation-include-reasoning~
+- ~eden-include-reasoning~
 - ~eden-prompt-buffer-name~
 
 For more information on these variables, consult their documentation

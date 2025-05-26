@@ -193,7 +193,7 @@
 ;;
 ;; To include this reasoning in Eden conversations for
 ;; Deepseek-compatible APIs, set the variable
-;; `eden-conversation-include-reasoning' to `t'.
+;; `eden-include-reasoning' to `t'.
 ;;
 ;; Additionally, regardless of this setting, you can display the
 ;; reasoning of a request at point by calling `eden' with the `C-u' prefix
@@ -212,7 +212,7 @@
 ;; - Press `m' to set the model for the current API (`eden-model-set'),
 ;; - Press `t' to set the temperature (`eden-temperature-set'),
 ;; - Press `d' to set the request directory (`eden-dir-set'),
-;; - Press `i' to include reasoning information (`eden-conversation-include-reasoning-toggle'),
+;; - Press `i' to include reasoning information (`eden-include-reasoning-toggle'),
 ;;
 ;; or the following for modifying the system message:
 ;;
@@ -253,7 +253,7 @@
 ;; - `eden-org-property-date'
 ;; - `eden-org-property-req'
 ;; - `eden-pops-up-upon-receipt'
-;; - `eden-conversation-include-reasoning'
+;; - `eden-include-reasoning'
 ;; - `eden-prompt-buffer-name'
 ;;
 ;; For more information on these variables, consult their documentation
@@ -1529,7 +1529,7 @@ It's a required field in requests.")
   "Value of thinking.budget_tokens for Anthropic API.
 
 Only applied when using an Anthropic reasoning model and
-`eden-conversation-include-reasoning' is t.")
+`eden-include-reasoning' is t.")
 
 (defvar eden-perplexity-web-search-context-size "medium"
   "Value of web_search_options.search_context_size for Perplexity API.
@@ -1564,7 +1564,7 @@ See `eden-conversation-insert' and `eden-req-at-point-uuid'.")
 
 See `eden-send'.")
 
-(defvar eden-conversation-include-reasoning nil
+(defvar eden-include-reasoning nil
   "If t, include model's reasonings alongside the conversation's prompts and responses.
 
 It only applies to models such as \"deepseek-reasoner\" from Deepseek
@@ -2255,7 +2255,7 @@ See `eden-request-conversation'."
          ((looking-back "\n\n" nil) nil)
          ((looking-back "\n" nil) (insert "\n"))
          (t (insert "\n\n")))
-        (when (and eden-conversation-include-reasoning reasoning)
+        (when (and eden-include-reasoning reasoning)
           (insert "*** Reasoning\n\n" reasoning)
           (cond
            ((looking-back "\n\n" nil) nil)
@@ -2564,7 +2564,7 @@ or a temporary directory."
       (plist-put request :temperature -temperature))
     (when (string= service "anthropic")
       (plist-put request :max_tokens eden-anthropic-max-tokens)
-      (when eden-conversation-include-reasoning
+      (when eden-include-reasoning
         (plist-put request
                    :thinking `(:type "enabled"
                                :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
@@ -2861,7 +2861,7 @@ See `eden-last-request'."
   "Show current Configuration.
 
 This includes informations about `eden-dir', `eden-api', `eden-model',
-`eden-conversation-include-reasoning',`eden-temperature',
+`eden-include-reasoning',`eden-temperature',
 `eden-system-message' and the current conversation.
 
 Depending on the service, it also includes information about
@@ -2883,7 +2883,7 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("endpoint" . ,(plist-get eden-api :endpoint))
                   ("eden-dir" . ,eden-dir)
                   ("model" . ,eden-model)
-                  ("include reasoning" . ,(format "%s" eden-conversation-include-reasoning))
+                  ("include reasoning" . ,(format "%s" eden-include-reasoning))
                   ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
                   ,(if (string= service "perplexity")
@@ -2959,12 +2959,12 @@ it becomes the value of `eden-model'."
     (setq eden-dir (file-name-as-directory (expand-file-name dir)))
     (message "Next requests will be stored in `%s' directory." eden-dir)))
 
-(transient-define-suffix eden-conversation-include-reasoning-toggle ()
-  "Toggle `eden-conversation-include-reasoning' value."
+(transient-define-suffix eden-include-reasoning-toggle ()
+  "Toggle `eden-include-reasoning' value."
   :transient t
   (interactive)
-  (setq eden-conversation-include-reasoning (not eden-conversation-include-reasoning))
-  (if eden-conversation-include-reasoning
+  (setq eden-include-reasoning (not eden-include-reasoning))
+  (if eden-include-reasoning
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 
@@ -3106,7 +3106,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-model-set'
   - `eden-temperature-set'
   - `eden-dir-set'
-  - `eden-conversation-include-reasoning-toggle'
+  - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'
 - System messages
   - `eden-system-message-add'
@@ -3124,7 +3124,7 @@ This also sets `eden-system-message' with this new system message."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("t" "Set temperature" eden-temperature-set)
-    ("i" "Include reasoning information" eden-conversation-include-reasoning-toggle)
+    ("i" "Include reasoning information" eden-include-reasoning-toggle)
     ("o" "More options" eden-more-options-menu)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
