@@ -2854,31 +2854,47 @@ See `eden-last-request'."
 (defun eden-show-current-configuration ()
   "Show current Configuration.
 
-This incudes informations about `eden-dir', `eden-api', `eden-model',
-`eden-temperature', `eden-system-message' and the current conversation.
+This includes informations about `eden-dir', `eden-api', `eden-model',
+`eden-conversation-include-reasoning',`eden-temperature',
+`eden-system-message' and the current conversation.
+
+Depending on the service, it also includes information about
+`eden-perplexity-web-search-context-size', `eden-anthropic-max-tokens'
+and `eden-anthropic-thinking-budget-tokens'.
 
 See `eden-conversation-id' and `eden-conversations'."
   (interactive)
-  (let ((buff (get-buffer-create (eden-buffer-name "current settings")))
-        (service (plist-get eden-api :service))
-        (endpoint (plist-get eden-api :endpoint))
-        (model eden-model)
-        (temperature (or eden-temperature ""))
-        (system-message (or eden-system-message ""))
-        (conversation (or (assoc eden-conversation-id eden-conversations) "")))
+  (let* ((buff (get-buffer-create (eden-buffer-name "current settings")))
+         (service (plist-get eden-api :service))
+         (temperature (format "%s" (or eden-temperature "")))
+         (conversation (if-let ((conversation (assoc eden-conversation-id eden-conversations)))
+                           (format "%S" conversation)
+                         ""))
+         (system-message (format "%s" (or eden-system-message "")))
+         (options
+          (delq nil
+                `(("service" . ,service)
+                  ("endpoint" . ,(plist-get eden-api :endpoint))
+                  ("eden-dir" . ,eden-dir)
+                  ("model" . ,eden-model)
+                  ("include reasoning" . ,(format "%s" eden-conversation-include-reasoning))
+                  ("temperature" . ,temperature)
+                  ("conversation" . ,conversation)
+                  ,(if (string= service "perplexity")
+                       `("Perplexity search context size" . ,eden-perplexity-web-search-context-size))
+                  ,(if (string= service "anthropic")
+                       `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
+                  ,(if (string= service "anthropic")
+                       `("Anthropic thinking budget tokens" . ,(number-to-string eden-anthropic-thinking-budget-tokens)))
+                  ("system message" . ,system-message))))
+         (opt-max-len (apply 'max (mapcar (lambda (opt) (length (car opt)))
+                                          options))))
     (with-current-buffer buff
       (save-excursion
         (erase-buffer)
-        (insert
-         (format
-          (concat "       service: %s\n"
-                  "      endpoint: %s\n"
-                  "      eden-dir: %s\n"
-                  "         model: %s\n"
-                  "   temperature: %s\n"
-                  "  conversation: %s\n"
-                  "system message: %s\n")
-          service endpoint eden-dir model temperature conversation system-message))))
+        (dolist (opt options)
+          (insert (string-pad (car opt) opt-max-len nil 't) ": "
+                  (cdr opt) "\n"))))
     (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
