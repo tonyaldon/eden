@@ -37,6 +37,15 @@ directory, providing a range of benefits:
    ~error.json~ file can be consulted for troubleshooting.
 3) All data is stored in JSON (or text format), facilitating
    integration with other software for further analysis.
+4) You can start or continue a conversation from any existing request
+   (a feature known as "branching"):
+   - Either from a request at point in your notes,
+   - Or navigating through history in the prompt buffer using ~M-p~ and
+     ~M-n~ to find the desired request, opening the menu with ~eden~, and
+     pressing ~c~ to continue the conversation or ~s~ to start a new
+     conversation from the request.
+5) All data is stored in JSON (or text format), facilitating
+   integration with other software for further analysis.
 
 * Get started in minutes
 
@@ -88,64 +97,6 @@ of your ~exec-path~ directories:
 - ~uuidgen~
 - ~pandoc~
 
-* Eden keeps track of all your interactions with ChatGPT
-
-Another key feature of *Eden* is its ability to keep track of all your
-interactions with *ChatGPT* or any OpenAI-compatible API.
-
-Each request is stored in the ~eden-dir~ directory, which defaults to
-the ~eden~ subdirectory within your ~user-emacs-directory~, providing a
-range of benefits:
-
-1) Requests are always preserved, ensuring you can retrieve them at
-   any time.
-2) With the request's UUID, you can track down the associated
-   request and check details like the API, model, system prompt, and
-   timestamp.
-3) Should an error occur during processing, the corresponding
-   ~error.json~ file can be consulted for troubleshooting.
-4) You can start or continue a conversation from any existing request
-   (a feature known as "branching"):
-   - Either from a request at point in your notes,
-   - Or navigating through history in the prompt buffer using ~M-p~ and
-     ~M-n~ to find the desired request, opening the menu with ~eden~, and
-     pressing ~c~ to continue the conversation or ~s~ to start a new
-     conversation from the request.
-5) All data is stored in JSON (or text format), facilitating
-   integration with other software for further analysis.
-
-* Eden focuses on conversations without enforcing them
-
-*Eden* strikes the perfect balance by focusing on conversations without
-enforcing them; defaulting to independent requests, it makes starting
-new conversations or continuing from previous ones easy!
-
-There are several ways to engage in a conversation while in the prompt
-buffer:
-
-1) To start a new conversation, call the ~eden~ command, press ~n~,
-   and enter a title.  This creates a new empty conversation, setting
-   it as the current one for all new requests.
-
-2) To start a conversation from the current request in history
-   (excluding earlier exchanges), navigate through the history using
-   ~M-p~ and ~M-n~ to find the desired request.  Then, call the ~eden~
-   command, press ~s~, and enter a title.  This creates a new
-   conversation that already include one exchange.
-
-3) To continue an existing conversation call the ~eden~ command, press
-   ~c~, and enter a title.  This will include all previous exchanges of
-   the current request in history.
-
-You can pause the current conversation by calling ~eden~ and pressing
-~SPC~.  Subsequent requests sent to *ChatGPT* or any OpenAI-compatible API
-will then be independent again.
-
-Note that conversation titles and IDs are not stored; they only exist
-during your Emacs session.  However, you can retrieve any conversation
-later either by saving its UUID in your notes or navigating the prompt
-history with ~M-p~ and ~M-n~.
-
 * What are requests at point?
 
 Calling ~eden~ with the ~C-u~ prefix argument opens a menu with available
@@ -162,21 +113,6 @@ For instance:
   request at point,
 - Pressing ~b~ will show the conversation branches of the request at
   point (all the conversations containing the request at point).
-
-* Including reasoning for Deepseek-compatible APIs
-
-Some models, such as ~deepseek-reasoner~ from [[https://www.deepseek.com][Deepseek]], generate
-responses based on their internal reasoning process and provide access
-to this reasoning.
-
-To include this reasoning in Eden conversations for
-Deepseek-compatible APIs, set the variable
-~eden-include-reasoning~ to ~t~.
-
-Additionally, regardless of this setting, you can display the
-reasoning of a request at point by calling ~eden~ with the ~C-u~ prefix
-argument and pressing ~R~.  A buffer will pop up with the corresponding
-reasoning.
 
 * Configuring Eden
 
