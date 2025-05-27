@@ -1,19 +1,31 @@
-*Eden* is a *ChatGPT* client for Emacs that facilitates *branching
-conversations* making it the perfect tool for effective *thinking* and
-*brainstorming*.
+*Eden* is a simple *ChatGPT* client for Emacs that focuses on
+conversations.
 
-*Eden's interface* is simple:
+*Eden* supports OpenAI, Anthropic, Deepseek, Perplexity, and X.ai APIs.
+For reasoning models, you can choose whether or not to display the
+reasoning.  For Perplexity and OpenAI web search, while citations are
+inlined, you can also list them in a dedicated buffer.
 
-- You want to ask something to *ChatGPT*, call ~eden~ command, enter your
+*Eden*'s interface is simple:
+
+- You want to ask something to *ChatGPT*?  Call ~eden~ command, enter your
   prompt, press ~C-c C-c~ and you're done.
-- You want to integrate the response in your ~org-mode~ notes, just
+- You want to integrate the response in your ~org-mode~ notes?  Just
   copy/paste it.
-- You want to manage your configuration, call ~eden~ and explore the
-  options in its transient menu.
+- You want to continue a conversation saved in your ~org-mode~ notes?
+  Call ~eden~ with the ~C-u~ prefix argument which opens a transient
+  menu, then press ~c~ to to continue the conversation whose last
+  request is the request at point.
+- You want to switch the API and the model?  Just call ~eden~ in the
+  prompt buffer, then press ~a~ to change the API and ~m~ to change the
+  model.
+- You want to continue a conversation from a previous request?
+  Simple!  In the prompt buffer, navigate through the prompt history
+  using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
+  ~eden~ and press ~c~ to continue the conversation from that request.
 
-*Eden* strikes the perfect balance by focusing on conversations without
-enforcing them; defaulting to independent requests, it makes starting
-new conversations or continuing from previous ones easy!
+Note that requests are independent by default.  To link them together,
+you must be in a conversation.
 
 Another key feature of *Eden* is its ability to keep track of all your
 interactions with *ChatGPT*.  Each request is stored in the ~eden-dir~
@@ -75,33 +87,6 @@ of your ~exec-path~ directories:
 - ~curl~
 - ~uuidgen~
 - ~pandoc~
-
-* Eden's interface is simple
-
-1) You want to ask something to *ChatGPT*, call ~eden~ command, enter your
-   prompt, press ~C-c C-c~ and you're done.
-2) You want to integrate the response in your ~org-mode~ notes, just
-   copy/paste it.
-3) You want to manage your *configuration*, call ~eden~ from the prompt
-   buffer and explore the options in its transient menu.  For
-   instance, you can:
-
-   - Show the current configuration by pressing ~C~,
-   - Set the current API by pressing ~a~ or
-   - Pick a system message by pressing ~p~.
-
-4) You want to manage your *conversations*, call ~eden~ from the prompt
-   buffer and explore the options in its transient menu.  For instance,
-   you can:
-
-   - Start a new conversation by pressing ~n~,
-   - Switch to an existing conversation by pressing ~TAB~ or
-   - Paused a conversation by pressing ~SPC~.
-
-5) Finally, you can also continue or inspect a conversation from a
-   *request at point* by calling ~eden~ with the prefix argument ~C-u~.
-   This will bring up ~eden-req-at-point-menu~, offering various actions
-   related to the request at point.
 
 * Eden keeps track of all your interactions with ChatGPT
 
