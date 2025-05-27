@@ -1561,7 +1561,7 @@ For instance we can set `eden-system-messages' to:
     ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
      (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
 
-(defvar eden-system-message->developer-for-models '("o1")
+(defvar eden-system-message->developer-for-models '("o1" "o3" "o3-mini" "o4-mini")
   "List of models that use \"developer\" message instead of \"system\" message.
 
 According to OpenAI API documentation, \"With o1 models and newer,
