@@ -78,6 +78,13 @@ directory, providing a range of benefits:
    (require 'eden)
    #+END_SRC
 
+   Or if you're using ~straight~:
+
+   #+BEGIN_SRC emacs-lisp
+   (straight-use-package
+    '(eden :type git :host github :repo "tonyaldon/eden"))
+   #+END_SRC
+
 3) Store your OpenAI API key in either the ~~/.authinfo.gpg~ file
    (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
 
