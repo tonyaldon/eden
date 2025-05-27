@@ -16,15 +16,18 @@ inlined, you can also list them in a dedicated buffer.
   Call ~eden~ with the ~C-u~ prefix argument which opens a transient
   menu, then press ~c~ to to continue the conversation whose last
   request is the request at point.
+- You want to continue a conversation from a previous request?
+  Simple!  In the prompt buffer, navigate through the prompt history
+  using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
+  ~eden~ and press ~c~ to continue the conversation from that request.
 - You want to switch the API and the model?  Just call ~eden~ in the
   prompt buffer, then press ~a~ to change the API and ~m~ to change the
   model.
 - You want to list Perplexity citations?  Fine!  On the request at
   point, call ~eden~ with the ~C-u~ prefix argument, then press ~C~.
-- You want to continue a conversation from a previous request?
-  Simple!  In the prompt buffer, navigate through the prompt history
-  using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
-  ~eden~ and press ~c~ to continue the conversation from that request.
+- You want to read the reasoning behind the response?  Great!  In the
+  prompt buffer, call ~eden~ and press ~i~ to toggle the reasoning.  Send
+  your request and get the reasoning in its own section.
 
 Note that requests are independent by default.  To link them together,
 you must be in a conversation.
@@ -57,6 +60,13 @@ directory, providing a range of benefits:
    - ~curl~
    - ~uuidgen~
    - ~pandoc~
+
+   You can ask ChatGPT to help you with this (replace ~distribution~ with
+   your distribution be Mac, Ubuntu, etc.):
+
+   #+BEGIN_SRC text
+   How to install the utilities curl, uuidgen, and pandoc on <distribution>?
+   #+END_SRC
 
 2) Add the directory containing ~eden.el~ to your ~load-path~ and
    require the *Eden* package by adding the following lines to your init
@@ -177,3 +187,33 @@ You can create new API keys at the following links:
 - https://platform.deepseek.com/api_keys
 - https://perplexity.ai/account/api/keys
 - https://console.x.ai
+
+* Alternatives
+
+See "Alternatives" section of [[https://github.com/karthink/gptel][gptel]] README for a comprehensive list of
+Emacs clients for LLMs not limited to OpenAI.
+
+* FAQ
+** Do you support streaming?
+
+No.
+
+** Why don't you support streaming?
+
+I don't like it.
+
+Streaming the response forces me to read it immediately and linearly.
+
+That's not how I read.  I often start from the end and go backward,
+picking out only the pieces I'm interested in.  If I need a more
+profound understanding of the answer, I might then read it linearly to
+make sure I don't miss anything.
+
+And if I have to read the entire text of each response, I'll get
+exhausted too quickly.  My processing power can't keep up with the
+production rate of LLMs.  I have to choose wisely what I read and what
+I don't.
+
+You might say, "Nobody is forcing you to read it this way; you can just
+wait until the end." That's true!  But in that case, why bother
+implementing streaming at all?
