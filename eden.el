@@ -1091,8 +1091,19 @@ Perplexity API and a system message:
 (defvar eden-api
   '(:service "openai"
     :endpoint "https://api.openai.com/v1/chat/completions"
-    :default-model "gpt-4o-mini"
-    :models ("gpt-4o-mini" "gpt-4o" "o1-mini" "o1"))
+    :default-model "gpt-4.1"
+    :models ("gpt-4.1"
+             "gpt-4.1-mini"
+             "gpt-4.1-nano"
+             "gpt-4o"
+             "gpt-4o-mini"
+             "chatgpt-4o-latest"
+             "gpt-4o-search-preview"
+             "gpt-4o-mini-search-preview"
+             "o1"
+             "o3"
+             "o3-mini"
+             "o4-mini"))
   "Plist describing the OpenAI-compatible API to use.
 
 Accepted keys includes:
@@ -1112,8 +1123,8 @@ Example for OpenAI API configuration:
 
     (:service \"openai\"
      :endpoint \"https://api.openai.com/v1/chat/completions\"
-     :default-model \"gpt-4o-mini\"
-     :models (\"gpt-4o-mini\" \"gpt-4o\" \"o1-mini\" \"o1\"))
+     :default-model \"gpt-4.1\"
+     :models (\"gpt-4.1\" \"gpt-4o\" \"o1\" \"o3-mini\"))
 
 In that case, ensure that the API key, <openai-api-key>, for the
 endpoint \"https://api.openai.com/v1/chat/completions\" is stored
