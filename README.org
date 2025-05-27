@@ -125,15 +125,16 @@ configuration doing the following
 - Press ~a~ to set the current API (~eden-api-set~),
 - Press ~m~ to set the model for the current API (~eden-model-set~),
 - Press ~t~ to set the temperature (~eden-temperature-set~),
-- Press ~d~ to set the request directory (~eden-dir-set~),
 - Press ~i~ to include reasoning information (~eden-include-reasoning-toggle~),
+- Press ~o~ to access another menu with more options (~eden-more-options-menu~),
+- Press ~d~ to set the request directory (~eden-dir-set~),
 
 or the following for modifying the system message:
 
-- Press ~+~ to add a system message (~eden-system-message-add~),
+- Press ~S~ to add a system message (~eden-system-message-add~),
 - Press ~u~ to update the system message (~eden-system-message-update~),
 - Press ~p~ to pick a system message (~eden-system-message-set~),
-- Press ~_~ to reset the system message (~eden-system-message-reset~).
+- Press ~r~ to reset the system message (~eden-system-message-reset~).
 
 ** Navigating the profile history
 
@@ -142,6 +143,7 @@ Each time you quit Eden's menu, the current *profile* which includes
 - the API,
 - the request directory,
 - the model,
+- if you include the reasoning,
 - the temperature,
 - the current conversation if any, and,
 - the system message if any
@@ -164,7 +166,11 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-system-messages~
 - ~eden-system-message->developer-for-models~
 - ~eden-dir~
+- ~eden-anthropic-max-tokens~
+- ~eden-anthropic-thinking-budget-tokens~
+- ~eden-web-search-context-size~
 - ~eden-org-property-date~
+- ~eden-org-property-model~
 - ~eden-org-property-req~
 - ~eden-pops-up-upon-receipt~
 - ~eden-include-reasoning~
@@ -174,82 +180,24 @@ For more information on these variables, consult their documentation
 in the ~*Help*~ buffer using ~describe-variable~ command, bound by default
 to ~C-h v~.
 
-* Adding Perplexity API key
+* Adding API keys to ~~/.authinfo~ or ~~/.authinfo.gpg~
 
-To use Perplexity API, you can either set ~eden-api~ to
+To use the APIs from OpenAI, Anthropic, Deepseek, Perplexity, or X.ai
+you need to store their API key in either the ~~/.authinfo.gpg~ file
+(encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext) as follow:
 
-#+BEGIN_SRC emacs-lisp
-(:service "perplexity"
- :endpoint "https://api.perplexity.ai/chat/completions")
+#+BEGIN_SRC authinfo
+machine openai password <openai-api-key>
+machine anthropic password <anthropic-api-key>
+machine deepseek password <deepseek-api-key>
+machine perplexity password <perplexity-api-key>
+machine x.ai password <x.ai-api-key>
 #+END_SRC
 
-and ~eden-model~ to a model supported by Perplexity API like this
+You can create new API keys at the following links:
 
-#+BEGIN_SRC emacs-lisp
-"sonar"
-#+END_SRC
-
-or you can select Perplexity API by calling ~eden~ in the prompt buffer,
-pressing the key ~a~ and selecting ~perplexity~.
-
-In both cases you need to store your Perplexity API key in either the
-~~/.authinfo.gpg~ file (encrypted with ~gpg~) or the ~~/.authinfo~ file
-(plaintext):
-
-- After funding your [[https://www.perplexity.ai][Perplexity account]] ($5.00 is enough to get
-  started), create a Perplexity API key visiting
-  https://www.perplexity.ai/settings/api.
-- Add the API key in the selected file as follows:
-
-  #+BEGIN_SRC authinfo
-  machine perplexity password <perplexity-api-key>
-  #+END_SRC
-
-  where ~<perplexity-api-key>~ is your API key.
-
-* Adding Deepseek API key
-
-Store your Deepseek API key in either the ~~/.authinfo.gpg~ file
-(encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
-
-- After funding your [[https://platform.deepseek.com][Deepseek account]] ($5.00 is enough to get
-  started), create a Deepseek API key visiting
-  https://platform.deepseek.com/api_keys.
-- Add the API key in the selected file as follows:
-
-  #+BEGIN_SRC authinfo
-  machine deepseek password <deepseek-api-key>
-  #+END_SRC
-
-  where ~<deepseek-api-key>~ is your API key.
-
-* Adding an OpenAI-compatible API to eden-apis
-
-Let's take an example with X.ai API, an OpenAI-compatible API.
-
-If you want to use X.ai API alongside other OpenAI-compatible APIs,
-start by adding its description to the ~eden-apis~ variable as follows:
-
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'eden-apis
-             '(:service "x.ai"
-               :endpoint "https://api.x.ai/v1/chat/completions"
-               :default-model "grok-2"
-               :models ("grok-beta" "grok-2-latest" "grok-2" "grok-2-12-12")))
-#+END_SRC
-
-Then you need to store your X.ai API key in either the ~~/.authinfo.gpg~
-file (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
-
-- After funding your [[https://console.x.ai][X.ai account]] ($5.00 is enough to get started),
-  create an X.ai API key in that same console.
-- Add the API key in the selected file as follows:
-
-  #+BEGIN_SRC authinfo
-  machine x.ai password <x.ai-api-key>
-  #+END_SRC
-
-  where ~<x.ai-api-key>~ is your API key.
-
-Finally, you can select X.ai API with ~grok-2~ default model by calling
-~eden~ in the prompt buffer, pressing the key ~a~ and selecting ~x.ai~.
+- https://platform.openai.com/api-keys
+- https://console.anthropic.com/settings/keys
+- https://platform.deepseek.com/api_keys
+- https://perplexity.ai/account/api/keys
+- https://console.x.ai
