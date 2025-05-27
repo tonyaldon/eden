@@ -178,7 +178,7 @@ For more information on these variables, consult their documentation
 in the ~*Help*~ buffer using ~describe-variable~ command, bound by default
 to ~C-h v~.
 
-* Adding API keys to ~~/.authinfo~ or ~~/.authinfo.gpg~
+* Adding API keys to ~/.authinfo or ~/.authinfo.gpg
 
 To use the APIs from OpenAI, Anthropic, Deepseek, Perplexity, or X.ai
 you need to store their API key in either the ~~/.authinfo.gpg~ file
