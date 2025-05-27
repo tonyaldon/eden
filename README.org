@@ -10,6 +10,11 @@ inlined, you can also list them in a dedicated buffer.
 
 - You want to ask something to *ChatGPT*?  Call ~eden~ command, enter your
   prompt, press ~C-c C-c~ and you're done.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/demo.gif" />
+  #+html: </p>
+
 - You want to integrate the response in your ~org-mode~ notes?  Just
   copy/paste it.
 - You want to continue a conversation saved in your ~org-mode~ notes?
@@ -32,9 +37,9 @@ inlined, you can also list them in a dedicated buffer.
 Note that requests are independent by default.  To link them together,
 you must be in a conversation.
 
-Another key feature of *Eden* is its ability to keep track of all your
-interactions with *ChatGPT*.  Each request is stored in the ~eden-dir~
-directory, providing a range of benefits:
+Also note that *Eden* keeps track of all your interactions with *ChatGPT*.
+Each request is stored in the ~eden-dir~ directory, providing a range of
+benefits:
 
 1) Requests are always preserved, ensuring you can retrieve them at
    any time.
