@@ -97,23 +97,6 @@ of your ~exec-path~ directories:
 - ~uuidgen~
 - ~pandoc~
 
-* What are requests at point?
-
-Calling ~eden~ with the ~C-u~ prefix argument opens a menu with available
-actions related to the request at point.
-
-If the point is on an ~org-mode~ heading which includes the
-property ~eden-org-property-req~ (by default ~EDEN_REQ~), indicating that
-a request exists at that position, you can apply one of the action
-listed in the menu.
-
-For instance:
-
-- Pressing ~c~ will continue a conversation whose last request is the
-  request at point,
-- Pressing ~b~ will show the conversation branches of the request at
-  point (all the conversations containing the request at point).
-
 * Configuring Eden
 
 In the prompt buffer, you can call ~eden~ and press ~C~ to show the
