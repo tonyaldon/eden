@@ -19,6 +19,8 @@ inlined, you can also list them in a dedicated buffer.
 - You want to switch the API and the model?  Just call ~eden~ in the
   prompt buffer, then press ~a~ to change the API and ~m~ to change the
   model.
+- You want to list Perplexity citations?  Fine!  On the request at
+  point, call ~eden~ with the ~C-u~ prefix argument, then press ~C~.
 - You want to continue a conversation from a previous request?
   Simple!  In the prompt buffer, navigate through the prompt history
   using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
@@ -87,15 +89,6 @@ directory, providing a range of benefits:
 6) Press ~C-c C-c~ to send your prompt to OpenAI API,
 7) Finally, the response will asynchronously show up in a dedicated
    buffer upon receipt.
-
-* Utility requirements
-
-Ensure the following utilities are installed and present in one
-of your ~exec-path~ directories:
-
-- ~curl~
-- ~uuidgen~
-- ~pandoc~
 
 * Configuring Eden
 
