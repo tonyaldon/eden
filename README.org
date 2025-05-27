@@ -1,5 +1,4 @@
-*Eden* is a simple *ChatGPT* client for Emacs that focuses on
-conversations.
+* *Eden* is a simple *ChatGPT* client for Emacs that focuses on conversations.
 
 *Eden* supports OpenAI, Anthropic, Deepseek, Perplexity, and X.ai APIs.
 For reasoning models, you can choose whether or not to display the
