@@ -578,10 +578,10 @@
      (equal
       (eden-request-citations `(:dir ,dir :uuid "uuid-foo"))
       '("https://foo-1.com" "https://foo-2.com" "https://foo-3.com"))))
-  ;; 1) `bar-req' request has no citations in its response
-  ;; 2) `err-req' request has no response.json file, this can happen if
-  ;;    it is removed inadvertently
+
+  ;; conversation with multiple requests
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         ;; Perplexity request with citations in response
          (foo-req `(:req (:stream :false
                           :model "sonar"
                           :temperature 1
@@ -603,23 +603,71 @@
                                           :content "foo assistant[1][3]")
                                 :finish_reason "stop")]))
          (foo-resp-str (eden-json-encode foo-resp))
+         ;; OpenAI web search request with citations in response
+         (foo-foo-req `(:req (:stream :false
+                              :model "gpt-4o-search-preview"
+                              :temperature 1
+                              :messages [(:role "user" :content "foo user")])
+                        :exchanges [(:uuid "uuid-foo"
+                                     :prompt "foo prompt"
+                                     :user "foo user"
+                                     :assistant "foo assistant[1][3]"
+                                     :response "foo response[1][3]")]
+                        :api (:service "openai"
+                              :endpoint "https://api.openai.com/v1/chat/completions")
+                        :prompt "foo-foo prompt\n"
+                        :dir ,dir
+                        :uuid "uuid-foo-foo"))
+         (foo-foo-resp
+          '(:id "chatcmpl-7b72b354-9256-4c2e-bacb-8fc390f91270"
+            :object "chat.completion"
+            :created 1748260920
+            :model "gpt-4o-search-preview-2025-03-11"
+            :choices
+            [(:index 0
+              :message
+              (:role "assistant"
+               :content "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)"
+               :refusal nil
+               :annotations [(:type "url_citation"
+                              :url_citation
+                              (:end_index 19
+                               :start_index 40
+                               :title "foo-foo-1 title"
+                               :url "https://foo-foo-1.com"))
+                             (:type "url_citation"
+                              :url_citation
+                              (:end_index 42
+                               :start_index 63
+                               :title "foo-foo-2 title"
+                               :url "https://foo-foo-2.com"))
+                             ])
+              :finish_reason "stop")]))
+         (foo-foo-resp-str (eden-json-encode foo-foo-resp))
+         ;; bar response with no citations
          (bar-req `(:req (:stream :false
                           :model "sonar"
                           :temperature 1
                           :messages [(:role "user" :content "foo user")
                                      (:role "assistant" :content "foo assistant[1][3]")
+                                     (:role "user" :content "foo-foo user")
+                                     (:role "assistant" :content "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)")
                                      (:role "user" :content "bar user")])
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "foo prompt"
                                  :user "foo user"
                                  :assistant "foo assistant[1][3]"
-                                 :response "foo response[1][3]")]
+                                 :response "foo response[1][3]")
+                                (:uuid "uuid-foo-foo"
+                                 :prompt "foo-foo prompt"
+                                 :user "foo-foo user"
+                                 :assistant "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)"
+                                 :response "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)")]
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
                     :prompt "bar prompt\n"
                     :dir ,dir
                     :uuid "uuid-bar"))
-         ;; bar response with no citations
          (bar-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
                      :object "chat.completion"
                      :created 1735366499
@@ -629,39 +677,17 @@
                                           :content "bar assistant")
                                 :finish_reason "stop")]))
          (bar-resp-str (eden-json-encode bar-resp))
-         (err-req `(:req (:stream :false
-                          :model "sonar"
-                          :temperature 1
-                          :messages [(:role "user" :content "foo user")
-                                     (:role "assistant" :content "foo assistant[1][3]")
-                                     (:role "user" :content "bar user")
-                                     (:role "assistant" :content "bar assistant")
-                                     (:role "user" :content "err user")])
-                    :api (:service "perplexity"
-                          :endpoint "https://api.perplexity.ai/chat/completions")
-                    :prompt "err prompt\n"
-                    :exchanges [(:uuid "uuid-foo"
-                                 :prompt "foo prompt"
-                                 :user "foo user"
-                                 :assistant "foo assistant[1][3]"
-                                 :response "foo response[1][3]")
-                                (:uuid "uuid-bar"
-                                 :prompt "bar prompt"
-                                 :user "bar user"
-                                 :assistant "bar assistant"
-                                 :response "bar response")]
-                    :dir ,dir
-                    :uuid "uuid-err"))
+         ;; Perplexity request with citations in response
          (baz-req `(:req (:stream :false
                           :model "sonar"
                           :temperature 1
                           :messages [(:role "system" :content "baz system")
                                      (:role "user" :content "foo user")
                                      (:role "assistant" :content "foo assistant[1][3]")
+                                     (:role "user" :content "foo-foo user")
+                                     (:role "assistant" :content "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)")
                                      (:role "user" :content "bar user")
                                      (:role "assistant" :content "bar assistant")
-                                     (:role "user" :content "err user")
-                                     (:role "assistant" :content "err assistant")
                                      (:role "user" :content "baz user")])
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
@@ -672,16 +698,16 @@
                                  :user "foo user"
                                  :assistant "foo assistant[1][3]"
                                  :response "foo response[1][3]")
+                                (:uuid "uuid-foo-foo"
+                                 :prompt "foo-foo prompt"
+                                 :user "foo-foo user"
+                                 :assistant "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)"
+                                 :response "foo-foo assistant (https://foo-foo-1.com, https://foo-foo-2.com)")
                                 (:uuid "uuid-bar"
                                  :prompt "bar prompt"
                                  :user "bar user"
                                  :assistant "bar assistant"
-                                 :response "bar response")
-                                (:uuid "uuid-err"
-                                 :prompt "err prompt"
-                                 :user "err user"
-                                 :assistant "err assistant"
-                                 :response "err response")]
+                                 :response "bar response")]
                     :dir ,dir
                     :uuid "uuid-baz"))
          (baz-resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
@@ -696,10 +722,11 @@
          (baz-resp-str (eden-json-encode baz-resp)))
     (message "%s" (eden-request-dir baz-req))
     (eden-write-request foo-req)
-    (eden-write-response foo-resp-str foo-resp `(:dir ,dir :uuid "uuid-foo"))
+    (eden-write-response foo-resp-str foo-resp foo-req)
+    (eden-write-request foo-foo-req)
+    (eden-write-response foo-foo-resp-str foo-foo-resp foo-foo-req)
     (eden-write-request bar-req)
-    (eden-write-response bar-resp-str bar-resp `(:dir ,dir :uuid "uuid-bar"))
-    (eden-write-request err-req) ;; we don't write any response for `err-req'
+    (eden-write-response bar-resp-str bar-resp bar-req)
     (eden-write-request baz-req)
     (eden-write-response baz-resp-str baz-resp baz-req)
     (should
@@ -708,6 +735,8 @@
       '("https://foo-1.com"
         "https://foo-2.com"
         "https://foo-3.com"
+        "https://foo-foo-1.com"
+        "https://foo-foo-2.com"
         "https://baz-1.com"
         "https://baz-2.com")))))
 

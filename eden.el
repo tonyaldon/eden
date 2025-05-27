@@ -750,9 +750,16 @@ See `eden-req-at-point-show-citations'."
      (lambda (acc exchange)
        (let* ((uuid-exchange (plist-get exchange :uuid))
               (req-exchange `(:dir ,dir :uuid ,uuid-exchange)))
+         ;; We check for an error in `req-exchange' even if normally
+         ;; this should never happened as requests that signaled errors
+         ;; are discarded in conversations.
          (if (condition-case nil (eden-request-check req-exchange) (error nil))
              (let* ((resp (eden-request-read 'response req-exchange))
-                    (citations (plist-get resp :citations)))
+                    (citations (or (plist-get resp :citations) ;; perplexity
+                                   ;; openai web search
+                                   (mapcar (lambda (elt)
+                                             (eden-get-in elt [:url_citation :url]))
+                                           (eden-get-in resp [:choices 0 :message :annotations])))))
                (append acc citations '()))
            acc)))
      (eden-request-conversation req)
