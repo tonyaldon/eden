@@ -1208,11 +1208,12 @@ More information about the APIs and models:
 - https://api-docs.deepseek.com/quick_start/pricing
 ")
 
-(defvar eden-model "gpt-4o-mini"
+(defvar eden-model "gpt-4.1"
   "Model used by `eden-send' to send requests to `eden-api'.
 
-Examples of valid model for OpenAI API: \"gpt-4o-mini\", \"gpt-4o\",
-\"o1-mini\", \"o1\".")
+Examples of valid model for OpenAI API: \"gpt-4.1\", \"gpt-4o\".
+
+This variable can be modified via `eden-menu'.")
 
 (defvar eden-temperature nil
   "Temperature used by `eden-send' to send requests to `eden-api'.
