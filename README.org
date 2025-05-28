@@ -65,6 +65,11 @@ like this: ~*eden[<conversation's name>]*~.
 Note that all requests are stored in the ~eden-dir~ directory, which
 defaults to the ~eden~ subdirectory within your ~user-emacs-directory~.
 
+Also note that the prompt buffer ~*eden*~ uses ~eden-mode~, which is
+derived from ~org-mode~.  This means that everything you can do in
+~org-mode~ is also available in the prompt buffer, except for the
+following key bindings: ~C-c C-c~, ~M-p~, ~M-n~, ~C-M-p~, and ~C-M-n~.
+
 * Get started in minutes
 
 1) Ensure the following utilities are installed and present in one
