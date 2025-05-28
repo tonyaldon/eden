@@ -20,18 +20,42 @@ inlined, you can also list them in a dedicated buffer.
   On the request at point, call ~eden~ with the ~C-u~ prefix argument
   which opens a transient menu, then press ~c~ to to continue the
   conversation whose last request is the request at point.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/simple-conversation-req-at-point.png" />
+  #+html: </p>
+
 - You want to continue a conversation from a previous request?
   Simple!  In the prompt buffer, navigate through the prompt history
   using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
   ~eden~ and press ~c~ to continue the conversation from that request.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/simple-conversation-prompt-buffer.png" />
+  #+html: </p>
+
 - You want to switch the API and the model?  Just call ~eden~ in the
   prompt buffer, then press ~a~ to change the API and ~m~ to change the
   model.
-- You want to list Perplexity citations?  Fine!  On the request at
-  point, call ~eden~ with the ~C-u~ prefix argument, then press ~C~.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/simple-configuration-api-model.png" />
+  #+html: </p>
+
 - You want to read the reasoning behind the response?  Great!  In the
   prompt buffer, call ~eden~ and press ~i~ to toggle the reasoning.  Send
   your request and get the reasoning in its own section.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/simple-configuration-include-reasoning.png" />
+  #+html: </p>
+
+- You want to list Perplexity citations?  Fine!  On the request at
+  point, call ~eden~ with the ~C-u~ prefix argument, then press ~C~.
+
+  #+html: <p align="center">
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/simple-citations.png" />
+  #+html: </p>
 
 Requests are independent by default and are appended to the
 ~*eden[requests]*~ buffer.  To link them together, you must be in a
