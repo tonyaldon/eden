@@ -2840,7 +2840,7 @@ This also sets `eden-system-message' with this new system message."
   [[("d" "Set request directory" eden-dir-set)
     ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
     ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
-    ("c" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
+    ("s" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
     ("RET" "Quit 'More options' menu" transient-quit-one)]])
 
 (defun eden-menu-quit ()
