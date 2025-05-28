@@ -79,7 +79,8 @@ defaults to the ~eden~ subdirectory within your ~user-emacs-directory~.
 
    - After funding your [[https://platform.openai.com][OpenAI account]] ($5.00 is enough to get
      started), create an OpenAI API key visiting
-     https://platform.openai.com/api-keys.
+     https://platform.openai.com/api-keys.  You can check [[https://www.youtube.com/watch?v=oXoFZIcRvJU][my video]] if
+     you've never done this before.
    - Add the API key in the selected file as follows:
 
      #+BEGIN_SRC authinfo
@@ -99,8 +100,8 @@ defaults to the ~eden~ subdirectory within your ~user-emacs-directory~.
 * Adding API keys to ~/.authinfo or ~/.authinfo.gpg
 
 To use the APIs from OpenAI, Anthropic, Deepseek, Perplexity, or X.ai
-you need to store their API key in either the ~~/.authinfo.gpg~ file
-(encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext) as follow:
+you need to store their API key in either the ~/.authinfo.gpg file
+(encrypted with gpg) or the ~/.authinfo file (plaintext) as follow:
 
 #+BEGIN_SRC authinfo
 machine openai password <openai-api-key>
