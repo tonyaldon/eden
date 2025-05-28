@@ -1,4 +1,4 @@
-* *Eden* is a simple *ChatGPT* client for Emacs that focuses on conversations.
+* Eden is a simple ChatGPT client for Emacs that focuses on conversations.
 
 *Eden* supports OpenAI, Anthropic, Deepseek, Perplexity, and X.ai APIs.
 For reasoning models, you can choose whether or not to display the
@@ -11,15 +11,15 @@ inlined, you can also list them in a dedicated buffer.
   prompt, press ~C-c C-c~ and you're done.
 
   #+html: <p align="center">
-  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/demo.gif" />
+  #+html: <img src="https://raw.githubusercontent.com/tonyaldon/eden/master/img/demo.gif" />
   #+html: </p>
 
 - You want to integrate the response in your ~org-mode~ notes?  Just
   copy/paste it.
 - You want to continue a conversation saved in your ~org-mode~ notes?
-  Call ~eden~ with the ~C-u~ prefix argument which opens a transient
-  menu, then press ~c~ to to continue the conversation whose last
-  request is the request at point.
+  On the request at point, call ~eden~ with the ~C-u~ prefix argument
+  which opens a transient menu, then press ~c~ to to continue the
+  conversation whose last request is the request at point.
 - You want to continue a conversation from a previous request?
   Simple!  In the prompt buffer, navigate through the prompt history
   using ~M-p~ and ~M-n~ to find the desired request, open the menu calling
@@ -33,28 +33,13 @@ inlined, you can also list them in a dedicated buffer.
   prompt buffer, call ~eden~ and press ~i~ to toggle the reasoning.  Send
   your request and get the reasoning in its own section.
 
-Note that requests are independent by default.  To link them together,
-you must be in a conversation.
+Requests are independent by default and are appended to the
+~*eden[requests]*~ buffer.  To link them together, you must be in a
+conversation; in that case, they are appended to unique buffers named
+like this: ~*eden[<conversation's name>]*~.
 
-Also note that *Eden* keeps track of all your interactions with *ChatGPT*.
-Each request is stored in the ~eden-dir~ directory, providing a range of
-benefits:
-
-1) Requests are always preserved, ensuring you can retrieve them at
-   any time.
-2) Should an error occur during processing, the corresponding
-   ~error.json~ file can be consulted for troubleshooting.
-3) All data is stored in JSON (or text format), facilitating
-   integration with other software for further analysis.
-4) You can start or continue a conversation from any existing request
-   (a feature known as "branching"):
-   - Either from a request at point in your notes,
-   - Or navigating through history in the prompt buffer using ~M-p~ and
-     ~M-n~ to find the desired request, opening the menu with ~eden~, and
-     pressing ~c~ to continue the conversation or ~s~ to start a new
-     conversation from the request.
-5) All data is stored in JSON (or text format), facilitating
-   integration with other software for further analysis.
+Note that all requests are stored in the ~eden-dir~ directory, which
+defaults to the ~eden~ subdirectory within your ~user-emacs-directory~.
 
 * Get started in minutes
 
@@ -89,8 +74,8 @@ benefits:
     '(eden :type git :host github :repo "tonyaldon/eden"))
    #+END_SRC
 
-3) Store your OpenAI API key in either the ~~/.authinfo.gpg~ file
-   (encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext):
+3) Store your OpenAI API key in either the ~/.authinfo.gpg file
+   (encrypted with gpg) or the ~/.authinfo file (plaintext):
 
    - After funding your [[https://platform.openai.com][OpenAI account]] ($5.00 is enough to get
      started), create an OpenAI API key visiting
@@ -111,6 +96,85 @@ benefits:
 7) Finally, the response will asynchronously show up in a dedicated
    buffer upon receipt.
 
+* Adding API keys to ~/.authinfo or ~/.authinfo.gpg
+
+To use the APIs from OpenAI, Anthropic, Deepseek, Perplexity, or X.ai
+you need to store their API key in either the ~~/.authinfo.gpg~ file
+(encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext) as follow:
+
+#+BEGIN_SRC authinfo
+machine openai password <openai-api-key>
+machine anthropic password <anthropic-api-key>
+machine deepseek password <deepseek-api-key>
+machine perplexity password <perplexity-api-key>
+machine x.ai password <x.ai-api-key>
+#+END_SRC
+
+You can create new API keys at the following links:
+
+- https://platform.openai.com/api-keys
+- https://console.anthropic.com/settings/keys
+- https://platform.deepseek.com/api_keys
+- https://perplexity.ai/account/api/keys
+- https://console.x.ai
+
+* Managing conversations
+
+*Eden* focuses on conversations without enforcing them; defaulting to
+independent requests, it makes starting new conversations or
+continuing from previous ones easy!
+
+There are several ways to engage in a conversation while in the prompt
+buffer:
+
+1) To start a new conversation, call the ~eden~ command, press ~n~,
+   and enter a title.  This creates a new empty conversation, setting
+   it as the current one for all new requests.
+
+2) To start a conversation from the current request in history
+   (excluding earlier exchanges), navigate through the history using
+   ~M-p~ and ~M-n~ to find the desired request.  Then, call the ~eden~
+   command, press ~s~, and enter a title.  This creates a new
+   conversation that already include one exchange.
+
+3) To continue an existing conversation call the ~eden~ command, press
+   ~c~, and enter a title.  This will include all previous exchanges of
+   the current request in history.
+
+You can pause the current conversation by calling ~eden~ and pressing
+~SPC~.  Subsequent requests will then be independent again.
+
+When you are in a conversation, the name of the conversation appears
+in the mode line of the prompt buffer, enclosed in brackets.
+
+Note that conversation titles and IDs are not stored; they only exist
+during your Emacs session.  However, you can retrieve any conversation
+later either by saving it in your notes (with its UUID) or navigating
+the prompt history with ~M-p~ and ~M-n~.
+
+* All requests are stored on disk
+
+All requests are stored in the ~eden-dir~ directory, which defaults to
+the ~eden~ subdirectory within your ~user-emacs-directory~, providing a
+range of benefits:
+
+1) Requests are always preserved, ensuring you can retrieve them at
+   any time.
+2) With the request's UUID, you can track down the associated
+   request and check details like the API, model, system prompt, and
+   timestamp.
+3) Should an error occur during processing, the corresponding
+   ~error.json~ file can be consulted for troubleshooting.
+4) You can start or continue a conversation from any existing request
+   (a feature known as "branching"):
+   - Either from a request at point in your notes,
+   - Or navigating through history in the prompt buffer using ~M-p~ and
+     ~M-n~ to find the desired request, opening the menu with ~eden~, and
+     pressing ~c~ to continue the conversation or ~s~ to start a new
+     conversation from the request.
+5) All data is stored in JSON (or text format), facilitating
+   integration with other software for further analysis.
+
 * Configuring Eden
 
 In the prompt buffer, you can call ~eden~ and press ~C~ to show the
@@ -124,7 +188,6 @@ configuration doing the following
 - Press ~t~ to set the temperature (~eden-temperature-set~),
 - Press ~i~ to include reasoning information (~eden-include-reasoning-toggle~),
 - Press ~o~ to access another menu with more options (~eden-more-options-menu~),
-- Press ~d~ to set the request directory (~eden-dir-set~),
 
 or the following for modifying the system message:
 
@@ -176,28 +239,6 @@ The complete list of user variables you may want to adjust includes:
 For more information on these variables, consult their documentation
 in the ~*Help*~ buffer using ~describe-variable~ command, bound by default
 to ~C-h v~.
-
-* Adding API keys to ~/.authinfo or ~/.authinfo.gpg
-
-To use the APIs from OpenAI, Anthropic, Deepseek, Perplexity, or X.ai
-you need to store their API key in either the ~~/.authinfo.gpg~ file
-(encrypted with ~gpg~) or the ~~/.authinfo~ file (plaintext) as follow:
-
-#+BEGIN_SRC authinfo
-machine openai password <openai-api-key>
-machine anthropic password <anthropic-api-key>
-machine deepseek password <deepseek-api-key>
-machine perplexity password <perplexity-api-key>
-machine x.ai password <x.ai-api-key>
-#+END_SRC
-
-You can create new API keys at the following links:
-
-- https://platform.openai.com/api-keys
-- https://console.anthropic.com/settings/keys
-- https://platform.deepseek.com/api_keys
-- https://perplexity.ai/account/api/keys
-- https://console.x.ai
 
 * Alternatives
 
