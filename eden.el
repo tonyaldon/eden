@@ -3025,7 +3025,7 @@ See `eden-req-at-point-uuid' and `eden-request-citations'."
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
     (if-let ((citations (eden-request-citations req)))
         (let ((buff (get-buffer-create
-                     (eden-buffer-name "perplexity citations"))))
+                     (eden-buffer-name "citations"))))
           (with-current-buffer buff
             (erase-buffer)
             (org-mode)
