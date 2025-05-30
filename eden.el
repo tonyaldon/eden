@@ -2095,7 +2095,7 @@ See `eden-profile-ring' and `eden-profile-current'."
     (setq eden-api (plist-get profile-next :api))
     (setq eden-dir (plist-get profile-next :dir))
     (setq eden-model (plist-get profile-next :model))
-    (setq eden-include-reasoning (plist-get profile-prev :include-reasoning))
+    (setq eden-include-reasoning (plist-get profile-next :include-reasoning))
     (setq eden-temperature (plist-get profile-next :temperature))
     (setq eden-conversation-id (plist-get profile-next :conversation-id))
     (setq eden-system-message (plist-get profile-next :system-message))
