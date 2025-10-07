@@ -1249,6 +1249,13 @@ According to OpenAI API documentation, a system message consists of
 \"Developer-provided instructions that the model should follow,
 regardless of messages sent by the user.\"")
 
+(defvar eden-system-message-append nil
+  "Instructions (a string) appended to the system message used by `eden-send'.
+
+Setting this variable doesn't modify `eden-system-message'.
+
+See `eden-request'.")
+
 (defvar eden-system-messages nil
   "Alist of system messages available for selection when using `eden-system-message-set'.
 
@@ -2040,13 +2047,14 @@ to `transient-exit-hook'.")
 
 It is a plist with the following key/value pairs:
 
-- :api               - See `eden-api'
-- :dir               - See `eden-dir'
-- :model             - See `eden-model'
-- :include-reasoning - See `eden-include-reasoning'
-- :temperature       - See `eden-temperature'
-- :conversation-id   - See `eden-conversation-id'
-- :system-message    - See `eden-system-message'
+- :api                   - See `eden-api'
+- :dir                   - See `eden-dir'
+- :model                 - See `eden-model'
+- :include-reasoning     - See `eden-include-reasoning'
+- :temperature           - See `eden-temperature'
+- :conversation-id       - See `eden-conversation-id'
+- :system-message        - See `eden-system-message'
+- :system-message-append - See `eden-system-message-append'
 
 See `eden-profile-push'."
   (list :api eden-api
@@ -2055,7 +2063,8 @@ See `eden-profile-push'."
         :include-reasoning eden-include-reasoning
         :temperature eden-temperature
         :conversation-id eden-conversation-id
-        :system-message eden-system-message))
+        :system-message eden-system-message
+        :system-message-append eden-system-message-append))
 
 (defun eden-profile-push ()
   "Push current profile into `eden-profile-ring'.
@@ -2081,6 +2090,7 @@ See `eden-profile-ring' and `eden-profile-current'."
     (setq eden-temperature (plist-get profile-prev :temperature))
     (setq eden-conversation-id (plist-get profile-prev :conversation-id))
     (setq eden-system-message (plist-get profile-prev :system-message))
+    (setq eden-system-message-append (plist-get profile-prev :system-message-append))
     (when (= (ring-length eden-profile-ring) 1)
       (message "There's only one profile in the ring."))
     (force-mode-line-update)))
@@ -2103,6 +2113,7 @@ See `eden-profile-ring' and `eden-profile-current'."
     (setq eden-temperature (plist-get profile-next :temperature))
     (setq eden-conversation-id (plist-get profile-next :conversation-id))
     (setq eden-system-message (plist-get profile-next :system-message))
+    (setq eden-system-message-append (plist-get profile-next :system-message-append))
     (when (= (ring-length eden-profile-ring) 1)
       (message "There's only one profile in the ring."))
     (force-mode-line-update)))
@@ -2273,6 +2284,7 @@ conversation, INFO argument must be structured as:
         (eden-mode-line-waiting 'maybe-start)))))
 
 (cl-defun eden-request (&key prompt system-message exchanges
+                             system-message-append
                              model temperature
                              api dir)
   "Return a request as defined in `eden-request-send'.
@@ -2281,6 +2293,9 @@ conversation, INFO argument must be structured as:
 
 If `:system-message' is missing, it is replaced by `eden-system-message'
 or \"\".
+
+If `:system-message-append' or `eden-system-message-append' (in that order)
+is non-nil, it is appended to the system message of the return request.
 
 If `:model' is missing, it is replaced by `eden-model'.
 If the model picked is part of `eden-system-message->developer-for-models',
@@ -2299,13 +2314,21 @@ or a temporary directory."
   (let* ((-model (or model eden-model))
          (-system-message
           (or system-message (cdr-safe eden-system-message) ""))
+         (-system-message-append
+          (or system-message-append eden-system-message-append))
+         (--system-message
+          (format "%s%s"
+                  -system-message
+                  (if -system-message-append
+                      (concat "\n\n" -system-message-append)
+                    "")))
          (-messages
-          `(,(when (not (string-empty-p -system-message))
+          `(,(when (not (string-empty-p --system-message))
                `(:role ,(if (seq-contains-p eden-system-message->developer-for-models
                                             -model)
                             "developer"
                           "system")
-                 :content ,(eden-org-to-markdown -system-message)))
+                 :content ,(eden-org-to-markdown --system-message)))
             ,@(seq-reduce
                (lambda (acc exchange)
                  (append acc
@@ -2339,7 +2362,7 @@ or a temporary directory."
     `(:req ,request
       :api ,-api
       :prompt ,prompt
-      :system-message ,-system-message
+      :system-message ,--system-message
       :exchanges ,exchanges
       :dir ,(or dir
                 eden-dir
@@ -2626,7 +2649,8 @@ See `eden-last-request'."
 
 This includes informations about `eden-dir', `eden-api', `eden-model',
 `eden-include-reasoning',`eden-temperature',
-`eden-system-message' and the current conversation.
+`eden-system-message', `eden-system-message-append' and the current
+conversation.
 
 Depending on the service, it also includes information about
 `eden-web-search-context-size', `eden-anthropic-max-tokens'
@@ -2641,6 +2665,7 @@ See `eden-conversation-id' and `eden-conversations'."
                            (format "%S" conversation)
                          ""))
          (system-message (format "%s" (or eden-system-message "")))
+         (system-message-append (format "%s" (or eden-system-message-append "")))
          (options
           (delq nil
                 `(("service" . ,service)
@@ -2660,7 +2685,8 @@ See `eden-conversation-id' and `eden-conversations'."
                        `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
                   ,(if (string= service "anthropic")
                        `("Anthropic thinking budget tokens" . ,(number-to-string eden-anthropic-thinking-budget-tokens)))
-                  ("system message" . ,system-message))))
+                  ("system message" . ,system-message)
+                  ("system message append" . ,system-message-append))))
          (opt-max-len (apply 'max (mapcar (lambda (opt) (length (car opt)))
                                           options))))
     (with-current-buffer buff

@@ -237,6 +237,7 @@ Each time you quit Eden's menu, the current *profile* which includes
 - the temperature,
 - the current conversation if any, and,
 - the system message if any
+- the instructions appended to the system message if any
 
 is pushed to an history that you can navigate from the prompt buffer
 with:
@@ -253,6 +254,7 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-model~
 - ~eden-temperature~
 - ~eden-system-message~
+- ~eden-system-message-append~
 - ~eden-system-messages~
 - ~eden-system-message->developer-for-models~
 - ~eden-dir~

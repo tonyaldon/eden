@@ -3110,6 +3110,29 @@ baz-assistant-content
                    [(:role "developer" :content "foo system")
                     (:role "user" :content "foo prompt")])))
 
+  ;; `eden-system-message', :system-message-append and `eden-system-message-append'
+  (should
+   (string=
+    (let ((eden-system-message
+           '("bar system message title" . "bar system message") ))
+      (plist-get (eden-request
+                  :prompt "foo prompt"
+                  :system-message-append "baz system message append")
+                 :system-message))
+    "bar system message
+
+baz system message append"))
+  (should
+   (string=
+    (let ((eden-system-message
+           '("bar system message title" . "bar system message") )
+          (eden-system-message-append "baz system message append"))
+      (plist-get (eden-request :prompt "foo prompt")
+                 :system-message))
+    "bar system message
+
+baz system message append"))
+
   ;; Test :model
   (let* ((eden-model "gpt-4o")
          (req (eden-request :prompt "foo prompt")))
