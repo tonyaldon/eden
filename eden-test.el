@@ -2992,12 +2992,14 @@ baz-assistant-content
   (should-error (eden-request))
   ;; :prompt and :system-message
   (let* ((eden-system-message nil)
+         (eden-system-message-append nil)
          (req (eden-request :prompt "foo prompt")))
     (should (string= (plist-get req :prompt) "foo prompt"))
     (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "foo prompt")])))
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
          (req (eden-request :prompt "foo prompt"
                             :system-message "foo system")))
@@ -3007,6 +3009,7 @@ baz-assistant-content
                     (:role "user" :content "foo prompt")])))
   ;; :prompt, :system-message and :exchanges
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
          (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
@@ -3034,12 +3037,14 @@ baz-assistant-content
   ;; :prompt and :system-message
   ;; both converted from org-mode to markdown
   (let* ((eden-system-message nil)
+         (eden-system-message-append nil)
          (req (eden-request :prompt "* prompt h1\n** prompt h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
          (req (eden-request :prompt "* prompt h1\n** prompt h2"
                             :system-message "* system h1\n** system h2")))
@@ -3049,6 +3054,7 @@ baz-assistant-content
                    [(:role "system" :content "# system h1\n\n\n## system h2")
                     (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
          (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
@@ -3072,14 +3078,16 @@ baz-assistant-content
   ;; :system-message and default `eden-system-message'
   (should
    (string=
-    (let ((eden-system-message nil))
+    (let ((eden-system-message nil)
+          (eden-system-message-append nil))
       (plist-get (eden-request :prompt "foo prompt")
                  :system-message))
     ""))
   (should
    (string=
     (let ((eden-system-message
-           '("bar system message title" . "bar system message") ))
+           '("bar system message title" . "bar system message"))
+          (eden-system-message-append nil))
       (plist-get
        (eden-request :prompt "foo prompt"
                      :system-message "foo system message")
@@ -3088,7 +3096,8 @@ baz-assistant-content
   (should
    (string=
     (let ((eden-system-message
-           '("bar system message title" . "bar system message") ))
+           '("bar system message title" . "bar system message"))
+          (eden-system-message-append nil))
       (plist-get (eden-request :prompt "foo prompt")
                  :system-message))
     "bar system message"))
@@ -3096,6 +3105,7 @@ baz-assistant-content
   ;; `eden-model' and `eden-system-message->developer-for-models'
   ;; in that case :role of first message in messages must be "developer"
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (req (eden-request :prompt "foo prompt"
                             :system-message "foo system"
                             :model "o1")))
@@ -3103,6 +3113,7 @@ baz-assistant-content
                    [(:role "developer" :content "foo system")
                     (:role "user" :content "foo prompt")])))
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
+         (eden-system-message-append nil)
          (eden-model "o1")
          (req (eden-request :prompt "foo prompt"
                             :system-message "foo system")))
@@ -3114,7 +3125,8 @@ baz-assistant-content
   (should
    (string=
     (let ((eden-system-message
-           '("bar system message title" . "bar system message") ))
+           '("bar system message title" . "bar system message"))
+          (eden-system-message-append nil))
       (plist-get (eden-request
                   :prompt "foo prompt"
                   :system-message-append "baz system message append")
