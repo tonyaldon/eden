@@ -1216,10 +1216,10 @@ More information about the APIs and models:
 - https://api-docs.deepseek.com/quick_start/pricing
 ")
 
-(defvar eden-model "gpt-4.1"
+(defvar eden-model "gpt-5"
   "Model used by `eden-send' to send requests to `eden-api'.
 
-Examples of valid model for OpenAI API: \"gpt-4.1\", \"gpt-4o\".
+Examples of valid model for OpenAI API: \"gpt-5\", \"gpt-4.1\".
 
 This variable can be modified via `eden-menu'.")
 
