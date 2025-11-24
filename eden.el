@@ -1091,8 +1091,9 @@ Perplexity API and a system message:
 (defvar eden-api
   '(:service "openai"
     :endpoint "https://api.openai.com/v1/chat/completions"
-    :default-model "gpt-5"
-    :models ("gpt-5"
+    :default-model "gpt-5.1"
+    :models ("gpt-5.1"
+             "gpt-5"
              "gpt-5-mini"
              "gpt-5-nano"
              "gpt-5-chat-latest"
@@ -1156,8 +1157,9 @@ formatted as:
               "deepseek-reasoner"))
     (:service "openai"
      :endpoint "https://api.openai.com/v1/chat/completions"
-     :default-model "gpt-5"
-     :models ("gpt-5"
+     :default-model "gpt-5.1"
+     :models ("gpt-5.1"
+              "gpt-5"
               "gpt-5-mini"
               "gpt-5-nano"
               "gpt-5-chat-latest"
@@ -1218,10 +1220,10 @@ More information about the APIs and models:
 - https://api-docs.deepseek.com/quick_start/pricing
 ")
 
-(defvar eden-model "gpt-5"
+(defvar eden-model "gpt-5.1"
   "Model used by `eden-send' to send requests to `eden-api'.
 
-Examples of valid model for OpenAI API: \"gpt-5\", \"gpt-4.1\".
+Examples of valid model for OpenAI API: \"gpt-5.1\", \"gpt-5\", \"gpt-4.1\".
 
 This variable can be modified via `eden-menu'.")
 
