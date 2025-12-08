@@ -2372,6 +2372,45 @@ or a temporary directory."
                 (concat (temporary-file-directory) "eden/"))
       :uuid ,(eden-uuid))))
 
+(defun eden-callback (req _resp info)
+  "Default callback function used in `eden-send'."
+  (let* ((conversation-id (plist-get info :conversation-id))
+         (title (or (eden-conversation-title conversation-id)
+                    "Request"))
+         (buff-name
+          (or (eden-conversation-buffer-name conversation-id)
+              (eden-buffer-name "requests")))
+         (buff-already-exist-p (get-buffer buff-name))
+         (append (and conversation-id buff-already-exist-p 'append))
+         (buff (get-buffer-create buff-name)))
+    (push buff-name buffer-name-history)
+    (with-current-buffer buff
+      (save-excursion
+        (widen)
+        (when (not buff-already-exist-p) (org-mode))
+        (goto-char (point-max))
+        ;; If `buff' has been newly created we are at
+        ;; the beginning of buffer and `append' is nil such
+        ;; that we insert the conversation completly
+        (eden-conversation-insert req title append)))
+    (when (not (equal (window-buffer (selected-window)) buff))
+      (when-let ((w (or (and eden-pops-up-upon-receipt
+                             (display-buffer
+                              buff '(display-buffer-reuse-window)))
+                        (get-buffer-window buff))))
+        (with-selected-window w
+          (goto-char (point-max))
+          (re-search-backward "^\\*\\*\\* Response" nil t)
+          (recenter-top-bottom 0))
+        (when winner-mode (winner-save-old-configurations))))
+    (eden-pending-remove req)
+    (eden-conversation-update info req)
+    (eden-mode-line-waiting 'maybe-stop)
+    (message "Eden received a response from %s after %.3fs.  See `%s' buffer."
+             (plist-get eden-api :service)
+             (- (float-time) (plist-get info :created))
+             buff-name)))
+
 (defun eden-send ()
   "Send current prompt to `eden-api' OpenAI-compatible API.
 
@@ -2391,43 +2430,7 @@ See `eden-send-request'."
          :exchanges (eden-conversation-exchanges eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id
            :created ,(float-time))
-   :callback (lambda (req _resp info)
-               (let* ((conversation-id (plist-get info :conversation-id))
-                      (title (or (eden-conversation-title conversation-id)
-                                 "Request"))
-                      (buff-name
-                       (or (eden-conversation-buffer-name conversation-id)
-                           (eden-buffer-name "requests")))
-                      (buff-already-exist-p (get-buffer buff-name))
-                      (append (and conversation-id buff-already-exist-p 'append))
-                      (buff (get-buffer-create buff-name)))
-                 (push buff-name buffer-name-history)
-                 (with-current-buffer buff
-                   (save-excursion
-                     (widen)
-                     (when (not buff-already-exist-p) (org-mode))
-                     (goto-char (point-max))
-                     ;; If `buff' has been newly created we are at
-                     ;; the beginning of buffer and `append' is nil such
-                     ;; that we insert the conversation completly
-                     (eden-conversation-insert req title append)))
-                 (when (not (equal (window-buffer (selected-window)) buff))
-                   (when-let ((w (or (and eden-pops-up-upon-receipt
-                                          (display-buffer
-                                           buff '(display-buffer-reuse-window)))
-                                     (get-buffer-window buff))))
-                     (with-selected-window w
-                       (goto-char (point-max))
-                       (re-search-backward "^\\*\\*\\* Response" nil t)
-                       (recenter-top-bottom 0))
-                     (when winner-mode (winner-save-old-configurations))))
-                 (eden-pending-remove req)
-                 (eden-conversation-update info req)
-                 (eden-mode-line-waiting 'maybe-stop)
-                 (message "Eden received a response from %s after %.3fs.  See `%s' buffer."
-                          (plist-get eden-api :service)
-                          (- (float-time) (plist-get info :created))
-                          buff-name))))
+   :callback 'eden-callback)
   ;; When we select a profile with `eden-profile-next' or
   ;; `eden-profile-previous', the profile, if not recently accessed,
   ;; might be deeper in the ring.  As we are interesting in using it now,
