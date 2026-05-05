@@ -2741,7 +2741,7 @@ baz-assistant-content
          (req-foo (eden-request :prompt "foo"))
          (req-foo-foo (eden-request :prompt "foo-foo"))
          ;; even if we don't use it (because we're not really sending
-         ;; sending the request to openain) we pass :exchanges argument
+         ;; the request to openai) we pass :exchanges argument
          ;; to `eden-request' as we should do it given that
          ;; below we send `req-baz' as part of the conversation
          ;; "conversation-id-bar" with :action being `start-from'
