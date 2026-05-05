@@ -319,21 +319,14 @@
     (should-error (eden-request-conversation req)))
 
   ;; conversation with no previous messages
-  (let* ((req `(:req (:stream :false
-                      :model "gpt-4o-mini"
-                      :temperature 1
-                      :messages [(:role "user" :content "foo user")])
+  (let* ((req `(:req (:messages [(:role "user" :content "foo user")])
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
          (dir (plist-get req :dir))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
+         (resp '(:choices [(:index 0
                             :message (:role "assistant" :content "foo assistant\n" :refusal nil)
                             :logprobs nil :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
@@ -349,22 +342,15 @@
         :assistant "foo assistant\n"
         :response "foo assistant\n")])))
 
-  ;; conversation with no previous messages and reasoning content
-  (let* ((req `(:req (:stream :false
-                      :model "gpt-4o-mini"
-                      :temperature 1
-                      :messages [(:role "user" :content "foo user")])
+  ;; conversation with no previous messages and reasoning content (as per Deepseek)
+  (let* ((req `(:req (:messages [(:role "user" :content "foo user")])
                 :api (:service "chatgpt"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
          (dir (plist-get req :dir))
-         (resp '(:id "5b5178d0-9cca-4a8b-86f9-6971ce2c1788"
-                 :object "chat.completion"
-                 :created 1738222989
-                 :model "deepseek-reasoner"
-                 :choices [(:index 0
+         (resp '(:choices [(:index 0
                             :message (:role "assistant"
                                       :content "foo assistant\n"
                                       :reasoning_content "foo reasoning\n")
@@ -385,10 +371,7 @@
         :reasoning "foo reasoning\n")])))
 
   ;; conversation with previous messages
-  (let* ((req `(:req (:stream :false
-                      :model "gpt-4o-mini"
-                      :temperature 1
-                      :messages [(:role "system" :content "baz system\n")
+  (let* ((req `(:req (:messages [(:role "system" :content "baz system\n")
                                  (:role "user" :content "foo user")
                                  (:role "assistant" :content "foo assistant\n")
                                  (:role "user" :content "bar prompt")
@@ -411,11 +394,7 @@
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-baz"))
          (dir (plist-get req :dir))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
+         (resp '(:choices [(:index 0
                             :message (:role "assistant" :content "baz assistant\n" :refusal nil)
                             :logprobs nil :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
