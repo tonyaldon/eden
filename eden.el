@@ -1758,13 +1758,6 @@ If no conversation with CONVERSATION-ID can be found in `eden-conversations',
 return nil."
   (eden-get-in eden-conversations `(,conversation-id :title)))
 
-(defun eden-conversation-action (conversation-id)
-  "Return action of conversation with CONVERSATION-ID in `eden-conversations'.
-
-If no conversation with CONVERSATION-ID can be found in `eden-conversations',
-return nil."
-  (eden-get-in eden-conversations `(,conversation-id :action)))
-
 (defun eden-conversation-last-req (conversation-id)
   "Return last request of conversation with CONVERSATION-ID in `eden-conversations'.
 

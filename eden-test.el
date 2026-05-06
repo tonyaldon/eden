@@ -1962,26 +1962,6 @@ foo bar baz
       (eden-conversation-title "conversation-id-bar")
       "bar title"))))
 
-(ert-deftest eden-conversation-action-test ()
-  (let ((eden-conversations nil))
-    (should-not (eden-conversation-action "conversation-id-bar")))
-  (let ((eden-conversations
-         '(("conversation-id-foo" .
-            (:title "foo title" :action start :last-req-uuid nil))
-           ("conversation-id-bar" .
-            (:title "bar title" :action start-from :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :action continue-from :last-req-uuid "baz-req-uuid")))))
-    (should
-     (eq (eden-conversation-action "conversation-id-foo")
-         'start))
-    (should
-     (eq (eden-conversation-action "conversation-id-bar")
-         'start-from))
-    (should
-     (eq (eden-conversation-action "conversation-id-baz")
-         'continue-from))))
-
 (ert-deftest eden-conversation-last-req-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-title "conversation-id-bar")))
