@@ -1731,6 +1731,19 @@ foo bar baz
 
 ;;;; Conversations
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exists-p-test")))
+(ert-deftest eden-conversation-exists-p-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-exists-p "not-a-conversation")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :action start :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :action continue-from :last-req-uuid "bar-req-uuid")))))
+    (should (eden-conversation-exists-p "conversation-id-foo"))
+    (should (eden-conversation-exists-p "conversation-id-bar"))
+    (should-not (eden-conversation-exists-p "not-a-conversation"))))
+
 (ert-deftest eden-conversation-with-title-exists-p-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-with-title-exists-p "bar title")))
@@ -2136,6 +2149,7 @@ foo bar baz
       '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))
     (should (= (length eden-conversations) 3))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-insert-test")))
 (ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (should-error
@@ -2186,10 +2200,10 @@ foo bar baz
               (req (eden-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai")))
+                    :api '(:service "openai"
+                           :endpoint "https://api.openai.com/v1/chat/completions")))
               (resp '(:model "gpt-4o-mini-2024-07-18"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
+                      :choices [(:message (:role "assistant"
                                            :content "foo bar baz assistant response"))])))
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)
@@ -2229,7 +2243,8 @@ foo bar baz assistant response
               (req (eden-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "deepseek")))
+                    :api '(:service "deepseek"
+                           :endpoint "https://api.deepseek.com")))
               (resp '(:model "deepseek-reasoner"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2277,10 +2292,10 @@ foo bar baz assistant response
               (req (eden-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "deepseek")))
+                    :api '(:service "deepseek"
+                           :endpoint "https://api.deepseek.com")))
               (resp '(:model "deepseek-reasoner"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
+                      :choices [(:message (:role "assistant"
                                            :content "foo bar baz assistant response"
                                            :reasoning_content "foo bar baz assistant reasoning"))])))
           (eden-write-request req)
@@ -2318,10 +2333,10 @@ foo bar baz assistant response
               (req (eden-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai")))
+                    :api '(:service "openai"
+                           :endpoint "https://api.openai.com/v1/chat/completions")))
               (resp '(:model "o1-mini-2024-09-12"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
+                      :choices [(:message (:role "assistant"
                                            :content "### assistant title-1 \n#### foo\n\n bar baz\n\n### title-2\n#### foo\n\n bar baz"))]))
               (title "Title of the request"))
           (eden-write-request req)
@@ -2376,17 +2391,18 @@ bar baz
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai")
+                    :api '(:service "openai"
+                           :endpoint "https://api.openai.com/v1/chat/completions")
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                 :user "foo user"
-                                 :assistant "### foo-assistant-heading-3\n#### foo-assistant-heading-4\n\nfoo-assistant-content"
                                  :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
                                 (:uuid "uuid-bar"
                                  :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                 :user "bar user"
-                                 :assistant "### bar-assistant-heading-3\n#### bar-assistant-heading-4\n\nbar-assistant-content"
-                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
+                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
               (resp '(:model "o1-mini-2024-09-12"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2466,20 +2482,23 @@ baz-assistant-content
               (req (eden-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai")
+                    :api '(:service "openai"
+                           :endpoint "https://api.openai.com/v1/chat/completions")
+                    ;; We keep :exchanges thought modifying it doesn't
+                    ;; modify what we're testing.
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                 :user "foo user"
-                                 :assistant "### foo-assistant-heading-3\n#### foo-assistant-heading-4\n\nfoo-assistant-content"
                                  :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
                                 (:uuid "uuid-bar"
                                  :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                 :user "bar user"
-                                 :assistant "### bar-assistant-heading-3\n#### bar-assistant-heading-4\n\nbar-assistant-content"
-                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
+                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
+                    ))
               (resp '(:model "o1-mini-2024-09-12"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
+                      :choices [(:message (:role "assistant"
                                            :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
           (insert "** Title of the conversation
 :PROPERTIES:
@@ -2575,10 +2594,8 @@ baz-assistant-content
 
 "))
 
-  ;; last argument `start-from' indicates we are starting a
-  ;; conversation from `req' but we didn't send a new request
-  ;; so far and we only want to insert the last exchange
-  ;; user/assistant, not the whole conversation in `req' so far
+  ;; Insert only insert the last request of the conversation
+  ;; by passing 'only-last-req argument to `eden-conversation-insert'
   (should
    (string=
     (with-temp-buffer
@@ -2591,20 +2608,23 @@ baz-assistant-content
                (eden-dir (concat (make-temp-file "eden-" t) "/"))
                (req (eden-request
                      :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                     :api '(:service "openai")
+                     :api '(:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions")
+                     ;; We keep :exchanges thought modifying it doesn't
+                     ;; modify what we're testing.
                      :exchanges [(:uuid "uuid-foo"
                                   :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                  :user "foo user"
-                                  :assistant "### foo-assistant-heading-3\n#### foo-assistant-heading-4\n\nfoo-assistant-content"
                                   :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
                                  (:uuid "uuid-bar"
                                   :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                  :user "bar user"
-                                  :assistant "### bar-assistant-heading-3\n#### bar-assistant-heading-4\n\nbar-assistant-content"
-                                  :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
+                                  :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                                  :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                            (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                            (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                            (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
+                     ))
                (resp '(:model "o1-mini-2024-09-12"
-                       :choices [(:index 0
-                                  :message (:role "assistant"
+                       :choices [(:message (:role "assistant"
                                             :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
           (eden-write-request req)
           (eden-write-response (eden-json-encode resp) resp req)

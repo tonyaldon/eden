@@ -1159,7 +1159,7 @@ formatted as:
               "claude-3-5-haiku-latest"
               "claude-3-opus-latest"))
     (:service "deepseek"
-     :endpoint "https://api.deepseek.com/chat/completions"
+     :endpoint "https://api.deepseek.com"
      :default-model "deepseek-reasoner"
      :models ("deepseek-chat"
               "deepseek-reasoner"))
@@ -1701,6 +1701,10 @@ For instance `eden-conversations' can be:
 (defvar eden-conversation-id nil
   "UUID of the current conversation if any.")
 
+(defun eden-conversation-exists-p (conversation-id)
+  "Return t if a conversation with CONVERSATION-ID exists in `eden-conversations'."
+  (alist-get conversation-id eden-conversations nil nil 'string=))
+
 (defun eden-conversation-with-title-exists-p (title)
   "Return t if a conversation with TITLE exists in `eden-conversations'."
   (seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
@@ -1944,15 +1948,15 @@ See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
     (message "No current conversation."))
   (setq eden-conversation-id nil))
 
-(defun eden-conversation-insert (req title &optional append start-from)
+(defun eden-conversation-insert (req title &optional append only-last-req)
   "Format and insert the conversation whose last request is REQ into current buffer.
 
 Set TITLE as the first heading.
 
 If APPEND is non-nil, only append the last exchange of the conversation.
 
-If START-FROM is non-nil, do not include previous conversation messages,
-only the last one being REQ itself.
+If ONLY-LAST-REQ is non-nil, do not include previous conversation
+messages, only the last one being REQ itself.
 
 Signal an error if REQ fails `eden-request-check'.
 Signal an error if TITLE and APPEND are both non-nil.
@@ -2006,7 +2010,7 @@ See `eden-request-conversation'."
          (conversation
           (mapcar format-exchange (eden-request-conversation req)))
          (conversation
-          (if (or append start-from) (last conversation) conversation)))
+          (if (or append only-last-req) (last conversation) conversation)))
     (if (and append
              (progn (goto-char (point-min))
                     (re-search-forward
@@ -2453,19 +2457,19 @@ See `eden-send-request'."
 
 See `eden-conversations' and `eden-conversation-id'."
   (interactive)
-  (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
-        (title (eden-conversation-title eden-conversation-id))
-        (action (eden-conversation-action eden-conversation-id))
-        (last-req (eden-conversation-last-req eden-conversation-id)))
-    (cond
-     ((null buff-name) (message "No current conversation to display."))
-     ((null last-req) (message "Current conversation is empty."))
-     (t (when (not (get-buffer buff-name))
+  (cond
+   ((not (eden-conversation-exists-p eden-conversation-id))
+    (message "No current conversation to display."))
+   ((null (eden-conversation-last-req eden-conversation-id))
+    (message "Current conversation is empty."))
+   (t (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
+            (title (eden-conversation-title eden-conversation-id))
+            (last-req (eden-conversation-last-req eden-conversation-id)))
+        (when (not (get-buffer buff-name))
           (with-current-buffer (get-buffer-create buff-name)
             (save-excursion
               (org-mode)
-              (eden-conversation-insert
-               last-req title nil (eq action 'start-from)))))
+              (eden-conversation-insert last-req title))))
         (eden-maybe-delete-window-prompt-buffer)
         (select-window
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
@@ -2649,7 +2653,7 @@ See `eden-last-request'."
         (dolist (req-uuid requests)
           (eden-conversation-insert
            `(:dir ,eden-dir :uuid ,req-uuid)
-           "Request" nil 'start-from))))
+           "Request" nil 'only-last-req))))
     (eden-maybe-delete-window-prompt-buffer)
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
@@ -3010,7 +3014,7 @@ in a conversation (see `eden-request-conversation')."
       (org-mode)
       (save-excursion
         (dolist (req requests)
-          (eden-conversation-insert req "Request" nil 'start-from))))
+          (eden-conversation-insert req "Request" nil 'only-last-req))))
     (select-window
      (display-buffer buff '(display-buffer-reuse-window)))))
 
