@@ -1909,21 +1909,6 @@ See `eden-conversation', `eden-conversations' and `eden-conversation-id'."
     (eden-conversation 'start title)
     (message "Conversation `%s' initialized." title)))
 
-(transient-define-suffix eden-conversation-start-from-req-history ()
-  "Start a conversation from current request in history excluding previous exchanges.
-
-See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
-`eden-conversation-id'."
-  :transient t
-  (interactive)
-  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
-      (let ((title (read-string "Start conversation with title: ")))
-        (eden-conversation 'start-from title req-uuid)
-        (message "Conversation `%s' initialized." title))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
-
 (transient-define-suffix eden-conversation-continue-from-req-history ()
   "Start a conversation from current request in history including all previous exchanges.
 
@@ -2897,7 +2882,6 @@ This also sets `eden-system-message' with this new system message."
 
 - Conversations:
   - `eden-conversation-start'
-  - `eden-conversation-start-from-req-history'
   - `eden-conversation-continue-from-req-history'
   - `eden-conversation-switch'
   - `eden-conversation-edit-title'
@@ -2923,7 +2907,6 @@ This also sets `eden-system-message' with this new system message."
   - `eden-system-message-reset'"
   [["Conversation"
     ("n" "New conversation (cv)" eden-conversation-start)
-    ("s" "Start cv from current request in history" eden-conversation-start-from-req-history)
     ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("TAB" "Switch conversation" eden-conversation-switch)
