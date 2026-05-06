@@ -21,6 +21,16 @@
 
 ;;; API to send asynchronous requests to OpenAI and Perplexity
 
+(defun eden-plist-delete (plist property)
+  "Delete PROPERTY from PLIST."
+  ;; From org-macs.el.
+  (let (p)
+    (while plist
+      (if (not (eq property (car plist)))
+	        (setq p (plist-put p (car plist) (nth 1 plist))))
+      (setq plist (cddr plist)))
+    p))
+
 (defun eden-json-encode (object)
   "Return a JSON representation of OBJECT as a string.
 
@@ -235,26 +245,6 @@ We also support Perplexity and Anthropic even if they do it a bit differently."
             (throw 'found (plist-get elt :thinking))))
         nil)))
 
-(defun eden-request-user-content (request)
-  "Return the last message of REQUEST, an OpenAI-compatible API request.
-
-For instance we have:
-
-    (let* ((request \\='(:stream :false
-                      :model \"gpt-4o-mini\"
-                      :temperature 1
-                      :messages [(:role \"system\" :content \"baz system\")
-                                 (:role \"user\" :content \"foo user\")
-                                 (:role \"assistant\" :content \"foo assistant\")
-                                 (:role \"user\" :content \"bar prompt\")
-                                 (:role \"assistant\" :content \"bar assistant\")
-                                 (:role \"user\" :content \"baz user\")])))
-      (eden-request-user-content request))
-    ;; \"baz user\""
-  (let* ((messages (plist-get request :messages))
-         (last-message (aref messages (1- (length messages)))))
-    (plist-get last-message :content)))
-
 (defun eden-request-check (req)
   "Return t if REQ did complete.
 
@@ -265,6 +255,7 @@ Signal an error in the following cases:
 - the request is incomplete, specifically when at least one of the following
   files is missing:
 
+  - api.json
   - prompt.org
   - request.json
   - response.json
@@ -278,6 +269,8 @@ Signal an error in the following cases:
      ((file-exists-p (eden-request-file 'error req))
       (error "Request `%s' has failed in a prior attempt.  See why in `%s' file"
              req-dir (eden-request-file 'error req)))
+     ((not (file-exists-p (eden-request-file 'api req)))
+      (error "Missing `%s' file" (eden-request-file 'api req)))
      ((not (file-exists-p (eden-request-file 'prompt req)))
       (error "Missing `%s' file" (eden-request-file 'prompt req)))
      ((not (file-exists-p (eden-request-file 'request req)))
@@ -295,23 +288,20 @@ Signal an error in the following cases:
 (defun eden-request-conversation (req)
   "Return all exchanges of the conversation whose last request is REQ.
 
+REQ is meant to be passed with only the keys `:dir' and `:uuid'.
+
 The return value is a vector of plists (exchanges) containing the
 following keys:
 
 - :uuid                 - UUID of the request for that exchange
 - :prompt               - prompt of that exchange (`org-mode' string)
-- :user                 - prompt of that exchange sent to OpenAI-compatible API
-                          (markdown string)
-- :assistant            - content message of the response of that exchange
-                          received from OpenAI-compatible API (markdown string)
 - :response             - content message of the response of that exchange
                           received from OpenAI-compatible API converted to Org
                           (`org-mode' string)
-- :assistant-reasoning  - (optional) reasoning content of the response of that exchange
-                          received from Deepseek-compatible API (markdown string)
 - :reasoning            - (optional) reasoning content of the response of that exchange
                           received from Deepseek-compatible API converted to Org
                           (`org-mode' string)
+- :context              - (optional) TODO
 
 Signal an error if REQ doesn't pass `eden-request-check' check.
 
@@ -325,38 +315,50 @@ function call
 gives use the following conversation:
 
     [(:uuid \"uuid-foo\"
-      :prompt \"foo prompt\"
-      :user \"foo user\"
-      :assistant \"foo assistant\"
-      :response \"foo assistant\")
+      :prompt \"foo prompt\\n\"
+      :response \"foo assistant\\n\")
      (:uuid \"uuid-bar\"
-      :prompt \"bar prompt\"
-      :user \"bar user\"
-      :assistant \"bar assistant\"
-      :response \"bar assistant\")
+      :prompt \"bar prompt\\n\"
+      :response \"bar assistant\\n\")
      (:uuid \"uuid-baz\"
-      :prompt \"baz user prompt\"
-      :user \"baz user\"
-      :assistant \"baz assistant\"
-      :response \"baz assistant\")]"
+      :prompt \"baz prompt\\n\"
+      :response \"baz assistant\\n\"
+      :context [(:role \"user\" :content \"foo user\")
+                (:role \"assistant\" :content \"foo assistant\\n\")
+                (:role \"user\" :content \"bar user\")
+                (:role \"assistant\" :content \"bar assistant\\n\")
+                (:role \"user\" :content \"baz user\")
+                (:role \"assistant\" :content \"baz assistant\\n\")])]"
   (eden-request-check req)
-  (let* ((exchanges (eden-request-read 'exchanges req))
+  (let* ((api (eden-request-read 'api req))
+         (request (eden-request-read 'request req))
+         ;; Exchanges up to req excluded without :context which
+         ;; will be attached to the current exchange.
+         (prev-exchanges
+          (mapcar (lambda (e) (eden-plist-delete e :context))
+                  (eden-request-read 'exchanges req)))
          (resp (eden-request-read 'response req))
-         (last-exchange
-          (list
-           (delq nil
-                 `(:uuid ,(plist-get req :uuid)
-                   :prompt ,(eden-request-read 'prompt req)
-                   :user ,(eden-request-user-content
-                           (eden-request-read 'request req))
-                   :assistant ,(eden-request-assistant-content resp)
-                   :response ,(eden-request-read 'response-org req)
-                   ,@(when-let ((assistant-reasoning
-                                 (eden-request-assistant-reasoning resp)))
-                       `(:assistant-reasoning ,assistant-reasoning))
-                   ,@(when (file-exists-p (eden-request-file 'reasoning req))
-                       `(:reasoning ,(eden-request-read 'reasoning req))))))))
-    (apply 'vector (append exchanges last-exchange))))
+         (output
+          (if (eden-api-is-responses-p api)
+              nil ;; TODO (:output)
+            (vector (eden-get-in resp [:choices 0 :message]))))
+         (input
+          (if (eden-api-is-responses-p api)
+              nil ;; TODO (:output)
+            (let ((msgs (plist-get request :messages)))
+              ;; Don't include the system message in the context
+              (if (string= (plist-get (aref msgs 0) :role) "system")
+                  (seq-subseq msgs 1)
+                msgs))))
+         (reasoning (ignore-errors (eden-request-read 'reasoning req)))
+         (exchange
+          (delq nil
+                `(:uuid ,(plist-get req :uuid)
+                  :prompt ,(eden-request-read 'prompt req)
+                  :response ,(eden-request-read 'response-org req)
+                  ,@(when reasoning `(:reasoning ,reasoning))
+                  :context ,(seq-concatenate 'vector input output)))))
+    (apply 'vector (append prev-exchanges (list exchange)))))
 
 (defun eden-request-conversation-path (req)
   "Return the path of the conversation whose last request is REQ.
@@ -518,7 +520,9 @@ Specifically, 6 files are written to disk:
 - a `system-message' file - an `org-mode' file with content being the value
                             under `:system-message' key,
 - an `exchanges' file     - a JSON file with content being the value
-                            under `:exchanges' key of REQ plist.
+                            under `:exchanges' key of REQ plist.  It
+                            corresponds to all the exchanges with the
+                            API up to REQ excluded.
 
 Here's an example with a typical request (third of a conversation)
 that we would send to OpenAI API.  Evaluating the following expression
@@ -570,6 +574,10 @@ the moment we evaluate that expression):
     (eden-request-write 'prompt req prompt)
     (eden-request-write 'system-message req system-message)
     (eden-request-write 'exchanges req exchanges)))
+
+(defun eden-api-is-responses-p (api)
+  "..."
+  (string-suffix-p "/responses" (plist-get api :endpoint)))
 
 (defun eden-api-key-symbol (service)
   "Return the symbol we use for holding api key for SERVICE service.
@@ -2332,13 +2340,9 @@ or a temporary directory."
                             "developer"
                           "system")
                  :content ,(eden-org-to-markdown --system-message)))
-            ,@(seq-reduce
-               (lambda (acc exchange)
-                 (append acc
-                         `((:role "user" :content ,(plist-get exchange :user))
-                           (:role "assistant" :content ,(plist-get exchange :assistant)))))
-               exchanges
-               '())
+            ,@(when (not (null exchanges))
+                (let ((last-exchange (aref exchanges (1- (length exchanges)))))
+                  (plist-get last-exchange :context)))
             (:role "user" :content ,(eden-org-to-markdown prompt))))
          (req-messages (apply 'vector (remq nil -messages)))
          (-api (or api eden-api))
