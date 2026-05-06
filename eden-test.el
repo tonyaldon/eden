@@ -2050,15 +2050,13 @@ foo bar baz
          (last-resp '(:choices [(:message (:role "assistant" :content "baz assistant\n"))]))
          (last-resp-str (eden-json-encode last-resp))
          (eden-conversations
-          '(("conversation-id-start" .
-             (:title "start title" :action start :last-req-uuid nil))
+          '(("conversation-id-new" .
+             (:title "new title" :last-req-uuid nil))
             ("conversation-id-continue-from" .
-             (:title "continue-from title"
-              :action continue-from
-              :last-req-uuid "uuid-baz")))))
+             (:title "continue-from title" :last-req-uuid "uuid-baz")))))
     (eden-write-request last-req)
     (eden-write-response last-resp-str last-resp last-req)
-    (should-not (eden-conversation-exchanges "conversation-id-start"))
+    (should-not (eden-conversation-exchanges "conversation-id-new"))
     (should
      (equal
       (eden-conversation-exchanges "conversation-id-continue-from")

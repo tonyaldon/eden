@@ -1794,17 +1794,11 @@ For instance:
 (defun eden-conversation-exchanges (conversation-id)
   "Return exchanges of the conversation with CONVERSATION-ID.
 
-Return nil if conversation's `:action' is `start'.
-Return only the last exchange if conversation's `:action' is `start-from'.
-Return all the exchanges if conversation's `:action' is `start-continue'.
+Return nil if the conversation is new or doesn't exist.
 
 See `eden-conversations' and `eden-request-conversation'."
-  (when-let ((last-req (eden-conversation-last-req
-                        conversation-id))
-             (conversation (eden-request-conversation last-req)))
-    (pcase (eden-conversation-action conversation-id)
-      ('start-from (vector (aref conversation (1- (length conversation)))))
-      ('continue-from conversation))))
+  (when-let ((last-req (eden-conversation-last-req conversation-id)))
+    (eden-request-conversation last-req)))
 
 (defun eden-conversation-rename (conversation-id new-title)
   "Rename conversation with CONVERSATION-ID to NEW-TITLE in `eden-conversations'.
