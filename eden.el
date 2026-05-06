@@ -542,14 +542,14 @@ that we would send to OpenAI API.  Evaluating the following expression
                  :system-message \"baz system message\"
                  :exchanges [(:uuid \"uuid-foo\"
                               :prompt \"foo prompt\"
-                              :user \"foo user\"
-                              :assistant \"foo assistant\"
                               :response \"foo response\")
                              (:uuid \"uuid-bar\"
                               :prompt \"bar prompt\"
-                              :user \"bar user\"
-                              :assistant \"bar assistant\"
-                              :response \"bar response\")]
+                              :response \"bar response\"
+                              :context [(:role \"user\" :content \"foo prompt\")
+                                        (:role \"assistant\" :content \"foo response\")
+                                        (:role \"user\" :content \"bar prompt\")
+                                        (:role \"assistant\" :content \"bar response\")])]
                  :dir \"/tmp/eden/\"
                  :uuid \"uuid-baz\")))
       (eden-write-request req))
@@ -987,21 +987,6 @@ See also `eden-request-dir' and `eden-request-file'.
 
 REQ request is a plist with the following keys:
 
-- :req            - The request that we send to OpenAI API or a compatible
-                    API like Perplexity.  See:
-
-                    - https://platform.openai.com/docs/guides/text-generation/,
-                    - https://platform.openai.com/docs/api-reference/chat and
-                    - https://docs.perplexity.ai/api-reference/chat-completions.
-
-                    As we don't support streaming API, value for `:stream'
-                    key must always be `:false'.  Here's an example:
-
-                        (:stream :false
-                         :model \"gpt-4o-mini\"
-                         :temperature 1
-                         :messages [(:role \"user\" :content \"foo bar baz\")])
-
 - :api            - A plist describing the service and endpoint to use
                     for the creation of the curl command we use to send
                     the request, including where to find the API key.  Here's
@@ -1017,6 +1002,21 @@ REQ request is a plist with the following keys:
 
                     See `eden-request-command'.
 
+- :req            - The request that we send to OpenAI API or a compatible
+                    API like Perplexity.  See:
+
+                    - https://platform.openai.com/docs/guides/text-generation/,
+                    - https://platform.openai.com/docs/api-reference/chat and
+                    - https://docs.perplexity.ai/api-reference/chat-completions.
+
+                    As we don't support streaming API, value for `:stream'
+                    key must always be `:false'.  Here's an example:
+
+                        (:stream :false
+                         :model \"gpt-4o-mini\"
+                         :temperature 1
+                         :messages [(:role \"user\" :content \"foo bar baz\")])
+
 - :prompt         - The prompt of the request in `org-mode' format.
 - :dir            - A directory (absolute path) where we log all the
                     requests.
@@ -1026,31 +1026,30 @@ REQ request is a plist with the following keys:
 - :system-message - (optional) The system message of the request in `org-mode'
                     format.
 - :exchanges      - (optional) If REQ is the last exchange in a conversation,
-                    this key must be a vector of the previous exchanges, where
-                    each exchange is defined with a plist containing the
-                    following keys: `:uuid', `:prompt', `:user', `:assistant'
-                    and `:response'.  Here's an example:
+                    this key must be a vector of the previous exchanges.  See
+                    `eden-request-conversation' and `eden-conversation-exchanges'.
+                    Here's an example:
 
-                        [(:uuid \"uuid-foo\"
-                          :prompt \"foo prompt org-mode\"
-                          :user \"foo prompt markdown\"
-                          :assistant \"foo response markdown\"
-                          :response \"foo response org-mode\")
-                         (:uuid \"uuid-bar\"
-                          :prompt \"bar prompt org-mode\"
-                          :user \"bar prompt markdown\"
-                          :assistant \"bar response markdown\"
-                          :response \"bar response org-mode\")]
+                    [(:uuid \"uuid-foo\"
+                      :prompt \"foo prompt\"
+                      :response \"foo response\")
+                     (:uuid \"uuid-bar\"
+                      :prompt \"bar prompt\"
+                      :response \"bar response\"
+                      :context [(:role \"user\" :content \"foo prompt\")
+                                (:role \"assistant\" :content \"foo response\")
+                                (:role \"user\" :content \"bar prompt\")
+                                (:role \"assistant\" :content \"bar response\")])]
 
 Here's an example of a REQ request using OpenAI API, with no system
 message and no previous exchanges:
 
-    (:req (:stream :false
+    (:api (:service \"openai\"
+           :endpoint \"https://api.openai.com/v1/chat/completions\")
+     :req (:stream :false
            :model \"gpt-4o-mini\"
            :temperature 1
            :messages [(:role \"user\" :content \"foo bar baz\")])
-     :api (:service \"openai\"
-           :endpoint \"https://api.openai.com/v1/chat/completions\")
      :prompt \"foo bar baz\"
      :dir \"/tmp/eden/\"
      :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
@@ -1058,29 +1057,29 @@ message and no previous exchanges:
 Here's an example of a REQ request (third of a conversation), using
 Perplexity API and a system message:
 
-    (:req (:stream :false
+    (:api (:service \"perplexity\"
+           :endpoint \"https://api.perplexity.ai/chat/completions\")
+     :req (:stream :false
            :model \"gpt-4o-mini\"
            :temperature 1
            :messages [(:role \"system\" :content \"baz system message\")
-                      (:role \"user\" :content \"foo user\")
-                      (:role \"assistant\" :content \"foo assistant\")
+                      (:role \"user\" :content \"foo prompt\")
+                      (:role \"assistant\" :content \"foo response\")
                       (:role \"user\" :content \"bar prompt\")
-                      (:role \"assistant\" :content \"bar assistant\")
-                      (:role \"user\" :content \"baz user prompt\")])
-     :api (:service \"perplexity\"
-           :endpoint \"https://api.perplexity.ai/chat/completions\")
+                      (:role \"assistant\" :content \"bar response\")
+                      (:role \"user\" :content \"baz prompt\")])
      :prompt \"baz user prompt\"
      :system-message \"baz system message\"
      :exchanges [(:uuid \"uuid-foo\"
                   :prompt \"foo prompt\"
-                  :user \"foo user\"
-                  :assistant \"foo assistant\"
                   :response \"foo response\")
                  (:uuid \"uuid-bar\"
                   :prompt \"bar prompt\"
-                  :user \"bar user\"
-                  :assistant \"bar assistant\"
-                  :response \"bar response\")]
+                  :response \"bar response\"
+                  :context [(:role \"user\" :content \"foo prompt\")
+                            (:role \"assistant\" :content \"foo response\")
+                            (:role \"user\" :content \"bar prompt\")
+                            (:role \"assistant\" :content \"bar response\")])]
      :dir \"/tmp/eden/\"
      :uuid \"uuid-baz\")"
   (seq-let (command command-no-api-key) (eden-request-command req)
@@ -1678,25 +1677,16 @@ A conversation is a cons cells whose
 - cdr is a plists with the following keys:
 
   - :title         - The title of the conversation
-  - :action        - The symbol `start', `start-from' or `continue-from'
-                     depending on the state of the conversation
-  - :last-req-uuid - The UUID of the last request in the conversation
-                     which can be nil if `:action' is `start'
+  - :last-req-uuid - The UUID of the last request in the conversation.
+                     nil for a new conversation.
 
 For instance `eden-conversations' can be:
 
     ((\"213940f6-fa87-4c27-9aa5-30d6ba3d2724\" .
-      (:title \"foo title\"
-       :action start
-       :last-req-uuid nil))
+      (:title \"foo title\" :last-req-uuid nil))
      (\"bcb3f6ee-1b85-4c92-904a-f8ae8f536f7c\" .
       (:title \"bar title\"
-       :action start-from
-       :last-req-uuid \"04397cda-f623-425b-9a7d-c29caea3511f\"))
-     (\"09b95117-ae13-41dc-aa76-53f63576b771\" .
-      (:title \"baz title\"
-       :action continue-from
-       :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))")
+       :last-req-uuid \"04397cda-f623-425b-9a7d-c29caea3511f\")))")
 
 (defvar eden-conversation-id nil
   "UUID of the current conversation if any.")
@@ -1710,44 +1700,27 @@ For instance `eden-conversations' can be:
   (seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
             eden-conversations))
 
-(defun eden-conversation (action title &optional req-uuid)
-  "Add a conversation to `eden-conversations' with a specied ACTION and TITLE.
+(defun eden-conversation-add (title &optional req-uuid)
+  "Add a conversation to `eden-conversations' with TITLE.
 
-Valid ACTION values include:
-
-- `start'         - Initiates a new conversation.
-- `start-from'    - Begins a conversation from a request requiring its
-                    UUID specified by REQ-UUID.
-- `continue-from' - Resumes a conversation from a request requiring its
-                    UUID specified by REQ-UUID
+If REQ-UUID is the UUID of an existing request, resume a conversation
+from that request.
 
 Also set `eden-conversation-id' to the ID of the newly created conversation
 making it the current conversation.
 
 Signal an error if the conversation cannot be added."
-  (cond
-   ((eden-conversation-with-title-exists-p title)
+  (when (eden-conversation-with-title-exists-p title)
     (error "Conversation with title `%s' already exists in `eden-conversations'"
            title))
-   ((not (seq-contains-p [start start-from continue-from] action))
-    (error "Conversation `action' must be `start', `start-from' or `continue-from' not `%S'"
-           action))
-   ((and (eq action 'start) req-uuid)
-    (error "When action is `start', `req-uuid' argument must be nil or omitted, not `%s'"
-           req-uuid))
-   ((seq-contains-p [start-from continue-from] action)
-    (let ((req `(:dir ,eden-dir :uuid ,req-uuid)))
-      (when (null req-uuid)
-        (error "When action is `%s', `req-uuid' argument is mandatory"
-               action))
-      (condition-case err
-          (eden-request-check req)
-        (error
-         (error "Cannot start nor continue from that request.  %s"
-                (error-message-string err)))))))
+  (when req-uuid
+    (condition-case err
+        (eden-request-check `(:dir ,eden-dir :uuid ,req-uuid))
+      (error
+       (error "Cannot continue from that request.  %s"
+              (error-message-string err)))))
   (let ((conversation-id (eden-uuid)))
-    (push (cons conversation-id
-                `(:title ,title :action ,action :last-req-uuid ,req-uuid))
+    (push (cons conversation-id `(:title ,title :last-req-uuid ,req-uuid))
           eden-conversations)
     (setq eden-conversation-id conversation-id)))
 
@@ -1770,7 +1743,6 @@ For instance:
           (eden-conversations
            \\='((\"09b95117-ae13-41dc-aa76-53f63576b771\" .
               (:title \"baz title\"
-               :action continue-from
                :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))))
       (eden-conversation-last-req \"09b95117-ae13-41dc-aa76-53f63576b771\"))
     ;; (:uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\"
@@ -1800,14 +1772,9 @@ Signal an error if NEW-TITLE is already used by another conversation."
   (when (eden-conversation-with-title-exists-p new-title)
     (error "Cannot rename conversation with `%s' which is already used by another conversation in `eden-conversations'"
            new-title))
-  (when-let ((conversation-data
-              (seq-copy
-               (cdr (assoc conversation-id eden-conversations)))))
-    (setq eden-conversations
-          (cons (cons conversation-id
-                      (plist-put conversation-data :title new-title))
-                (remove (assoc conversation-id eden-conversations)
-                        eden-conversations)))))
+  (when-let ((cell (assoc conversation-id eden-conversations)))
+    (setcdr cell (plist-put (copy-sequence (cdr cell))
+                            :title new-title))))
 
 (transient-define-suffix eden-conversation-edit-title ()
   "Edit title of current conversation and its associated buffer based on user's input.
@@ -1840,33 +1807,23 @@ See `eden-conversation-id' and `eden-conversation-rename'."
 INFO plist must include a `:conversation-id' key while REQ must contain
 a `:uuid' key.
 
-Additionally, conversation's `:action' key is set to `continue-from'.
-
 For instance:
 
     (let ((eden-conversations
            \\='((\"conversation-id-foo\" .
-              (:title \"foo title\" :action start :last-req-uuid nil)))))
+              (:title \"foo title\" :last-req-uuid nil)))))
       (eden-conversation-update \\='(:conversation-id \"conversation-id-foo\")
                                 \\='(:uuid \"new-foo-req-uuid\"))
       eden-conversations)
     ;; ((\"conversation-id-foo\" .
-    ;;   (:title \"foo title\" :action continue-from :last-req-uuid \"new-foo-req-uuid\")))
+    ;;   (:title \"foo title\" :last-req-uuid \"new-foo-req-uuid\")))
 
 See `eden-conversations', `eden-send-request' and `eden-send'."
-  (let ((conversation-id (plist-get info :conversation-id))
-        (req-uuid (plist-get req :uuid)))
-    (when-let ((conversation-data
-                (seq-copy
-                 (cdr (assoc conversation-id eden-conversations)))))
-      (let ((data (thread-first
-                    conversation-data
-                    (plist-put :action 'continue-from)
-                    (plist-put :last-req-uuid req-uuid))))
-        (setq eden-conversations
-              (cons (cons conversation-id data)
-                    (remove (assoc conversation-id eden-conversations)
-                            eden-conversations)))))))
+  (when-let* ((conversation-id (plist-get info :conversation-id))
+              (req-uuid (plist-get req :uuid))
+              (cell (assoc conversation-id eden-conversations)))
+    (setcdr cell (plist-put (copy-sequence (cdr cell))
+                            :last-req-uuid req-uuid))))
 
 (transient-define-suffix eden-conversation-switch ()
   "Switch current conversation based on user's selection from `eden-conversations'.
@@ -1886,26 +1843,26 @@ See `eden-conversation-id'."
             (alist-get title conversations nil nil #'string=))
       (message "Switched to conversation `%s'." title))))
 
-(transient-define-suffix eden-conversation-start ()
+(transient-define-suffix eden-conversation-new ()
   "Start a new conversation with title based on user's input.
 
-See `eden-conversation', `eden-conversations' and `eden-conversation-id'."
+See `eden-conversation-add', `eden-conversations' and `eden-conversation-id'."
   :transient t
   (interactive)
   (let ((title (read-string "New conversation with title: ")))
-    (eden-conversation 'start title)
-    (message "Conversation `%s' initialized." title)))
+    (eden-conversation-add title)
+    (message "New conversation `%s' initialized." title)))
 
 (transient-define-suffix eden-conversation-continue-from-req-history ()
   "Start a conversation from current request in history including all previous exchanges.
 
-See `eden-prompt-history-state', `eden-conversation', `eden-conversations' and
+See `eden-prompt-history-state', `eden-conversation-add', `eden-conversations' and
 `eden-conversation-id'."
   :transient t
   (interactive)
   (if-let ((req-uuid (eden-prompt-current-req-uuid)))
       (let ((title (read-string "Continue conversation with title: ")))
-        (eden-conversation 'continue-from title req-uuid)
+        (eden-conversation-add title req-uuid)
         (message "Conversation `%s' initialized." title))
     (message (concat "Current prompt is not associated with a request.  "
                      "Try navigating the prompt history with `M-p' and `M-n', "
@@ -2868,7 +2825,7 @@ This also sets `eden-system-message' with this new system message."
   "Transient command to manage conversations, requests and Eden's settings.
 
 - Conversations:
-  - `eden-conversation-start'
+  - `eden-conversation-new'
   - `eden-conversation-continue-from-req-history'
   - `eden-conversation-switch'
   - `eden-conversation-edit-title'
@@ -2893,7 +2850,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-system-message-set'
   - `eden-system-message-reset'"
   [["Conversation"
-    ("n" "New conversation (cv)" eden-conversation-start)
+    ("n" "New conversation (cv)" eden-conversation-new)
     ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("TAB" "Switch conversation" eden-conversation-switch)
@@ -2939,26 +2896,15 @@ the request cannot be found in `eden-dir'."
         (error "Request `%s' doesn't exist" req-dir))
     (error "No request at point found")))
 
-(defun eden-req-at-point-start-conversation ()
-  "Start a conversation from request at point including all previous exchanges.
-
-See `eden-req-at-point-uuid', `eden-conversation', `eden-conversations',
-and `eden-conversation-id'."
-  (interactive)
-  (when-let ((req-uuid (eden-req-at-point-uuid)))
-    (eden-conversation
-     'start-from (read-string "Enter a conversation title: ") req-uuid))
-  (eden))
-
 (defun eden-req-at-point-continue-conversation ()
-  "Start a conversation from request at point excluding all previous exchanges.
+  "Continue conversation from request at point.
 
-See `eden-req-at-point-uuid', `eden-conversation', `eden-conversations',
+See `eden-req-at-point-uuid', `eden-conversation-add', `eden-conversations',
 and `eden-conversation-id'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
-    (eden-conversation
-     'continue-from (read-string "Enter a conversation title: ") req-uuid))
+    (eden-conversation-add
+     (read-string "Enter a conversation title: ") req-uuid))
   (eden))
 
 (defun eden-req-at-point-show-requests ()
@@ -3083,7 +3029,6 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 (transient-define-prefix eden-req-at-point-menu ()
   "Transient command to manage conversations and requests at point.
 
-- `eden-req-at-point-start-conversation'
 - `eden-req-at-point-continue-conversation'
 - `eden-req-at-point-show-requests'
 - `eden-req-at-point-show-branches'
@@ -3092,11 +3037,10 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 - `eden-req-at-point-show-reasoning'
 - `eden-req-at-point-goto'"
   [["Conversation/Request at point"
-    ("s" "Start conversation from request at point" eden-req-at-point-start-conversation)
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
-    ("S" "Show system message of request at point" eden-req-at-point-show-system-message)
+    ("s" "Show system message of request at point" eden-req-at-point-show-system-message)
     ("C" "Show citations of conversation at point" eden-req-at-point-show-citations)
     ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
