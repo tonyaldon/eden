@@ -217,7 +217,6 @@ configuration doing the following
 
 - Press ~a~ to set the current API (~eden-api-set~),
 - Press ~m~ to set the model for the current API (~eden-model-set~),
-- Press ~t~ to set the temperature (~eden-temperature-set~),
 - Press ~i~ to include reasoning information (~eden-include-reasoning-toggle~),
 - Press ~o~ to access another menu with more options (~eden-more-options-menu~),
 

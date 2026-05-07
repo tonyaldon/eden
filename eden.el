@@ -2651,17 +2651,6 @@ it becomes the value of `eden-model'."
     (setq eden-model model)
     (message "Current model has been set to `%s'." eden-model)))
 
-(transient-define-suffix eden-temperature-set ()
-  "Set `eden-temperature' interactively."
-  :transient t
-  (interactive)
-  (let ((temperature
-         (read-string "Enter a float number [0-2] or (leave blank for none) to set model temperature: ")))
-    (setq eden-temperature
-          (when (not (string-empty-p temperature))
-            (string-to-number temperature)))
-    (message "Current temperature has been set to `%s'." eden-temperature)))
-
 (transient-define-suffix eden-dir-set-suffix ()
   "Set `eden-dir' interactively."
   :transient t
@@ -2812,7 +2801,6 @@ This also sets `eden-system-message' with this new system message."
 - Configuration
   - `eden-api-set'
   - `eden-model-set'
-  - `eden-temperature-set'
   - `eden-dir-set-suffix'
   - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'
@@ -2829,7 +2817,6 @@ This also sets `eden-system-message' with this new system message."
    ["Configuration"
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
-    ("t" "Set temperature" eden-temperature-set)
     ("i" "Include reasoning information" eden-include-reasoning-toggle)
     ("o" "More options" eden-more-options-menu)
     ("C" "Show current configuration" eden-show-current-configuration)]]
