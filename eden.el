@@ -1642,6 +1642,11 @@ This function should be called from `eden-prompt-buffer-name' buffer."
           (setq eden-prompt-history-state
                 (funcall f eden-prompt-history-state prompt))
           (if (eden-prompt-discard-current-p)
+              ;; This can happens if the UUID stored in prompt history
+              ;; doesn't match to a request in `eden-dir'.  If none
+              ;; of the UUIDs in prompt history correspond to an existing
+              ;; request, we'll hit `max-lisp-eval-depth'.  But in practice,
+              ;; this doesn't happens.
               (eden-prompt-history direction)
             (erase-buffer)
             (save-excursion
