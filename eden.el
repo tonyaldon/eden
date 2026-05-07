@@ -2437,32 +2437,6 @@ See `eden-conversations' and `eden-conversation-id'."
         (select-window
          (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
-(defun eden-show-current-conversation-in-req-history ()
-  "Show conversation of current request in history.
-
-See `eden-prompt-current-req-uuid' and `eden-prompt-history-state'."
-
-  (interactive)
-  (if-let* ((req-uuid (eden-prompt-current-req-uuid))
-            (req `(:dir ,eden-dir :uuid ,req-uuid)))
-      (if (condition-case nil (eden-request-check req) (error nil))
-          (let* ((title "current conversation in history")
-                 (buff (get-buffer-create (eden-buffer-name title))))
-            (with-current-buffer buff
-              (save-excursion
-                (erase-buffer)
-                (org-mode)
-                (eden-conversation-insert req title)))
-            (eden-maybe-delete-window-prompt-buffer)
-            (select-window
-             (display-buffer buff '(display-buffer-reuse-window))))
-        (message (concat "Current prompt is associated with a failed or missing request.  "
-                         "Try navigating the prompt history with `M-p' and `M-n', "
-                         "default binding of `eden-prompt-previous' and `eden-prompt-next'.")))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
-
 (defun eden-paths-maximal (paths)
   "Return last entry of maximal paths in PATHS.
 
@@ -2866,7 +2840,6 @@ This also sets `eden-system-message' with this new system message."
   - `eden-conversation-pause'
 - Conversations and requests
   - `eden-show-current-conversation'
-  - `eden-show-current-conversation-in-req-history'
   - `eden-show-last-conversations'
   - `eden-show-last-requests'
   - `eden-kill-last-request'
@@ -2899,7 +2872,6 @@ This also sets `eden-system-message' with this new system message."
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
     ("v" "Show current conversation" eden-show-current-conversation)
-    ("h" "Show current conversation in history" eden-show-current-conversation-in-req-history)
     ("l" "Show last conversations" eden-show-last-conversations)
     ("L" "Show last requests" eden-show-last-requests)
     ("g" "Go to current request in history" eden-prompt-current-goto)]
