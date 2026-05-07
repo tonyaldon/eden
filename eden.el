@@ -2687,7 +2687,7 @@ it becomes the value of `eden-model'."
             (string-to-number temperature)))
     (message "Current temperature has been set to `%s'." eden-temperature)))
 
-(transient-define-suffix eden-dir-set ()
+(transient-define-suffix eden-dir-set-suffix ()
   "Set `eden-dir' interactively."
   :transient t
   (interactive)
@@ -2809,7 +2809,7 @@ This also sets `eden-system-message' with this new system message."
 
 (transient-define-prefix eden-more-options-menu ()
   "Transient command for additional options."
-  [[("d" "Set request directory" eden-dir-set)
+  [[("d" "Set request directory" eden-dir-set-suffix)
     ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
     ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
     ("s" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
@@ -2840,7 +2840,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-api-set'
   - `eden-model-set'
   - `eden-temperature-set'
-  - `eden-dir-set'
+  - `eden-dir-set-suffix'
   - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'
 - System messages
