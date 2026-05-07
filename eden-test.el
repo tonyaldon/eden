@@ -3136,23 +3136,7 @@ baz system message append"))
          (eden-include-reasoning t)
          (req (eden-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
-    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048)))
-
-  ;; Test web_search_options for Perplexity and OpenAI web search models
-  (let* ((eden-web-search-context-size "low")
-         (eden-api '(:service "perplexity"
-                     :endpoint "https://api.perplexity.ai/chat/completions"))
-         (req (eden-request :prompt "foo prompt")))
-    (should (equal (eden-get-in req [:req :web_search_options :search_context_size])
-                   "low")))
-  (let* ((eden-web-search-context-size "low")
-         (eden-api '(:service "openai"
-                     :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-request
-               :prompt "foo prompt"
-               :model "gpt-4o-search-preview")))
-    (should (equal (eden-get-in req [:req :web_search_options :search_context_size])
-                   "low"))))
+    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
 
 ;;;; Main menu
 

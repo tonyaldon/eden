@@ -1284,11 +1284,6 @@ It's a required field in requests.")
 Only applied when using an Anthropic reasoning model and
 `eden-include-reasoning' is t.")
 
-(defvar eden-web-search-context-size "medium"
-  "Value of web_search_options.search_context_size in requests.
-
-Can be \"low\", \"medium\" or \"high\".")
-
 (defvar eden-org-property-date "EDEN_DATE"
   "Org property used for the date a request has been issued.
 
@@ -2281,14 +2276,6 @@ or a temporary directory."
         (plist-put request
                    :thinking `(:type "enabled"
                                :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
-    (when (or (string= service "perplexity")
-              (and (string= service "openai")
-                   (member -model
-                           '("gpt-4o-search-preview"
-                             "gpt-4o-mini-search-preview"))))
-      (plist-put request
-                 :web_search_options
-                 `(:search_context_size ,eden-web-search-context-size)))
     `(:req ,request
       :api ,-api
       :prompt ,prompt
@@ -2560,8 +2547,7 @@ This includes informations about `eden-dir', `eden-api', `eden-model',
 conversation.
 
 Depending on the service, it also includes information about
-`eden-web-search-context-size', `eden-anthropic-max-tokens'
-and `eden-anthropic-thinking-budget-tokens'.
+`eden-anthropic-max-tokens'and `eden-anthropic-thinking-budget-tokens'.
 
 See `eden-conversation-id' and `eden-conversations'."
   (interactive)
@@ -2582,12 +2568,6 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("include reasoning" . ,(format "%s" eden-include-reasoning))
                   ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
-                  ,(if (or (string= service "perplexity")
-                           (and (string= service "openai")
-                                (member eden-model
-                                        '("gpt-4o-search-preview"
-                                          "gpt-4o-mini-search-preview"))))
-                       `("web search context size" . ,eden-web-search-context-size))
                   ,(if (string= service "anthropic")
                        `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
                   ,(if (string= service "anthropic")
@@ -2658,16 +2638,6 @@ it becomes the value of `eden-model'."
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 
-(transient-define-suffix eden-web-search-context-size-set ()
-  "Set `eden-web-search-context-size' interactively."
-  :transient t
-  (interactive)
-  (setq eden-web-search-context-size
-        (completing-read "Set `web_search_options.search_context_size' to: "
-                         '("low" "medium" "high") nil 'require-match))
-  (message "`web_search_options.search_context_size' has been set to `%s'."
-           eden-web-search-context-size))
-
 (defun eden-menu-quit ()
   "Quit `eden-menu'."
   (interactive)
@@ -2703,7 +2673,6 @@ it becomes the value of `eden-model'."
     ("m" "Set model" eden-model-set)
     ("i" "Include reasoning information" eden-include-reasoning-toggle)
     ("d" "Set request directory" eden-dir-set-suffix)
-    ("w" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
