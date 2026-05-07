@@ -1445,6 +1445,7 @@ first.
 
 See `eden-request-timestamp'."
   (when (file-exists-p eden-dir)
+    (message "Setting request history...")
     (let* ((timestamp-files
             (directory-files-recursively eden-dir "timestamp-.*")))
       (setq eden-request-history
@@ -1455,7 +1456,8 @@ See `eden-request-timestamp'."
                         (cons (match-string 1 f)
                               (string-to-number (match-string 2 f)))))
               (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
-              (mapcar 'car))))))
+              (mapcar 'car))))
+    (message "Setting request history...done")))
 
 (defvar eden-prompt-history-state [nil nil nil]
   "State of the prompt history.
