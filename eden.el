@@ -2658,24 +2658,6 @@ it becomes the value of `eden-model'."
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 
-(transient-define-suffix eden-anthropic-max-tokens-set ()
-  "Set `eden-anthropic-max-tokens' interactively."
-  :transient t
-  (interactive)
-  (setq eden-anthropic-max-tokens
-        (read-number "Set Anthropic `max_tokens' to: "))
-  (message "Anthropic `max_tokens' has been set to `%s'."
-           eden-anthropic-max-tokens))
-
-(transient-define-suffix eden-anthropic-thinking-budget-tokens-set ()
-  "Set `eden-anthropic-thinking-budget-tokens' interactively."
-  :transient t
-  (interactive)
-  (setq eden-anthropic-thinking-budget-tokens
-        (read-number "Set Anthropic `thinking.budget_tokens' to: "))
-  (message "Anthropic `thinking.budget_tokens' has been set to `%s'."
-           eden-anthropic-thinking-budget-tokens))
-
 (transient-define-suffix eden-web-search-context-size-set ()
   "Set `eden-web-search-context-size' interactively."
   :transient t
@@ -2689,8 +2671,6 @@ it becomes the value of `eden-model'."
 (transient-define-prefix eden-more-options-menu ()
   "Transient command for additional options."
   [[("d" "Set request directory" eden-dir-set-suffix)
-    ("m" "Set Anthropic max_tokens" eden-anthropic-max-tokens-set)
-    ("b" "Set Anthropic thinking.budget_tokens" eden-anthropic-thinking-budget-tokens-set)
     ("s" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
     ("RET" "Quit 'More options' menu" transient-quit-one)]])
 
