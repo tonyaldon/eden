@@ -1454,8 +1454,8 @@ arr[0]
    (string=
     (eden-org-to-markdown "* h1
 
-#+BEGIN_SRC emacs-lisp
-(+ 1 2)
+#+BEGIN_SRC python
+foo = 1
 #+END_SRC
 
 #+BEGIN_EXAMPLE
@@ -1465,8 +1465,8 @@ foo bar baz
 ** h2")
     "# h1
 
-```emacs-lisp
-(+ 1 2)
+```python
+foo = 1
 
 ```
 
