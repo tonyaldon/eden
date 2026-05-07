@@ -1,5 +1,7 @@
 * Eden is a simple ChatGPT client for Emacs that focuses on conversations.
 
+[THE README IS TEMPORARILY OUT OF SYNC WITH THE ACTUAL CODE]
+
 *Eden* supports OpenAI, Anthropic, Deepseek, Perplexity, and X.ai APIs.
 For reasoning models, you can choose whether or not to display the
 reasoning.  For Perplexity and OpenAI web search, while citations are
@@ -256,7 +258,6 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-system-message~
 - ~eden-system-message-append~
 - ~eden-system-messages~
-- ~eden-system-message->developer-for-models~
 - ~eden-dir~
 - ~eden-anthropic-max-tokens~
 - ~eden-anthropic-thinking-budget-tokens~

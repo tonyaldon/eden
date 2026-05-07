@@ -1248,10 +1248,6 @@ command instead:
 It is a cons cell (\"title\" . \"system message\"), where \"system message\"
 serves as `:content' of the first message in request's `:messages'.
 
-And if `eden-model' belongs to `eden-system-message->developer-for-models',
-`:role' of this first message is \"developer\"; otherwise it defaults
-to \"system\".
-
 Additionally,`eden-system-message' may be nil, in which case `:messages'
 will omit the initial system message.
 
@@ -1275,12 +1271,6 @@ For instance we can set `eden-system-messages' to:
 
     ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
      (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
-
-(defvar eden-system-message->developer-for-models '("o1" "o3" "o3-mini" "o4-mini")
-  "List of models that use \"developer\" message instead of \"system\" message.
-
-According to OpenAI API documentation, \"With o1 models and newer,
-developer messages replace the previous system messages.\"")
 
 (defvar eden-dir (concat user-emacs-directory "eden/")
   "Directory where all requests sent by `eden-send' are stored.
@@ -2258,9 +2248,6 @@ If `:system-message-append' or `eden-system-message-append' (in that order)
 is non-nil, it is appended to the system message of the return request.
 
 If `:model' is missing, it is replaced by `eden-model'.
-If the model picked is part of `eden-system-message->developer-for-models',
-the role of the system message if any will be \"developer\" instead
-of \"system\".
 
 Both the prompt and the system message considered `org-mode' strings
 are converted to markdown using `eden-org-to-markdown' function.
@@ -2284,10 +2271,7 @@ or a temporary directory."
                     "")))
          (-messages
           `(,(when (not (string-empty-p --system-message))
-               `(:role ,(if (seq-contains-p eden-system-message->developer-for-models
-                                            -model)
-                            "developer"
-                          "system")
+               `(:role "system"
                  :content ,(eden-org-to-markdown --system-message)))
             ,@(when (not (null exchanges))
                 (let ((last-exchange (aref exchanges (1- (length exchanges)))))

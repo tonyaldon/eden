@@ -3056,25 +3056,6 @@ baz-assistant-content
       (plist-get (eden-request :prompt "foo prompt")
                  :system-message))
     "bar system message"))
-  ;; :system-message and :model and the variables
-  ;; `eden-model' and `eden-system-message->developer-for-models'
-  ;; in that case :role of first message in messages must be "developer"
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (req (eden-request :prompt "foo prompt"
-                            :system-message "foo system"
-                            :model "o1")))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "developer" :content "foo system")
-                    (:role "user" :content "foo prompt")])))
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (eden-model "o1")
-         (req (eden-request :prompt "foo prompt"
-                            :system-message "foo system")))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "developer" :content "foo system")
-                    (:role "user" :content "foo prompt")])))
 
   ;; `eden-system-message', :system-message-append and `eden-system-message-append'
   (should
