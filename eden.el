@@ -2668,12 +2668,6 @@ it becomes the value of `eden-model'."
   (message "`web_search_options.search_context_size' has been set to `%s'."
            eden-web-search-context-size))
 
-(transient-define-prefix eden-more-options-menu ()
-  "Transient command for additional options."
-  [[("d" "Set request directory" eden-dir-set-suffix)
-    ("s" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
-    ("RET" "Quit 'More options' menu" transient-quit-one)]])
-
 (defun eden-menu-quit ()
   "Quit `eden-menu'."
   (interactive)
@@ -2708,7 +2702,8 @@ it becomes the value of `eden-model'."
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("i" "Include reasoning information" eden-include-reasoning-toggle)
-    ("o" "More options" eden-more-options-menu)
+    ("d" "Set request directory" eden-dir-set-suffix)
+    ("w" "Set web_search_options.search_context_size" eden-web-search-context-size-set)
     ("C" "Show current configuration" eden-show-current-configuration)]]
   [["Conversations and requests"
     ("k" "Kill last request" eden-kill-last-request)
