@@ -1424,6 +1424,25 @@ For instance:
     (puthash (car keys) value current-map)
     map))
 
+(defun eden-dir-set (new-dir)
+  "Set `eden-dir' to NEW-DIR.
+
+This also set the variables `eden-request-history' and
+`eden-prompt-history-state' accordingly.
+
+If you do this interactively, do it via `eden-menu'.
+See `eden-dir-set-suffix'."
+  (cond
+   ((equal new-dir eden-dir) nil) ;; Do nothing.
+   ((eden-running-p)
+    (error "Can't set `eden-dir' (`%s') to a different directory `%s' while Eden is running."
+           eden-dir new-dir))
+   ((not (stringp new-dir))
+    (error "Wrong `new-dir' type: `%s'.  It should be a string." new-dir))
+   (t (setq eden-dir (file-name-as-directory (expand-file-name new-dir)))
+      (eden-request-history-set)
+      (eden-prompt-history-state-set))))
+
 ;;;; Prompt and Request history
 
 (defvar eden-request-history nil

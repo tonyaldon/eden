@@ -1608,6 +1608,49 @@ foo bar baz
     (should (= (gethash "baz-2" (gethash "bar" (gethash "foo" map))) 3))
     (should (= (gethash "baz-4" (gethash "baz-3" map)) 4))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-dir-set-test")))
+(ert-deftest eden-dir-set-test ()
+  ;; While Eden is already handling a request
+  (cl-letf (((symbol-function 'eden-running-p)
+             (lambda () t)))
+    (let ((eden-dir "/tmp/foo/"))
+      (should-error (eden-dir-set "/tmp/bar/"))
+
+      (eden-dir-set "/tmp/foo/")
+      (should (equal eden-dir "/tmp/foo/"))))
+
+  ;; While Eden is idle
+  (cl-letf (((symbol-function 'eden-running-p)
+             (lambda () nil)))
+    (let ((eden-dir "/tmp/eden/"))
+      (should-error (eden-dir-set 'not-a-dir))
+
+      (eden-dir-set "/tmp/eden/")
+      (should (string= eden-dir "/tmp/eden/"))
+
+      (eden-dir-set "/tmp/new-eden")
+      (should (string= eden-dir "/tmp/new-eden/"))
+
+      ;; Check that we also update request history and
+      ;; prompt history state.
+      (let* ((new-dir (concat (make-temp-file "eden-" t) "/"))
+             (req-foo `(:dir ,new-dir :uuid "foo"))
+             (req-bar `(:dir ,new-dir :uuid "bar"))
+             (req-baz `(:dir ,new-dir :uuid "baz"))
+             eden-request-history
+             eden-prompt-history-state)
+        (message "new-dir: %S" new-dir)
+        (eden-request-write 'timestamp req-foo "")
+        (eden-request-write 'timestamp req-bar "")
+        (eden-request-write 'timestamp req-baz "")
+
+        (eden-dir-set new-dir)
+        (should (equal eden-dir new-dir))
+
+        (should (equal eden-request-history '("baz" "bar" "foo")))
+        (should (equal eden-prompt-history-state
+                       [("baz" "bar" "foo") nil nil]))))))
+
 ;;;; Prompt and Request history
 
 (ert-deftest eden-request-history-set-test ()
