@@ -1848,24 +1848,6 @@ See `eden-conversations', `eden-send-request' and `eden-send'."
     (setcdr cell (plist-put (copy-sequence (cdr cell))
                             :last-req-uuid req-uuid))))
 
-(transient-define-suffix eden-conversation-switch ()
-  "Switch current conversation based on user's selection from `eden-conversations'.
-
-See `eden-conversation-id'."
-  :transient t
-  (interactive)
-  (if (null eden-conversations)
-      (message "No conversation to switch to yet.")
-    (let* ((conversations
-            (mapcar (lambda (c) (cons (plist-get (cdr c) :title) (car c)))
-                    eden-conversations))
-           (title (completing-read "Conversation title: "
-                                   (mapcar #'car conversations)
-                                   nil 'require-match)))
-      (setq eden-conversation-id
-            (alist-get title conversations nil nil #'string=))
-      (message "Switched to conversation `%s'." title))))
-
 (transient-define-suffix eden-conversation-new ()
   "Start a new conversation with title based on user's input.
 
@@ -2835,7 +2817,6 @@ This also sets `eden-system-message' with this new system message."
 - Conversations:
   - `eden-conversation-new'
   - `eden-conversation-continue-from-req-history'
-  - `eden-conversation-switch'
   - `eden-conversation-edit-title'
   - `eden-conversation-pause'
 - Conversations and requests
@@ -2860,7 +2841,6 @@ This also sets `eden-system-message' with this new system message."
     ("n" "New conversation (cv)" eden-conversation-new)
     ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
-    ("TAB" "Switch conversation" eden-conversation-switch)
     ("SPC" "Pause current conversation" eden-conversation-pause)]
    ["Configuration"
     ("a" "Set API" eden-api-set)
