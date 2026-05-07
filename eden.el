@@ -372,7 +372,7 @@ the following:
 
     (eden-request-conversation-path \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
     ;; [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"]"
-  (when (condition-case nil (eden-request-check req) (error nil))
+  (when (ignore-errors (eden-request-check req))
     (let* ((uuids (mapcar (lambda (exchange) (plist-get exchange :uuid))
                           (eden-request-read 'exchanges req)))
            (last-uuid (list (plist-get req :uuid))))
