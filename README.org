@@ -220,13 +220,6 @@ configuration doing the following
 - Press ~i~ to include reasoning information (~eden-include-reasoning-toggle~),
 - Press ~o~ to access another menu with more options (~eden-more-options-menu~),
 
-or the following for modifying the system message:
-
-- Press ~S~ to add a system message (~eden-system-message-add~),
-- Press ~u~ to update the system message (~eden-system-message-update~),
-- Press ~p~ to pick a system message (~eden-system-message-set~),
-- Press ~r~ to reset the system message (~eden-system-message-reset~).
-
 ** Navigating the profile history
 
 Each time you quit Eden's menu, the current *profile* which includes
@@ -256,7 +249,6 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-temperature~
 - ~eden-system-message~
 - ~eden-system-message-append~
-- ~eden-system-messages~
 - ~eden-dir~
 - ~eden-anthropic-max-tokens~
 - ~eden-anthropic-thinking-budget-tokens~

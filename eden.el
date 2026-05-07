@@ -1262,16 +1262,6 @@ Setting this variable doesn't modify `eden-system-message'.
 
 See `eden-request'.")
 
-(defvar eden-system-messages nil
-  "Alist of system messages available for selection when using `eden-system-message-set'.
-
-See `eden-system-message', for detailed descriptions of system messages.
-
-For instance we can set `eden-system-messages' to:
-
-    ((\"writer\" . \"You\\='re a good writer who only writes in Italian.\")
-     (\"programmer\" . \"You\\='re a programmer who only answers with code snippets.\"))")
-
 (defvar eden-dir (concat user-emacs-directory "eden/")
   "Directory where all requests sent by `eden-send' are stored.
 
@@ -2668,81 +2658,6 @@ it becomes the value of `eden-model'."
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 
-(transient-define-suffix eden-system-message-set ()
-  "Set `eden-system-message' selecting from `eden-system-messages'."
-  :transient t
-  (interactive)
-  (let ((err
-         (format
-          (concat "`eden-system-messages' variable must be nil or an alist like this\n\n"
-                  "((\"writer\" . \"You're a good writer who only writes in Italian.\")
- (\"programmer\" . \"You're a programmer who only answers with code snippets.\"))\n\n"
-                  "not `%S'")
-          eden-system-messages)))
-    (cond
-     ((null eden-system-messages)
-      (message "There's no system message to select from `eden-system-messages' variable which is nil."))
-     ((not (listp eden-system-messages)) (error err))
-     (t (if-let* ((system-message-titles
-                   (delq nil (mapcar 'car-safe eden-system-messages))))
-            (let ((title (completing-read
-                          "System message title (leave blank for none): "
-                          system-message-titles)))
-              (setq eden-system-message (assoc title eden-system-messages))
-              (message "System message `%s' selected." title))
-          (error err))))))
-
-(transient-define-suffix eden-system-message-reset ()
-  "Set `eden-system-message' to nil."
-  :transient t
-  (interactive)
-  (if eden-system-message
-      (progn
-        (message "Reset system message.")
-        (setq eden-system-message nil))
-    (message "System message is not set, no need to reset it.")))
-
-(defun eden-system-message-update ()
-  "Interactively update `eden-system-message'.
-
-This also updates its value in `eden-system-messages' list."
-  (interactive)
-  (if-let ((title (car-safe eden-system-message))
-           (message (cdr-safe eden-system-message)))
-      (let ((_ (eden-maybe-delete-window-prompt-buffer))
-            (new-message
-             (read-string-from-buffer
-              (format "Modifying \"%s\" system message" title)
-              message)))
-        (setf (cdr eden-system-message) new-message)
-        (select-window
-         (display-buffer-at-bottom
-          (get-buffer-create eden-prompt-buffer-name)
-          '(display-buffer-below-selected
-            (window-height . 6))))
-        (eden-menu)
-        (message "System message `%s' has been updated." title))
-    (message "Cannot update a system message not set.  Try instead to pick or add a system message via `eden-menu'.")
-    (eden-menu)))
-
-(defun eden-system-message-add ()
-  "Interactively add a new system message to `eden-system-messages'.
-
-This also sets `eden-system-message' with this new system message."
-  (interactive)
-  (let ((title (read-string "New system message title: ")))
-    (if (seq-contains-p (mapcar 'car-safe eden-system-messages) title)
-        (progn
-          (message "Cannot use `%s' as system message title which is already taken." title)
-          (eden-menu))
-      (let ((_ (eden-maybe-delete-window-prompt-buffer))
-            (message (read-string-from-buffer
-                      (format "Enter \"%s\" system message" title) "")))
-        (push (cons title message) eden-system-messages)
-        (setq eden-system-message (assoc title eden-system-messages))
-        (message "System message `%s' has been added." title)
-        (eden-menu)))))
-
 (transient-define-suffix eden-anthropic-max-tokens-set ()
   "Set `eden-anthropic-max-tokens' interactively."
   :transient t
@@ -2803,12 +2718,7 @@ This also sets `eden-system-message' with this new system message."
   - `eden-model-set'
   - `eden-dir-set-suffix'
   - `eden-include-reasoning-toggle'
-  - `eden-show-current-configuration'
-- System messages
-  - `eden-system-message-add'
-  - `eden-system-message-update'
-  - `eden-system-message-set'
-  - `eden-system-message-reset'"
+  - `eden-show-current-configuration'"
   [["Conversation"
     ("n" "New conversation (cv)" eden-conversation-new)
     ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
@@ -2825,15 +2735,9 @@ This also sets `eden-system-message' with this new system message."
     ("v" "Show current conversation" eden-show-current-conversation)
     ("l" "Show last conversations" eden-show-last-conversations)
     ("L" "Show last requests" eden-show-last-requests)
-    ("g" "Go to current request in history" eden-prompt-current-goto)]
-   ["System messages"
-    ("S" "Add system message" eden-system-message-add)
-    ("u" "Update system message" eden-system-message-update)
-    ("p" "Pick system message" eden-system-message-set)
-    ("r" "Reset system message" eden-system-message-reset)
+    ("g" "Go to current request in history" eden-prompt-current-goto)
     "..............."
-    ("RET" "Quit menu" eden-menu-quit)]]
-  )
+    ("RET" "Quit menu" eden-menu-quit)]])
 
 ;;;; Request at point menu
 
