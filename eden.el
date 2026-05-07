@@ -1597,14 +1597,16 @@ For instance:
       state)))
 
 (defun eden-prompt-discard-current-p ()
-  "Return t if current prompt is associated to a request failing `eden-request-check'.
+  "Return t if current prompt UUID is not associated to a request in `eden-dir'.
+
+This can happens when we switch `eden-dir' during a session without
+using `eden-dir-set' or `eden-dir-set-suffix'.
 
 See `eden-prompt-history-state'."
-  (let ((current (aref eden-prompt-history-state 1)))
-    (when (not (or (null current) (consp current)))
-      (let ((req `(:dir ,eden-dir :uuid ,current)))
-        (if (not (condition-case nil (eden-request-read 'prompt req) (error nil)))
-            t)))))
+  (when-let* ((current (aref eden-prompt-history-state 1))
+              ((stringp current)) ;; it's the UUID of a request
+              (req `(:dir ,eden-dir :uuid ,current)))
+    (not (ignore-errors (eden-request-read 'prompt req)))))
 
 (defun eden-prompt-history (direction)
   "Replace current buffer content with previous or next prompt based on DIRECTION.
