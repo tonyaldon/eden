@@ -1273,17 +1273,6 @@ data.
 See `eden-write-request', `eden-write-command', `eden-write-response'
 and `eden-write-error'.")
 
-(defvar eden-anthropic-max-tokens 4096
-  "Value of max_tokens for Anthropic API.
-
-It's a required field in requests.")
-
-(defvar eden-anthropic-thinking-budget-tokens 2048
-  "Value of thinking.budget_tokens for Anthropic API.
-
-Only applied when using an Anthropic reasoning model and
-`eden-include-reasoning' is t.")
-
 (defvar eden-org-property-date "EDEN_DATE"
   "Org property used for the date a request has been issued.
 
@@ -2270,12 +2259,11 @@ or a temporary directory."
                     :messages ,req-messages)))
     (when-let ((-temperature (or temperature eden-temperature)))
       (plist-put request :temperature -temperature))
+    ;; Anthropic API
     (when (string= service "anthropic")
-      (plist-put request :max_tokens eden-anthropic-max-tokens)
+      (plist-put request :max_tokens 4096)
       (when eden-include-reasoning
-        (plist-put request
-                   :thinking `(:type "enabled"
-                               :budget_tokens ,eden-anthropic-thinking-budget-tokens))))
+        (plist-put request :thinking '(:type "enabled" :budget_tokens 2048))))
     `(:req ,request
       :api ,-api
       :prompt ,prompt
@@ -2546,9 +2534,6 @@ This includes informations about `eden-dir', `eden-api', `eden-model',
 `eden-system-message', `eden-system-message-append' and the current
 conversation.
 
-Depending on the service, it also includes information about
-`eden-anthropic-max-tokens'and `eden-anthropic-thinking-budget-tokens'.
-
 See `eden-conversation-id' and `eden-conversations'."
   (interactive)
   (let* ((buff (get-buffer-create (eden-buffer-name "current settings")))
@@ -2568,10 +2553,6 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("include reasoning" . ,(format "%s" eden-include-reasoning))
                   ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
-                  ,(if (string= service "anthropic")
-                       `("Anthropic max tokens" . ,(number-to-string eden-anthropic-max-tokens)))
-                  ,(if (string= service "anthropic")
-                       `("Anthropic thinking budget tokens" . ,(number-to-string eden-anthropic-thinking-budget-tokens)))
                   ("system message" . ,system-message)
                   ("system message append" . ,system-message-append))))
          (opt-max-len (apply 'max (mapcar (lambda (opt) (length (car opt)))

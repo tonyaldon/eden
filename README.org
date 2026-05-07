@@ -250,8 +250,6 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-system-message~
 - ~eden-system-message-append~
 - ~eden-dir~
-- ~eden-anthropic-max-tokens~
-- ~eden-anthropic-thinking-budget-tokens~
 - ~eden-org-property-date~
 - ~eden-org-property-model~
 - ~eden-org-property-req~

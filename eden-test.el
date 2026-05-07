@@ -3121,17 +3121,14 @@ baz system message append"))
                      :endpoint "https://openai-endpoint"))))
 
   ;; Test :api when service is anthropic
-  (let* ((eden-anthropic-max-tokens 4096)
-         (eden-api '(:service "anthropic"
+  (let* ((eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
          (req (eden-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :max_tokens]) 4096)))
 
   ;; Test :api when service is anthropic with reasoning
   ;; `eden-include-reasoning' is t
-  (let* ((eden-anthropic-max-tokens 4096)
-         (eden-anthropic-thinking-budget-tokens 2048)
-         (eden-api '(:service "anthropic"
+  (let* ((eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
          (eden-include-reasoning t)
          (req (eden-request :prompt "foo prompt")))
