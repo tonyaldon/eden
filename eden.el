@@ -2045,9 +2045,20 @@ See `eden-profile-current'."
   (ring-remove+insert+extend eden-profile-ring (eden-profile-current) 'grow))
 
 (defun eden-profile-apply (profile)
-  "Set eden such that `eden-profile-current' returns PROFILE."
+  "Set current profile to PROFILE.
+
+Signal an error if PROFILE's `:dir' is different from the
+current profile and Eden is running.
+
+See `eden-profile-current'."
+  (condition-case err
+      (eden-dir-set (plist-get profile :dir))
+    (error
+     (error "Cannot apply profile:  %S\nError: %s"
+            profile
+            (error-message-string err))))
+
   (setq eden-api (plist-get profile :api))
-  (setq eden-dir (plist-get profile :dir))
   (setq eden-model (plist-get profile :model))
   (setq eden-include-reasoning (plist-get profile :include-reasoning))
   (setq eden-temperature (plist-get profile :temperature))
@@ -2716,7 +2727,7 @@ it becomes the value of `eden-model'."
   :transient t
   (interactive)
   (let ((dir (read-directory-name "Set request directory to: ")))
-    (setq eden-dir (file-name-as-directory (expand-file-name dir)))
+    (eden-dir-set dir)
     (message "Next requests will be stored in `%s' directory." eden-dir)))
 
 (transient-define-suffix eden-include-reasoning-toggle ()
