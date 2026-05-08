@@ -48,12 +48,10 @@
         (insert (eden-json-encode
                  '(:stream :false
                    :model "gpt-4o-mini"
-                   :temperature 1
                    :messages [(:role "user" :content "foo bar baz")]))))
       (eden-json-read))
     '(:stream :false
       :model "gpt-4o-mini"
-      :temperature 1
       :messages [(:role "user" :content "foo bar baz")])))
   (should
    (equal
@@ -139,7 +137,6 @@
 (ert-deftest eden-request-read-test ()
   (let* ((request '(:stream :false
                     :model "gpt-4o-mini"
-                    :temperature 1
                     :messages [(:role "user" :content "user prompt\n")]))
          (req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
@@ -491,7 +488,6 @@
   ;; conversation with no previous messages
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
-                      :temperature 1
                       :messages [(:role "user" :content "foo user")])
                 :api (:service "openai"
                       :endpoint "https://api.openai.com/v1/chat/completions")
@@ -517,7 +513,6 @@
   ;; conversation with previous messages
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
-                      :temperature 1
                       :messages [(:role "system" :content "baz system")
                                  (:role "user" :content "foo prompt")
                                  (:role "assistant" :content "foo response")
@@ -579,7 +574,6 @@
   ;; conversation with no previous messages
   (let* ((req `(:req (:stream :false
                       :model "sonar"
-                      :temperature 1
                       :messages [(:role "user" :content "foo user")])
                 :api (:service "perplexity"
                       :endpoint "https://api.perplexity.ai/chat/completions")
@@ -618,7 +612,6 @@
          ;; Perplexity request with citations in response
          (foo-req `(:req (:stream :false
                           :model "sonar"
-                          :temperature 1
                           :messages [(:role "user" :content "foo prompt")])
                     :api (:service "perplexity"
                           :endpoint "https://api.perplexity.ai/chat/completions")
@@ -638,7 +631,6 @@
          ;; OpenAI web search request with citations in response
          (foo-foo-req `(:req (:stream :false
                               :model "gpt-4o-search-preview"
-                              :temperature 1
                               :messages [(:role "user" :content "foo-foo prompt")])
                         :exchanges [(:uuid "uuid-foo"
                                      :prompt "foo prompt"
@@ -677,7 +669,6 @@
          ;; bar response with no citations
          (bar-req `(:req (:stream :false
                           :model "sonar"
-                          :temperature 1
                           :messages [(:role "user" :content "foo prompt")
                                      (:role "assistant" :content "foo response[1][3]")
                                      (:role "user" :content "foo-foo prompt")
@@ -710,7 +701,6 @@
          ;; Perplexity request with citations in response
          (baz-req `(:req (:stream :false
                           :model "sonar"
-                          :temperature 1
                           :messages [(:role "system" :content "baz system")
                                      (:role "user" :content "foo prompt")
                                      (:role "assistant" :content "foo response[1][3]")
@@ -801,7 +791,6 @@
 (ert-deftest eden-write-request-test ()
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
-                      :temperature 1
                       :messages [(:role "user" :content "user prompt\n")])
                 :api (:service "openai"
                       :endpoint "https://api.openai.com/v1/chat/completions")
@@ -843,7 +832,6 @@
         1)))
   (let* ((req `(:req (:stream :false
                       :model "gpt-4o-mini"
-                      :temperature 1
                       :messages [(:role "system" :content "baz system\n")
                                  (:role "user" :content "foo user")
                                  (:role "assistant" :content "foo response")
@@ -1412,7 +1400,6 @@ arr[0]
                             :finish_reason "stop")]))
          (-req `(:req (:stream :false
                        :model "gpt-4o-mini"
-                       :temperature 1
                        :messages [(:role "user" :content "foo bar baz")])
                  :api (:service "openai"
                        :endpoint "https://api.openai.com/v1/chat/completions")
@@ -3094,17 +3081,6 @@ baz system message append"))
     (should (equal
              (plist-get (plist-get req :req) :model)
              "gpt-4o-mini")))
-
-  ;; Test :temperature
-  (let* ((eden-temperature 0)
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (= (plist-get (plist-get req :req) :temperature)
-               0)))
-  (let* ((eden-temperature 0)
-         (req (eden-build-request :prompt "foo prompt"
-                                  :temperature 1.1)))
-    (should (= (plist-get (plist-get req :req) :temperature)
-               1.1)))
 
   ;; Test :api
   (let* ((eden-api '(:service "openai"

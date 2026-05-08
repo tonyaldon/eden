@@ -121,7 +121,6 @@ For instance if the file \"request.json\" of the request
     {
       \"stream\": false,
       \"model\": \"gpt-4o-mini\",
-      \"temperature\": null,
       \"messages\": [
         {
           \"role\": \"user\",
@@ -135,7 +134,6 @@ we have the following:
     (eden-request-read \\='request \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
     ;; (:stream :false
     ;;  :model \"gpt-4o-mini\"
-    ;;  :temperature nil
     ;;  :messages [(:role \"user\" :content \"foo bar baz\")])
 
 And for a non JSON file like the file \"prompt.org\" (assuming the
@@ -524,7 +522,6 @@ that we would send to OpenAI API.  Evaluating the following expression
 
     (let ((req \\='(:req (:stream :false
                        :model \"gpt-4o-mini\"
-                       :temperature 1
                        :messages [(:role \"system\" :content \"baz system message\")
                                   (:role \"user\" :content \"foo user\")
                                   (:role \"assistant\" :content \"foo assistant\")
@@ -823,7 +820,6 @@ error data looks like this:
      :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
      :request (:stream :false
                :model \"gpt-4o-mini\"
-               :temperature nil
                :messages [(:role \"user\" :content \"foo bar baz\")])
      :error (:message \"Incorrect API key provided: eesk-pro***WmEA. You can find your API key at https://platform.openai.com/account/api-keys.\"
              :type \"invalid_request_error\"
@@ -867,7 +863,6 @@ is called.  It takes 3 arguments
 
               (:req (:stream :false
                      :model \"gpt-4o-mini\"
-                     :temperature 1
                      :messages [(:role \"user\" :content \"foo bar baz\")])
                :api (:service \"openai\"
                      :endpoint \"https://api.openai.com/v1/chat/completions\")
@@ -895,7 +890,6 @@ just before signaling the error.  It takes 3 arguments:
               :directory \"/tmp/eden/40e73d38-7cb9-4558-b11f-542f8a2d1f9c/\"
               :request (:stream :false
                         :model \"gpt-4o-mini\"
-                        :temperature 1
                         :messages [(:role \"user\" :content \"foo bar baz\")])
               :error (:message \"Incorrect API key provided: eesk-pro***WmEA. You can find your API key at https://platform.openai.com/account/api-keys.\"
                       :type \"invalid_request_error\"
@@ -1009,7 +1003,6 @@ REQ request is a plist with the following keys:
 
                         (:stream :false
                          :model \"gpt-4o-mini\"
-                         :temperature 1
                          :messages [(:role \"user\" :content \"foo bar baz\")])
 
 - :prompt         - The prompt of the request in `org-mode' format.
@@ -1043,7 +1036,6 @@ message and no previous exchanges:
            :endpoint \"https://api.openai.com/v1/chat/completions\")
      :req (:stream :false
            :model \"gpt-4o-mini\"
-           :temperature 1
            :messages [(:role \"user\" :content \"foo bar baz\")])
      :prompt \"foo bar baz\"
      :dir \"/tmp/eden/\"
@@ -1056,7 +1048,6 @@ Perplexity API and a system message:
            :endpoint \"https://api.perplexity.ai/chat/completions\")
      :req (:stream :false
            :model \"gpt-4o-mini\"
-           :temperature 1
            :messages [(:role \"system\" :content \"baz system message\")
                       (:role \"user\" :content \"foo prompt\")
                       (:role \"assistant\" :content \"foo response\")
@@ -1228,11 +1219,6 @@ More information about the APIs and models:
 Examples of valid model for OpenAI API: \"gpt-5.1\", \"gpt-5\", \"gpt-4.1\".
 
 This variable can be modified via `eden-menu'.")
-
-(defvar eden-temperature nil
-  "Temperature used by `eden-send' to send requests to `eden-api'.
-
-It can be a float between 0 and 2 or nil.")
 
 (defvar eden-system-message nil
   "System message used by `eden-send' to send requests to `eden-api'.
@@ -1969,7 +1955,6 @@ It is a plist with the following key/value pairs:
 - :dir                   - See `eden-dir'
 - :model                 - See `eden-model'
 - :include-reasoning     - See `eden-include-reasoning'
-- :temperature           - See `eden-temperature'
 - :conversation-id       - See `eden-conversation-id'
 - :system-message        - See `eden-system-message'
 - :system-message-append - See `eden-system-message-append'
@@ -1979,7 +1964,6 @@ See `eden-profile-push'."
         :dir eden-dir
         :model eden-model
         :include-reasoning eden-include-reasoning
-        :temperature eden-temperature
         :conversation-id eden-conversation-id
         :system-message eden-system-message
         :system-message-append eden-system-message-append))
@@ -2007,7 +1991,6 @@ See `eden-profile-current'."
   (setq eden-api (plist-get profile :api))
   (setq eden-model (plist-get profile :model))
   (setq eden-include-reasoning (plist-get profile :include-reasoning))
-  (setq eden-temperature (plist-get profile :temperature))
   (setq eden-conversation-id (plist-get profile :conversation-id))
   (setq eden-system-message (plist-get profile :system-message))
   (setq eden-system-message-append (plist-get profile :system-message-append)))
@@ -2208,9 +2191,9 @@ conversation, INFO argument must be structured as:
         (eden-mode-line-waiting 'maybe-start)))))
 
 (cl-defun eden-build-request (&key prompt system-message exchanges
-                             system-message-append
-                             model temperature
-                             api dir)
+                                   system-message-append
+                                   model
+                                   api dir)
   "Return a request as defined in `eden-request-send'.
 
 `:prompt' is mandatory.
@@ -2226,7 +2209,6 @@ If `:model' is missing, it is replaced by `eden-model'.
 Both the prompt and the system message considered `org-mode' strings
 are converted to markdown using `eden-org-to-markdown' function.
 
-If `:temperature' is missing, it is replaced by `eden-temperature'.
 If `:api' is missing, it is replaced by `eden-api'.
 If `:dir' is missing, it is replaced by `eden-dir'
 or a temporary directory."
@@ -2257,8 +2239,6 @@ or a temporary directory."
          (request `(:stream :false
                     :model ,-model
                     :messages ,req-messages)))
-    (when-let ((-temperature (or temperature eden-temperature)))
-      (plist-put request :temperature -temperature))
     ;; Anthropic API
     (when (string= service "anthropic")
       (plist-put request :max_tokens 4096)
@@ -2530,15 +2510,13 @@ See `eden-last-request'."
   "Show current Configuration.
 
 This includes informations about `eden-dir', `eden-api', `eden-model',
-`eden-include-reasoning',`eden-temperature',
-`eden-system-message', `eden-system-message-append' and the current
-conversation.
+`eden-include-reasoning' `eden-system-message', `eden-system-message-append'
+and the current conversation.
 
 See `eden-conversation-id' and `eden-conversations'."
   (interactive)
   (let* ((buff (get-buffer-create (eden-buffer-name "current settings")))
          (service (plist-get eden-api :service))
-         (temperature (format "%s" (or eden-temperature "")))
          (conversation (if-let ((conversation (assoc eden-conversation-id eden-conversations)))
                            (format "%S" conversation)
                          ""))
@@ -2551,7 +2529,6 @@ See `eden-conversation-id' and `eden-conversations'."
                   ("eden-dir" . ,eden-dir)
                   ("model" . ,eden-model)
                   ("include reasoning" . ,(format "%s" eden-include-reasoning))
-                  ("temperature" . ,temperature)
                   ("conversation" . ,conversation)
                   ("system message" . ,system-message)
                   ("system message append" . ,system-message-append))))
@@ -2872,7 +2849,6 @@ mode-specific capabilities."
                     (plist-get eden-api :service)
                     (truncate-string-to-width eden-model 16 nil nil t)))
      (:eval (format " %s" (file-name-base (directory-file-name eden-dir))))
-     (:eval (when eden-temperature (format " -%s-" eden-temperature)))
      (:eval (when-let ((system-message-title (car-safe eden-system-message)))
               (concat (propertize " > " 'face '(:weight bold))
                       (format "%s"
