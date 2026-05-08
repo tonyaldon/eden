@@ -1472,11 +1472,10 @@ If the current prompt is temporary with no corresponding request, return nil."
   "Return current prompt in PROMPT-HISTORY if any or nil.
 
 The look up for the prompt is done in DIR.  See `eden-prompt-history-state'."
-  (let ((current (aref prompt-history 1)))
-    (cond
-     ((null current) nil)
-     ((consp current) (plist-get current :prompt))
-     (t (eden-request-read 'prompt `(:dir ,dir :uuid ,current))))))
+  (pcase (aref prompt-history 1)
+    ('nil "")
+    ((and p (pred consp)) (plist-get p :prompt))
+    (uuid (eden-request-read 'prompt `(:dir ,dir :uuid ,uuid)))))
 
 (defun eden-prompt-current-goto ()
   "Go to request's directory of current prompt in `eden-prompt-history-state'.
@@ -1611,7 +1610,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
       (eden-prompt-history-nav direction))
      (t (let* ((pcb (eden-prompt-current-buffer))
                (pc (eden-prompt-current dir eden-prompt-history-state))
-               (prompt (when (or (null pc) (not (string= pcb pc)))
+               (prompt (when (not (string= pcb pc))
                          `(:prompt ,pcb))))
           (setq eden-prompt-history-state
                 (funcall f eden-prompt-history-state prompt))
@@ -1624,7 +1623,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
               (eden-prompt-history-nav direction)
             (erase-buffer)
             (save-excursion
-              (insert (or (eden-prompt-current dir eden-prompt-history-state) "")))))))))
+              (insert (eden-prompt-current dir eden-prompt-history-state)))))))))
 
 (defun eden-prompt-previous ()
   "Replace current buffer content with previous prompt.
