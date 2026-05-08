@@ -1390,8 +1390,7 @@ See `eden-dir-set-suffix'."
    ((not (stringp new-dir))
     (error "Wrong `new-dir' type: `%s'.  It should be a string." new-dir))
    (t (setq eden-dir (file-name-as-directory (expand-file-name new-dir)))
-      (eden-request-history-set)
-      (eden-prompt-history-state-set))))
+      (eden-history-update :dir eden-dir))))
 
 ;;;; Prompt and Request history
 
@@ -1406,33 +1405,31 @@ variable.
 
 See `eden-send-request'.")
 
-(defun eden-request-history-set ()
-  "Set `eden-request-history' with UUIDs of existing requests in `eden-dir'.
+(defun eden-request-history-build (dir)
+  "Set `eden-request-history' with UUIDs of existing requests in `dir'.
 
 They are sorted by their timestamp file with the latest request appearing
 first.
 
 See `eden-request-timestamp'."
-  (when (file-exists-p eden-dir)
+  (when (file-exists-p dir)
     (message "Setting request history...")
-    (let* ((timestamp-files
-            (directory-files-recursively eden-dir "timestamp-.*")))
-      (setq eden-request-history
-            (thread-last
-              timestamp-files
-              (mapcar (lambda (f)
-                        (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                        (cons (match-string 1 f)
-                              (string-to-number (match-string 2 f)))))
-              (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
-              (mapcar 'car))))
-    (message "Setting request history...done")))
+    (prog1
+        (thread-last
+          (directory-files-recursively dir "timestamp-.*")
+          (mapcar (lambda (f)
+                    (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
+                    (cons (match-string 1 f)
+                          (string-to-number (match-string 2 f)))))
+          (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
+          (mapcar 'car))
+      (message "Setting request history...done"))))
 
 (defvar eden-prompt-history-state [nil nil nil]
   "State of the prompt history.
 
-- Set by `eden-prompt-history-state-set' in `eden-mode',
-- Reset with each call to `eden-send' and
+- Set by `eden-history-update' in `eden-mode',
+- Reset with each call to `eden-send-request' and
 - Updated on calling `eden-prompt-previous' and `eden-prompt-next'.
 
 The variable is a vector of three elements:
@@ -1449,8 +1446,12 @@ The variable is a vector of three elements:
 3) The Third element holds the list of next prompts which can also be
    nil, UUIDs or a temporary prompts as described in 1).")
 
-(defun eden-prompt-history-state-set ()
-  "Set `eden-prompt-history-state' with `eden-request-history'."
+
+(cl-defun eden-history-update (&key dir new-req-uuid)
+  "Update `eden-request-history' and `eden-prompt-history-state'."
+
+  (when dir (setq eden-request-history (eden-request-history-build dir)))
+  (when new-req-uuid (push new-req-uuid eden-request-history))
   (setq eden-prompt-history-state
         (vector eden-request-history nil nil)))
 
@@ -1565,16 +1566,16 @@ For instance:
                 (cdr next-items))
       state)))
 
-(defun eden-prompt-discard-current-p ()
+(defun eden-prompt-discard-current-p (dir prompt-history)
   "Return t if current prompt UUID is not associated to a request in `eden-dir'.
 
 This can happens when we switch `eden-dir' during a session without
 using `eden-dir-set' or `eden-dir-set-suffix'.
 
 See `eden-prompt-history-state'."
-  (when-let* ((current (aref eden-prompt-history-state 1))
+  (when-let* ((current (aref prompt-history 1))
               ((stringp current)) ;; it's the UUID of a request
-              (req `(:dir ,eden-dir :uuid ,current)))
+              (req `(:dir ,dir :uuid ,current)))
     (not (ignore-errors (eden-request-read 'prompt req)))))
 
 (defun eden-prompt-history (direction)
@@ -1600,7 +1601,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
     (cond
      ((null prompts)
       (message "No more requests or prompts in history."))
-     ((eden-prompt-discard-current-p)
+     ((eden-prompt-discard-current-p eden-dir eden-prompt-history-state)
       (setq eden-prompt-history-state
             (funcall f eden-prompt-history-state nil 'discard-current))
       (eden-prompt-history direction))
@@ -1610,7 +1611,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
                          `(:prompt ,pcb))))
           (setq eden-prompt-history-state
                 (funcall f eden-prompt-history-state prompt))
-          (if (eden-prompt-discard-current-p)
+          (if (eden-prompt-discard-current-p eden-dir eden-prompt-history-state)
               ;; This can happens if the UUID stored in prompt history
               ;; doesn't match to a request in `eden-dir'.  If none
               ;; of the UUIDs in prompt history correspond to an existing
@@ -2186,8 +2187,7 @@ conversation, INFO argument must be structured as:
                     :conversation-id conversation-id
                     :proc (eden-request-send req callback callback-error info))
               eden-pending-requests)
-        (push (plist-get req :uuid) eden-request-history)
-        (eden-prompt-history-state-set)
+        (eden-history-update :new-req-uuid (plist-get req :uuid))
         (eden-mode-line-waiting 'maybe-start)))))
 
 (cl-defun eden-build-request (&key prompt system-message exchanges
@@ -2826,7 +2826,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 
 Upon activation, this mode sets `mode-line-format' and `eden-profile-ring'
 variables, adds `eden-profile-push' to `transient-exit-hook' and calls
-`eden-request-history-set' and `eden-prompt-history-state-set'functions.
+`eden-history-update' function.
 
 It is used within `eden-prompt-buffer-name' for user prompt input.
 
@@ -2860,8 +2860,7 @@ mode-specific capabilities."
      mode-line-misc-info))
   (eden-profile-push)
   (add-hook 'transient-exit-hook 'eden-profile-push nil t)
-  (eden-request-history-set)
-  (eden-prompt-history-state-set))
+  (eden-history-update :dir eden-dir))
 
 (defun eden (&optional arg)
   "Command to access the prompt buffer and menus to manage conversations and settings.

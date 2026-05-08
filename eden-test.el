@@ -1640,32 +1640,56 @@ foo bar baz
 
 ;;;; Prompt and Request history
 
-(ert-deftest eden-request-history-set-test ()
-  ;; `eden-dir' doesn't exist
-  (let* (eden-request-history
-         (eden-dir (concat (make-temp-file "eden-" t) "/")))
-    (delete-directory eden-dir)
-    (eden-request-history-set)
-    (should-not eden-request-history))
-  ;; `eden-dir' exist with request and timestamp files
-  (let* (eden-request-history
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req-0 (eden-build-request :prompt "req-0"))
-         (req-1 (eden-build-request :prompt "req-1"))
-         (req-2 (eden-build-request :prompt "req-2"))
-         (req-3 (eden-build-request :prompt "req-3"))
-         (uuid-0 (plist-get req-0 :uuid))
-         (uuid-1 (plist-get req-1 :uuid))
-         (uuid-2 (plist-get req-2 :uuid))
-         (uuid-3 (plist-get req-3 :uuid)))
-    (message "%s" eden-dir)
-    (eden-write-request req-0)
-    (eden-write-request req-1)
-    (eden-write-request req-2)
-    (eden-write-request req-3)
-    (eden-request-history-set)
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-history-get-test")))
+(ert-deftest eden-request-history-get-test ()
+  ;; Directory doesn't exist
+  (let* ((dir (concat (make-temp-file "eden-" t) "/")))
+    (delete-directory dir)
+    (should-not (eden-request-history-build dir)))
+
+  ;; Directory exists
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-0 `(:dir ,dir :uuid "uuid-0"))
+         (req-1 `(:dir ,dir :uuid "uuid-1"))
+         (req-2 `(:dir ,dir :uuid "uuid-2"))
+         (req-3 `(:dir ,dir :uuid "uuid-3")))
+    (eden-request-write 'timestamp req-0 "")
+    (eden-request-write 'timestamp req-1 "")
+    (eden-request-write 'timestamp req-2 "")
+    (eden-request-write 'timestamp req-3 "")
     (should
-     (equal eden-request-history (list uuid-3 uuid-2 uuid-1 uuid-0)))))
+     (equal (eden-request-history-build dir)
+            '("uuid-3" "uuid-2" "uuid-1" "uuid-0")))))
+
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-history-update-test")))
+(ert-deftest eden-history-update-test ()
+  (let* ((eden-request-history)      ;; variable tested
+         (eden-prompt-history-state) ;; variable tested
+         (dir (concat (make-temp-file "eden-" t) "/"))
+         (req-0 `(:dir ,dir :uuid "uuid-0"))
+         (req-1 `(:dir ,dir :uuid "uuid-1"))
+         (req-2 `(:dir ,dir :uuid "uuid-2")))
+    (eden-request-write 'timestamp req-0 "")
+    (eden-request-write 'timestamp req-1 "")
+    (eden-request-write 'timestamp req-2 "")
+
+    (eden-history-update :dir dir)
+
+    (should
+     (equal eden-request-history '("uuid-2" "uuid-1" "uuid-0")))
+    (should
+     (equal eden-prompt-history-state
+            [("uuid-2" "uuid-1" "uuid-0") nil nil]))
+
+    (eden-history-update :new-req-uuid "uuid-3")
+
+    (should
+     (equal eden-request-history '("uuid-3" "uuid-2" "uuid-1" "uuid-0")))
+    (should
+     (equal eden-prompt-history-state
+            [("uuid-3" "uuid-2" "uuid-1" "uuid-0") nil nil]))))
+
+
 
 (ert-deftest eden-prompt-history-previous/next ()
   ;; default usage
@@ -1762,6 +1786,26 @@ foo bar baz
     (message "%S" (eden-request-dir req))
     (eden-request-write 'prompt req "foo prompt\n")
     (should (string= (eden-prompt-current) "foo prompt\n"))))
+
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-discard-current-p-test")))
+(ert-deftest eden-prompt-discard-current-p-test ()
+  ;; We must discard a request's UUID if the request
+  ;; can't be found in dir.
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (prompt-history [nil "foo-uuid" nil]))
+    (should (eden-prompt-discard-current-p dir prompt-history)))
+
+  ;; We don't discard current "prompt ref" if it's request's UUID
+  ;; of an existing request in dir or if it's prompt not attached
+  ;; to any request which we temporally keep in the history.
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (prompt-history [nil (:prompt "foo prompt") nil]))
+    (should-not (eden-prompt-discard-current-p dir prompt-history)))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (prompt-history [nil "bar-uuid" nil])
+         (req-bar `(:dir ,dir :uuid "bar-uuid")))
+    (eden-request-write 'prompt req-bar "bar prompt\n")
+    (should-not (eden-prompt-discard-current-p dir prompt-history))))
 
 ;;;; Conversations
 

@@ -228,7 +228,6 @@ Each time you quit Eden's menu, the current *profile* which includes
 - the request directory,
 - the model,
 - if you include the reasoning,
-- the temperature,
 - the current conversation if any, and,
 - the system message if any
 - the instructions appended to the system message if any
@@ -246,7 +245,6 @@ The complete list of user variables you may want to adjust includes:
 - ~eden-api~
 - ~eden-apis~
 - ~eden-model~
-- ~eden-temperature~
 - ~eden-system-message~
 - ~eden-system-message-append~
 - ~eden-dir~
