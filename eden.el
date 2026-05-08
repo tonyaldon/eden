@@ -1495,77 +1495,46 @@ See `eden-request-dir'."
                      "Try navigating the prompt history with `M-p' and `M-n', "
                      "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
-(defun eden-prompt-history-previous (state &optional prompt discard-current)
-  "Return a new state of STATE with previous prompt set as current prompt.
+(defun eden-prompt-history-previous (prompt-history &optional prompt discard-current)
+  "Update in-place the PROMPT-HISTORY backward.
 
-STATE follows the structure defined in `eden-prompt-history-state'.
+PROMPT-HISTORY follows the structure defined in `eden-prompt-history-state'.
 
 If PROMPT is non-nil, both PROMPT and the current prompt are pushed onto
 the stack of next prompts.
 
 If DISCARD-CURRENT is non-nil, the current prompt will not be pushed
-onto the stack of next prompts, accommodating requests in
-`eden-request-history' that may fail `eden-request-check' and should
-be omitted from `eden-prompt-history-state' while navigating it.
+onto the stack of next prompts.
 
-Signal an error if both PROMPT and DISCARD-CURRENT are non-nil.
-
-For instance:
-
-    (eden-prompt-history-previous [(\"bar\" \"baz\") \"foo\" nil])
-    ;; [(\"baz\") \"bar\" (\"foo\")]
-
-    (eden-prompt-history-previous
-     [(\"bar\" \"baz\") \"foo\" nil] \\='(:prompt \"scratch prompt\"))
-    ;; [(\"baz\") \"bar\" ((:prompt \"scratch prompt\") \"foo\")]
-
-    (eden-prompt-history-previous
-     [(\"foo\" \"bar\") \"to-be-discarded\" nil] nil \\='discard-current)
-    ;; [(\"bar\") \"foo\" nil]"
+Signal an error if both PROMPT and DISCARD-CURRENT are non-nil."
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
                    prompt discard-current)))
-  (let ((prev-items (aref state 0))
-        (current (aref state 1))
-        (next-items (aref state 2)))
-    (if prev-items
-        (vector (cdr prev-items)
-                (car prev-items)
-                (delq nil (append
-                           (list prompt (when (not discard-current) current))
-                           next-items)))
-      state)))
+  (when-let ((prev-items (aref prompt-history 0)))
+    (let ((current (aref prompt-history 1))
+          (next-items (aref prompt-history 2)))
+      (aset prompt-history 0 (cdr prev-items))
+      (aset prompt-history 1 (car prev-items))
+      (aset prompt-history 2 (delq nil
+                                   (append
+                                    (list prompt (when (not discard-current) current))
+                                    next-items))))))
 
-(defun eden-prompt-history-next (state &optional prompt discard-current)
-  "Return a new state of STATE with next prompt set as current prompt.
+(defun eden-prompt-history-next (prompt-history &optional prompt discard-current)
+  "Update in-place the PROMPT-HISTORY forward.
 
-Similar to `eden-prompt-history-previous'.
-
-For instance:
-
-    (eden-prompt-history-next [nil \"baz\" (\"bar\" \"foo\")])
-    ;; [(\"baz\") \"bar\" (\"foo\")]
-
-    (eden-prompt-history-next
-     [(\"baz\") \"bar\" (\"foo\")] '(:prompt \"scratch prompt\"))
-    ;; [((:prompt \"scratch prompt\") \"bar\" \"baz\") \"foo\" nil]
-
-    (eden-prompt-history-next
-     [nil \"to-be-discarded\" (\"bar\" \"foo\")] nil 'discard-current)
-    ;; [nil \"bar\" (\"foo\")]"
+Similar to `eden-prompt-history-previous'."
   (when (and prompt discard-current)
     (error (format "`prompt' and `discard-current' arguments cannot be both non-nil: %S, %S"
                    prompt discard-current)))
-  (let ((prev-items (aref state 0))
-        (current (aref state 1))
-        (next-items (aref state 2)))
-    (if next-items
-        (vector (delq nil (append
-                           (list prompt (when (not discard-current) current))
-                           prev-items))
-                (car next-items)
-                (cdr next-items))
-      state)))
+  (when-let ((next-items (aref prompt-history 2)))
+    (let ((prev-items (aref prompt-history 0))
+          (current (aref prompt-history 1)))
+      (aset prompt-history 0 (delq nil (append
+                                        (list prompt (when (not discard-current) current))
+                                        prev-items)))
+      (aset prompt-history 1 (car next-items))
+      (aset prompt-history 2 (cdr next-items)))))
 
 (defun eden-prompt-discard-current-p (dir prompt-history)
   "Return t if current prompt UUID is not associated to a request in `eden-dir'.
@@ -1579,42 +1548,41 @@ See `eden-prompt-history-state'."
               (req `(:dir ,dir :uuid ,current)))
     (not (ignore-errors (eden-request-read 'prompt req)))))
 
-(defun eden-prompt-history-nav (direction)
+(defun eden-prompt-history-nav (dir direction prompt-history)
   "Replace current buffer content with previous or next prompt based on DIRECTION.
 
 DIRECTION can be either `previous' or `next'.
 
-Also update `eden-prompt-history-state' accordingly.  See
+This also updates in-place PROMPT-HISTORY accordingly.  See
 `eden-prompt-history-previous' and `eden-prompt-history-next'.
 
 If the content of `eden-prompt-buffer-name' buffer differs from
-the current prompt in `eden-prompt-history-state', it is pushed
+the current prompt in PROMPT-HISTORY, it is pushed
 onto the respective stack of previous or next prompts based on
 DIRECTION.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
-  (let (prompts
-        f
-        (dir eden-dir))
+  ;; This function is not unit tested.  When making changes to
+  ;; it or any prompt history function, test it by starting a fresh
+  ;; emacs and in the eden prompt buffer, play with M-n and M-p.
+  (let (prompts nav-fn)
     (pcase direction
-      ('previous (setq prompts (aref eden-prompt-history-state 0))
-                 (setq f 'eden-prompt-history-previous))
-      ('next (setq prompts (aref eden-prompt-history-state 2))
-             (setq f 'eden-prompt-history-next)))
+      ('previous (setq prompts (aref prompt-history 0))
+                 (setq nav-fn 'eden-prompt-history-previous))
+      ('next (setq prompts (aref prompt-history 2))
+             (setq nav-fn 'eden-prompt-history-next)))
     (cond
      ((null prompts)
       (message "No more requests or prompts in history."))
-     ((eden-prompt-discard-current-p dir eden-prompt-history-state)
-      (setq eden-prompt-history-state
-            (funcall f eden-prompt-history-state nil 'discard-current))
+     ((eden-prompt-discard-current-p dir prompt-history)
+      (funcall nav-fn prompt-history nil 'discard-current)
       (eden-prompt-history-nav direction))
      (t (let* ((pcb (eden-prompt-current-buffer))
-               (pc (eden-prompt-current dir eden-prompt-history-state))
+               (pc (eden-prompt-current dir prompt-history))
                (prompt (when (not (string= pcb pc))
                          `(:prompt ,pcb))))
-          (setq eden-prompt-history-state
-                (funcall f eden-prompt-history-state prompt))
-          (if (eden-prompt-discard-current-p dir eden-prompt-history-state)
+          (funcall nav-fn prompt-history prompt)
+          (if (eden-prompt-discard-current-p dir prompt-history)
               ;; This can happens if the UUID stored in prompt history
               ;; doesn't match to a request in `dir'.  If none
               ;; of the UUIDs in prompt history correspond to an existing
@@ -1623,7 +1591,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
               (eden-prompt-history-nav direction)
             (erase-buffer)
             (save-excursion
-              (insert (eden-prompt-current dir eden-prompt-history-state)))))))))
+              (insert (eden-prompt-current dir prompt-history)))))))))
 
 (defun eden-prompt-previous ()
   "Replace current buffer content with previous prompt.
@@ -1632,7 +1600,7 @@ See `eden-prompt-history-state' and `eden-prompt-history-nav'.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
-  (eden-prompt-history-nav 'previous))
+  (eden-prompt-history-nav eden-dir 'previous eden-prompt-history-state))
 
 (defun eden-prompt-next ()
   "Replace current buffer content with next prompt.
@@ -1641,7 +1609,7 @@ See `eden-prompt-history-state' and `eden-prompt-history-nav'.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
-  (eden-prompt-history-nav 'next))
+  (eden-prompt-history-nav eden-dir 'next eden-prompt-history-state))
 
 ;;;; Conversations
 

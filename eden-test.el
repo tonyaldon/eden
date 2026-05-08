@@ -1691,88 +1691,89 @@ foo bar baz
 
 
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-history-previous/next")))
 (ert-deftest eden-prompt-history-previous/next ()
+  ;; For some reason, this test failed if run twice without
+  ;; re-evaluating it.
+
   ;; default usage
-  (should
-   (equal (eden-prompt-history-previous [("foo" "bar" "baz") nil nil])
-          [("bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-previous [("bar" "baz") "foo" nil])
-          [("baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-previous [("baz") "bar" ("foo")])
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-previous [nil "baz" ("bar" "foo")])
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-next [nil "baz" ("bar" "foo")])
-          [("baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next [("baz") "bar" ("foo")])
-          [("bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-next [("bar" "baz") "foo" nil])
-          [("bar" "baz") "foo" nil]))
+  (let ((prompt-history [("foo" "bar" "baz") nil nil]))
+    (eden-prompt-history-previous prompt-history)
+    (should (equal prompt-history [("bar" "baz") "foo" nil])))
+  (let ((prompt-history [("bar" "baz") "foo" nil]))
+    (eden-prompt-history-previous prompt-history)
+    (should (equal prompt-history [("baz") "bar" ("foo")])))
+  (let ((prompt-history [("baz") "bar" ("foo")]))
+    (eden-prompt-history-previous prompt-history)
+    (should (equal prompt-history [nil "baz" ("bar" "foo")])))
+  (let ((prompt-history [nil "baz" ("bar" "foo")]))
+    (eden-prompt-history-previous prompt-history)
+    (should (equal prompt-history [nil "baz" ("bar" "foo")])))
+
+  (let ((prompt-history [nil "baz" ("bar" "foo")]))
+    (eden-prompt-history-next prompt-history)
+    (should (equal prompt-history [("baz") "bar" ("foo")])))
+  (let ((prompt-history [("baz") "bar" ("foo")]))
+    (eden-prompt-history-next prompt-history)
+    (should (equal prompt-history [("bar" "baz") "foo" nil])))
+  (let ((prompt-history [("bar" "baz") "foo" nil]))
+    (eden-prompt-history-next prompt-history)
+    (should (equal prompt-history [("bar" "baz") "foo" nil])))
 
   ;; signal error if both `prompt' and `discard-current' optional
   ;; arguments are non nil
-  ;; todo
-  (should-error
-   (eden-prompt-history-previous
-    [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt") 'discard-current))
+  (let ((prompt-history [("foo" "bar" "baz") nil nil]))
+    (eden-prompt-history-previous prompt-history )
+    (should-error
+     (eden-prompt-history-previous
+      [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt") 'discard-current)))
 
-  (should-error
-   (eden-prompt-history-next
-    [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt") 'discard-current))
+  (let ((prompt-history [nil "baz" ("bar" "foo")]))
+    (should-error
+     (eden-prompt-history-next
+      prompt-history '(:prompt "scratch prompt") 'discard-current)))
 
   ;; with `prompt' optional argument
-  (should
-   (equal (eden-prompt-history-previous
-           [("foo" "bar" "baz") nil nil] '(:prompt "scratch prompt"))
-          [("bar" "baz") "foo" ((:prompt "scratch prompt"))]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
-          [("baz") "bar" ((:prompt "scratch prompt") "foo")]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
-          [nil "baz" ((:prompt "scratch prompt") "bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-previous
-           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
-          [nil "baz" ("bar" "foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [nil "baz" ("bar" "foo")] '(:prompt "scratch prompt"))
-          [((:prompt "scratch prompt") "baz") "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [("baz") "bar" ("foo")] '(:prompt "scratch prompt"))
-          [((:prompt "scratch prompt") "bar" "baz") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-next
-           [("bar" "baz") "foo" nil] '(:prompt "scratch prompt"))
-          [("bar" "baz") "foo" nil]))
+  (let ((prompt-history [("foo" "bar" "baz") nil nil]))
+    (eden-prompt-history-previous prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [("bar" "baz") "foo" ((:prompt "scratch prompt"))])))
+  (let ((prompt-history [("bar" "baz") "foo" nil]))
+    (eden-prompt-history-previous prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [("baz") "bar" ((:prompt "scratch prompt") "foo")])))
+  (let ((prompt-history [("baz") "bar" ("foo")]))
+    (eden-prompt-history-previous prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [nil "baz" ((:prompt "scratch prompt") "bar" "foo")])))
+  (let ((prompt-history [nil "baz" ("bar" "foo")]))
+    (eden-prompt-history-previous prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [nil "baz" ("bar" "foo")])))
 
-  ;; with `discard-current' optional argument
-  (should
-   (equal (eden-prompt-history-previous
-           [("foo" "bar") "to-be-discarded" nil] nil 'discard-current)
-          [("bar") "foo" nil]))
-  (should
-   (equal (eden-prompt-history-previous
-           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
-          [nil "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [nil "to-be-discarded" ("bar" "foo")] nil 'discard-current)
-          [nil "bar" ("foo")]))
-  (should
-   (equal (eden-prompt-history-next
-           [("bar") "to-be-discarded" ("foo")] nil 'discard-current)
-          [("bar") "foo" nil])))
+
+  (let ((prompt-history [nil "baz" ("bar" "foo")]))
+    (eden-prompt-history-next prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [((:prompt "scratch prompt") "baz") "bar" ("foo")])))
+  (let ((prompt-history [("baz") "bar" ("foo")]))
+    (eden-prompt-history-next prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [((:prompt "scratch prompt") "bar" "baz") "foo" nil])))
+  (let ((prompt-history [("bar" "baz") "foo" nil]))
+    (eden-prompt-history-next prompt-history '(:prompt "scratch prompt"))
+    (should (equal prompt-history [("bar" "baz") "foo" nil])))
+
+
+  ;; with `discard-current' optional argument)
+  (let ((prompt-history [("foo" "bar") "to-be-discarded" nil]))
+    (eden-prompt-history-previous prompt-history nil 'discard-current)
+    (should (equal prompt-history [("bar") "foo" nil])))
+  (let ((prompt-history [("bar") "to-be-discarded" ("foo")]))
+    (eden-prompt-history-previous prompt-history nil 'discard-current)
+    (should (equal prompt-history [nil "bar" ("foo")])))
+
+  (let ((prompt-history [nil "to-be-discarded" ("bar" "foo")]))
+    (eden-prompt-history-next prompt-history nil 'discard-current)
+    (should (equal prompt-history [nil "bar" ("foo")])))
+
+  (let ((prompt-history [("bar") "to-be-discarded" ("foo")]))
+    (eden-prompt-history-next prompt-history nil 'discard-current)
+    (should (equal prompt-history [("bar") "foo" nil]))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-current-test")))
 (ert-deftest eden-prompt-current-test ()
