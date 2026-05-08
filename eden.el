@@ -1405,26 +1405,6 @@ variable.
 
 See `eden-send-request'.")
 
-(defun eden-request-history-build (dir)
-  "Set `eden-request-history' with UUIDs of existing requests in `dir'.
-
-They are sorted by their timestamp file with the latest request appearing
-first.
-
-See `eden-request-timestamp'."
-  (when (file-exists-p dir)
-    (message "Setting request history...")
-    (prog1
-        (thread-last
-          (directory-files-recursively dir "timestamp-.*")
-          (mapcar (lambda (f)
-                    (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
-                    (cons (match-string 1 f)
-                          (string-to-number (match-string 2 f)))))
-          (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
-          (mapcar 'car))
-      (message "Setting request history...done"))))
-
 (defvar eden-prompt-history-state [nil nil nil]
   "State of the prompt history.
 
@@ -1446,6 +1426,25 @@ The variable is a vector of three elements:
 3) The Third element holds the list of next prompts which can also be
    nil, UUIDs or a temporary prompts as described in 1).")
 
+(defun eden-request-history-build (dir)
+  "Set `eden-request-history' with UUIDs of existing requests in `dir'.
+
+They are sorted by their timestamp file with the latest request appearing
+first.
+
+See `eden-request-timestamp'."
+  (when (file-exists-p dir)
+    (message "Setting request history...")
+    (prog1
+        (thread-last
+          (directory-files-recursively dir "timestamp-.*")
+          (mapcar (lambda (f)
+                    (string-match ".*/\\([^/]+\\)/timestamp-\\(.*\\)" f)
+                    (cons (match-string 1 f)
+                          (string-to-number (match-string 2 f)))))
+          (seq-sort (lambda (t1 t2) (> (cdr t1) (cdr t2))))
+          (mapcar 'car))
+      (message "Setting request history...done"))))
 
 (cl-defun eden-history-update (&key dir new-req-uuid)
   "Update `eden-request-history' and `eden-prompt-history-state'."
@@ -1479,24 +1478,6 @@ The look up for the prompt is done in DIR.  See `eden-prompt-history-state'."
     ('nil "")
     ((and p (pred consp)) (plist-get p :prompt))
     (uuid (eden-request-read 'prompt `(:dir ,dir :uuid ,uuid)))))
-
-(defun eden-prompt-current-goto ()
-  "Go to request's directory of current prompt in `eden-prompt-history-state'.
-
-If the current prompt is temporary with no corresponding request, message
-the user about it.
-
-See `eden-request-dir'."
-  (interactive)
-  (if-let* ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state))
-            (req-dir (eden-request-dir
-                      `(:dir ,eden-dir :uuid ,req-uuid))))
-      (progn
-        (eden-maybe-delete-window-prompt-buffer)
-        (dired-other-window req-dir))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 (defun eden-prompt-history-previous (prompt-history &optional prompt discard-current)
   "Update in-place the PROMPT-HISTORY backward.
@@ -1613,6 +1594,24 @@ See `eden-prompt-history-state' and `eden-prompt-history-nav'.
 This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
   (eden-prompt-history-nav eden-dir 'next eden-prompt-history-state))
+
+(defun eden-prompt-current-goto ()
+  "Go to request's directory of current prompt in `eden-prompt-history-state'.
+
+If the current prompt is temporary with no corresponding request, message
+the user about it.
+
+See `eden-request-dir'."
+  (interactive)
+  (if-let* ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state))
+            (req-dir (eden-request-dir
+                      `(:dir ,eden-dir :uuid ,req-uuid))))
+      (progn
+        (eden-maybe-delete-window-prompt-buffer)
+        (dired-other-window req-dir))
+    (message (concat "Current prompt is not associated with a request.  "
+                     "Try navigating the prompt history with `M-p' and `M-n', "
+                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
 
 ;;;; Conversations
 
