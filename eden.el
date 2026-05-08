@@ -1461,12 +1461,15 @@ The variable is a vector of three elements:
 This function should be called from `eden-prompt-buffer-name' buffer."
   (buffer-substring-no-properties (point-min) (point-max)))
 
-(defun eden-prompt-current-req-uuid ()
-  "Return request's UUID of current prompt in `eden-prompt-history-state'.
+(defun eden-prompt-current-req-uuid (prompt-history)
+  "Return request's UUID of current prompt in PROMPT-HISTORY.
 
-If the current prompt is temporary with no corresponding request, return nil."
-  (when-let ((current (aref eden-prompt-history-state 1)))
-    (when (not (consp current)) current)))
+If the current prompt is temporary with no corresponding request, return nil.
+
+See `eden-prompt-history-state'."
+  (when-let* ((current (aref prompt-history 1))
+              ((stringp current)))
+    current))
 
 (defun eden-prompt-current (dir prompt-history)
   "Return current prompt in PROMPT-HISTORY if any or nil.
@@ -1485,7 +1488,7 @@ the user about it.
 
 See `eden-request-dir'."
   (interactive)
-  (if-let* ((req-uuid (eden-prompt-current-req-uuid))
+  (if-let* ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state))
             (req-dir (eden-request-dir
                       `(:dir ,eden-dir :uuid ,req-uuid))))
       (progn
@@ -1787,7 +1790,7 @@ See `eden-prompt-history-state', `eden-conversation-add', `eden-conversations' a
 `eden-conversation-id'."
   :transient t
   (interactive)
-  (if-let ((req-uuid (eden-prompt-current-req-uuid)))
+  (if-let ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state)))
       (let ((title (read-string "Continue conversation with title: ")))
         (eden-conversation-add title req-uuid)
         (message "Conversation `%s' initialized." title))

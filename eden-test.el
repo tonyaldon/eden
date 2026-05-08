@@ -1640,8 +1640,8 @@ foo bar baz
 
 ;;;; Prompt and Request history
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-history-get-test")))
-(ert-deftest eden-request-history-get-test ()
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-history-build-test")))
+(ert-deftest eden-request-history-build-test ()
   ;; Directory doesn't exist
   (let* ((dir (concat (make-temp-file "eden-" t) "/")))
     (delete-directory dir)
@@ -1689,7 +1689,32 @@ foo bar baz
      (equal eden-prompt-history-state
             [("uuid-3" "uuid-2" "uuid-1" "uuid-0") nil nil]))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-current-req-uuid-test")))
+(ert-deftest eden-prompt-current-req-uuid-test ()
+  (let ((prompt-history [nil nil nil]))
+    (should-not (eden-prompt-current-req-uuid prompt-history)))
+  (let ((prompt-history [nil (:prompt "scratch prompt") nil]))
+    (should-not (eden-prompt-current-req-uuid prompt-history)))
+  (let* ((prompt-history [nil "foo-uuid" nil]))
+    (should
+     (string= (eden-prompt-current-req-uuid prompt-history)
+              "foo-uuid"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-current-test")))
+(ert-deftest eden-prompt-current-test ()
+  (let ((dir (concat (make-temp-file "eden-" t) "/"))
+        (prompt-history [nil nil nil]))
+    (should (string= (eden-prompt-current dir prompt-history) "")))
+  (let ((dir (concat (make-temp-file "eden-" t) "/"))
+        (prompt-history [nil (:prompt "scratch prompt") nil]))
+    (should (string= (eden-prompt-current dir prompt-history)
+                     "scratch prompt")))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,dir :uuid "foo-uuid"))
+         (prompt-history [nil "foo-uuid" nil]))
+    (eden-request-write 'prompt req "foo prompt\n")
+    (should (string= (eden-prompt-current dir prompt-history)
+                     "foo prompt\n"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-history-previous/next")))
 (ert-deftest eden-prompt-history-previous/next ()
@@ -1774,22 +1799,6 @@ foo bar baz
   (let ((prompt-history [("bar") "to-be-discarded" ("foo")]))
     (eden-prompt-history-next prompt-history nil 'discard-current)
     (should (equal prompt-history [("bar") "foo" nil]))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-current-test")))
-(ert-deftest eden-prompt-current-test ()
-  (let ((dir (concat (make-temp-file "eden-" t) "/"))
-        (prompt-history [nil nil nil]))
-    (should (string= (eden-prompt-current dir prompt-history) "")))
-  (let ((dir (concat (make-temp-file "eden-" t) "/"))
-        (prompt-history [nil (:prompt "scratch prompt") nil]))
-    (should (string= (eden-prompt-current dir prompt-history)
-                     "scratch prompt")))
-  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,dir :uuid "foo-uuid"))
-         (prompt-history [nil "foo-uuid" nil]))
-    (eden-request-write 'prompt req "foo prompt\n")
-    (should (string= (eden-prompt-current dir prompt-history)
-                     "foo prompt\n"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-prompt-discard-current-p-test")))
 (ert-deftest eden-prompt-discard-current-p-test ()
