@@ -1260,7 +1260,7 @@ regardless of messages sent by the user.\"")
 
 Setting this variable doesn't modify `eden-system-message'.
 
-See `eden-request'.")
+See `eden-build-request'.")
 
 (defvar eden-dir (concat user-emacs-directory "eden/")
   "Directory where all requests sent by `eden-send' are stored.
@@ -2049,7 +2049,7 @@ See `eden-profile-ring' and `eden-profile-current'."
 
 Each element is a plist with the following keys:
 
-- :req             - A request created with `eden-request'.
+- :req             - A request created with `eden-build-request'.
 - :conversation-id - The ID for the conversation if `:req' is part of an
                      ongoing conversation in `eden-conversations';  nil
                      if not part of a conversation.
@@ -2207,7 +2207,7 @@ conversation, INFO argument must be structured as:
         (eden-prompt-history-state-set)
         (eden-mode-line-waiting 'maybe-start)))))
 
-(cl-defun eden-request (&key prompt system-message exchanges
+(cl-defun eden-build-request (&key prompt system-message exchanges
                              system-message-append
                              model temperature
                              api dir)
@@ -2327,7 +2327,7 @@ This function should be called from `eden-prompt-buffer-name' buffer.
 See `eden-send-request'."
   (interactive)
   (eden-send-request
-   :req (eden-request
+   :req (eden-build-request
          :prompt (eden-prompt-current-buffer)
          :exchanges (eden-conversation-exchanges eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id

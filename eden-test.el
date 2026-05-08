@@ -1663,10 +1663,10 @@ foo bar baz
   ;; `eden-dir' exist with request and timestamp files
   (let* (eden-request-history
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req-0 (eden-request :prompt "req-0"))
-         (req-1 (eden-request :prompt "req-1"))
-         (req-2 (eden-request :prompt "req-2"))
-         (req-3 (eden-request :prompt "req-3"))
+         (req-0 (eden-build-request :prompt "req-0"))
+         (req-1 (eden-build-request :prompt "req-1"))
+         (req-2 (eden-build-request :prompt "req-2"))
+         (req-3 (eden-build-request :prompt "req-3"))
          (uuid-0 (plist-get req-0 :uuid))
          (uuid-1 (plist-get req-1 :uuid))
          (uuid-2 (plist-get req-2 :uuid))
@@ -1861,7 +1861,7 @@ foo bar baz
   (let* (eden-conversations
          eden-conversation-id
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (foo-req (eden-request :prompt "foo-req")) ;; depend on `eden-dir'
+         (foo-req (eden-build-request :prompt "foo-req")) ;; depend on `eden-dir'
          (foo-req-uuid (plist-get foo-req :uuid))
          ;; we use the same response for two different requests
          ;; because we just need them to exist in the request directory
@@ -2100,7 +2100,7 @@ foo bar baz
 
 
   ;; Signal error when both `title' and `append' argument are nil
-  (let ((req (eden-request
+  (let ((req (eden-build-request
               :prompt "foo bar baz"
               :dir (concat (make-temp-file "eden-" t) "/")))
         (resp '(:model "gpt-4o-mini-2024-07-18"
@@ -2126,7 +2126,7 @@ foo bar baz
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "openai"
@@ -2169,7 +2169,7 @@ foo bar baz assistant response
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-req "EDEN_REQ")
               (eden-org-property-model "EDEN_MODEL")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "deepseek"
@@ -2218,7 +2218,7 @@ foo bar baz assistant response
               (eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "foo bar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "deepseek"
@@ -2259,7 +2259,7 @@ foo bar baz assistant response
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "openai"
@@ -2317,7 +2317,7 @@ bar baz
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "openai"
@@ -2408,7 +2408,7 @@ baz-assistant-content
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-request
+              (req (eden-build-request
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                     :dir (concat (make-temp-file "eden-" t) "/")
                     :api '(:service "openai"
@@ -2535,7 +2535,7 @@ baz-assistant-content
                (eden-org-property-model "EDEN_MODEL")
                (eden-org-property-req "EDEN_REQ")
                (eden-dir (concat (make-temp-file "eden-" t) "/"))
-               (req (eden-request
+               (req (eden-build-request
                      :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                      :api '(:service "openai"
                             :endpoint "https://api.openai.com/v1/chat/completions")
@@ -2612,7 +2612,7 @@ baz-assistant-content
                       (quote ,callback-error)
                       (quote ,info))))
              1))))
-      (eden-send-request :req (eden-request :prompt "req")))
+      (eden-send-request :req (eden-build-request :prompt "req")))
     (setq pr-timer eden-pending-timer)
     ;; When we kill the last request, we actually kill its
     ;; associated process which signal an error.
@@ -2690,14 +2690,14 @@ baz-assistant-content
              (:title "bar title" :last-req-uuid "last-bar-req-uuid"))
             ("conversation-id-baz" .
              (:title "baz title" :last-req-uuid "last-baz-req-uuid"))))
-         (req-foo (eden-request :prompt "foo"))
-         (req-foo-foo (eden-request :prompt "foo-foo"))
+         (req-foo (eden-build-request :prompt "foo"))
+         (req-foo-foo (eden-build-request :prompt "foo-foo"))
          ;; even if we don't use it (because we're not really sending
          ;; the request to openai) we pass :exchanges argument
-         ;; to `eden-request' as we should do it given that
+         ;; to `eden-build-request' as we should do it given that
          ;; below we send `req-baz' as part of the conversation
          ;; "conversation-id-bar".
-         (req-bar (eden-request
+         (req-bar (eden-build-request
                    :prompt "bar"
                    :exchanges [(:uuid "last-bar-req-uuid"
                                 :prompt "last bar prompt"
@@ -2705,7 +2705,7 @@ baz-assistant-content
                                 :context [(:role "user" :content "last bar prompt")
                                           (:role "system" :content "last bar response")]
                                 )]))
-         (req-baz (eden-request :prompt "baz"))
+         (req-baz (eden-build-request :prompt "baz"))
          (req-foo-uuid (plist-get req-foo :uuid))
          (req-bar-uuid (plist-get req-bar :uuid))
          (resp-fmt "{
@@ -2901,7 +2901,7 @@ baz-assistant-content
                            (quote ,callback-error)
                            (quote ,info))))
                   1))))
-           (eden-send-request :req (eden-request :prompt "req")))
+           (eden-send-request :req (eden-build-request :prompt "req")))
          (setq pr-timer eden-pending-timer)
          (kill-process (get-buffer-process (get-buffer proc-buff)))
          (sleep-for 0.2)))
@@ -2911,42 +2911,43 @@ baz-assistant-content
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-test")))
-(ert-deftest eden-request-test ()
+
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-build-request-test")))
+(ert-deftest eden-build-request-test ()
   ;; Test :uuid
   (should
    (stringp
-    (plist-get (eden-request :prompt "foo prompt")
+    (plist-get (eden-build-request :prompt "foo prompt")
                :uuid)))
 
   ;; Test :dir
   (should
    (string=
     (let ((eden-dir nil))
-      (plist-get (eden-request :prompt "foo prompt")
+      (plist-get (eden-build-request :prompt "foo prompt")
                  :dir))
     (concat (temporary-file-directory) "eden/")))
   (should
    (string=
     (plist-get
-     (eden-request :prompt "foo prompt" :dir "/tmp/foo/")
+     (eden-build-request :prompt "foo prompt" :dir "/tmp/foo/")
      :dir)
     "/tmp/foo/"))
   (should
    (string=
     (let ((eden-dir "/tmp/bar/"))
-      (plist-get (eden-request :prompt "foo prompt")
+      (plist-get (eden-build-request :prompt "foo prompt")
                  :dir))
     "/tmp/bar/"))
 
   ;; Check :prompt, :system-message, :exchanges
   ;;
   ;; :prompt argument is mandatory
-  (should-error (eden-request))
+  (should-error (eden-build-request))
   ;; :prompt and :system-message
   (let* ((eden-system-message nil)
          (eden-system-message-append nil)
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (string= (plist-get req :prompt) "foo prompt"))
     (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
@@ -2954,8 +2955,8 @@ baz-assistant-content
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
-         (req (eden-request :prompt "foo prompt"
-                            :system-message "foo system")))
+         (req (eden-build-request :prompt "foo prompt"
+                                  :system-message "foo system")))
     (should (string= (plist-get req :system-message) "foo system"))
     (should (equal (eden-get-in req [:req :messages])
                    [(:role "system" :content "foo system")
@@ -2974,7 +2975,7 @@ baz-assistant-content
                                 (:role "assistant" :content "foo assistant")
                                 (:role "user" :content "bar user")
                                 (:role "assistant" :content "bar assistant")])])
-         (req (eden-request
+         (req (eden-build-request
                :prompt "baz prompt"
                :system-message "baz system"
                :exchanges exchanges)))
@@ -2991,7 +2992,7 @@ baz-assistant-content
   ;; both converted from org-mode to markdown
   (let* ((eden-system-message nil)
          (eden-system-message-append nil)
-         (req (eden-request :prompt "* prompt h1\n** prompt h2")))
+         (req (eden-build-request :prompt "* prompt h1\n** prompt h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-message) ""))
     (should (equal (eden-get-in req [:req :messages])
@@ -2999,8 +3000,8 @@ baz-assistant-content
   (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
          (eden-system-message-append nil)
          (eden-model "gpt-4o-mini")
-         (req (eden-request :prompt "* prompt h1\n** prompt h2"
-                            :system-message "* system h1\n** system h2")))
+         (req (eden-build-request :prompt "* prompt h1\n** prompt h2"
+                                  :system-message "* system h1\n** system h2")))
     (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
     (should (string= (plist-get req :system-message) "* system h1\n** system h2"))
     (should (equal (eden-get-in req [:req :messages])
@@ -3019,7 +3020,7 @@ baz-assistant-content
                                 (:role "assistant" :content "foo assistant")
                                 (:role "user" :content "bar user")
                                 (:role "assistant" :content "bar assistant")])])
-         (req (eden-request
+         (req (eden-build-request
                :prompt "* prompt h1\n** prompt h2"
                :system-message "* system h1\n** system h2"
                :exchanges exchanges)))
@@ -3035,7 +3036,7 @@ baz-assistant-content
    (string=
     (let ((eden-system-message nil)
           (eden-system-message-append nil))
-      (plist-get (eden-request :prompt "foo prompt")
+      (plist-get (eden-build-request :prompt "foo prompt")
                  :system-message))
     ""))
   (should
@@ -3044,8 +3045,8 @@ baz-assistant-content
            '("bar system message title" . "bar system message"))
           (eden-system-message-append nil))
       (plist-get
-       (eden-request :prompt "foo prompt"
-                     :system-message "foo system message")
+       (eden-build-request :prompt "foo prompt"
+                           :system-message "foo system message")
        :system-message))
     "foo system message"))
   (should
@@ -3053,7 +3054,7 @@ baz-assistant-content
     (let ((eden-system-message
            '("bar system message title" . "bar system message"))
           (eden-system-message-append nil))
-      (plist-get (eden-request :prompt "foo prompt")
+      (plist-get (eden-build-request :prompt "foo prompt")
                  :system-message))
     "bar system message"))
 
@@ -3063,7 +3064,7 @@ baz-assistant-content
     (let ((eden-system-message
            '("bar system message title" . "bar system message"))
           (eden-system-message-append nil))
-      (plist-get (eden-request
+      (plist-get (eden-build-request
                   :prompt "foo prompt"
                   :system-message-append "baz system message append")
                  :system-message))
@@ -3075,7 +3076,7 @@ baz system message append"))
     (let ((eden-system-message
            '("bar system message title" . "bar system message") )
           (eden-system-message-append "baz system message append"))
-      (plist-get (eden-request :prompt "foo prompt")
+      (plist-get (eden-build-request :prompt "foo prompt")
                  :system-message))
     "bar system message
 
@@ -3083,36 +3084,36 @@ baz system message append"))
 
   ;; Test :model
   (let* ((eden-model "gpt-4o")
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (equal
              (plist-get (plist-get req :req) :model)
              "gpt-4o")))
   (let* ((eden-model "gpt-4o")
-         (req (eden-request :prompt "foo prompt"
-                            :model "gpt-4o-mini")))
+         (req (eden-build-request :prompt "foo prompt"
+                                  :model "gpt-4o-mini")))
     (should (equal
              (plist-get (plist-get req :req) :model)
              "gpt-4o-mini")))
 
   ;; Test :temperature
   (let* ((eden-temperature 0)
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (= (plist-get (plist-get req :req) :temperature)
                0)))
   (let* ((eden-temperature 0)
-         (req (eden-request :prompt "foo prompt"
-                            :temperature 1.1)))
+         (req (eden-build-request :prompt "foo prompt"
+                                  :temperature 1.1)))
     (should (= (plist-get (plist-get req :req) :temperature)
                1.1)))
 
   ;; Test :api
   (let* ((eden-api '(:service "openai"
                      :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (equal (plist-get req :api) eden-api)))
   (let* ((eden-api '(:service "openai"
                      :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-request
+         (req (eden-build-request
                :prompt "foo prompt"
                :api '(:service "openai-service"
                       :endpoint "https://openai-endpoint"))))
@@ -3123,7 +3124,7 @@ baz system message append"))
   ;; Test :api when service is anthropic
   (let* ((eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :max_tokens]) 4096)))
 
   ;; Test :api when service is anthropic with reasoning
@@ -3131,7 +3132,7 @@ baz system message append"))
   (let* ((eden-api '(:service "anthropic"
                      :endpoint "https://api.anthropic.com/v1/messages"))
          (eden-include-reasoning t)
-         (req (eden-request :prompt "foo prompt")))
+         (req (eden-build-request :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
     (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
 
@@ -3193,15 +3194,15 @@ baz system message append"))
     (cl-letf (((symbol-function 'eden-uuid)
                (lambda nil (format "uuid-req-%s" (cl-incf n)))))
       (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
-             (req-1 (eden-request :prompt "req-1 prompt"))
-             (req-2 (eden-request
+             (req-1 (eden-build-request :prompt "req-1 prompt"))
+             (req-2 (eden-build-request
                      :prompt "req-2 prompt"
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
                                   :response "req-1 response"
                                   :context [(:role "user" :content "req-1 prompt")
                                             (:role "assistant" :content "req-1 response")])]))
-             (req-3 (eden-request
+             (req-3 (eden-build-request
                      :prompt "req-3 prompt"
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
@@ -3213,7 +3214,7 @@ baz system message append"))
                                             (:role "assistant" :content "req-1 response")
                                             (:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
-             (req-4 (eden-request
+             (req-4 (eden-build-request
                      :prompt "req-4 prompt"
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
@@ -3225,15 +3226,15 @@ baz system message append"))
                                             (:role "assistant" :content "req-1 response")
                                             (:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
-             (req-5 (eden-request :prompt "req-5 prompt"))
-             (req-6 (eden-request
+             (req-5 (eden-build-request :prompt "req-5 prompt"))
+             (req-6 (eden-build-request
                      :prompt "req-6 prompt"
                      :exchanges [(:uuid "uuid-req-2"
                                   :prompt "req-2 prompt"
                                   :response "req-2 response"
                                   :context [(:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
-             (req-7 (eden-request :prompt "req-7 prompt"))
+             (req-7 (eden-build-request :prompt "req-7 prompt"))
              ;; to be completly correct we should also modify
              ;; the value of `created' key.  But it doesn't matter here.
              (resp-fmt "{
