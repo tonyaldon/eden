@@ -1578,7 +1578,7 @@ See `eden-prompt-history-state'."
               (req `(:dir ,dir :uuid ,current)))
     (not (ignore-errors (eden-request-read 'prompt req)))))
 
-(defun eden-prompt-history (direction)
+(defun eden-prompt-history-nav (direction)
   "Replace current buffer content with previous or next prompt based on DIRECTION.
 
 DIRECTION can be either `previous' or `next'.
@@ -1604,7 +1604,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
      ((eden-prompt-discard-current-p eden-dir eden-prompt-history-state)
       (setq eden-prompt-history-state
             (funcall f eden-prompt-history-state nil 'discard-current))
-      (eden-prompt-history direction))
+      (eden-prompt-history-nav direction))
      (t (let* ((pcb (eden-prompt-current-buffer))
                (pc (eden-prompt-current))
                (prompt (when (or (null pc) (not (string= pcb pc)))
@@ -1617,7 +1617,7 @@ This function should be called from `eden-prompt-buffer-name' buffer."
               ;; of the UUIDs in prompt history correspond to an existing
               ;; request, we'll hit `max-lisp-eval-depth'.  But in practice,
               ;; this doesn't happens.
-              (eden-prompt-history direction)
+              (eden-prompt-history-nav direction)
             (erase-buffer)
             (save-excursion
               (insert (or (eden-prompt-current) "")))))))))
@@ -1625,20 +1625,20 @@ This function should be called from `eden-prompt-buffer-name' buffer."
 (defun eden-prompt-previous ()
   "Replace current buffer content with previous prompt.
 
-See `eden-prompt-history-state' and `eden-prompt-history'.
+See `eden-prompt-history-state' and `eden-prompt-history-nav'.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
-  (eden-prompt-history 'previous))
+  (eden-prompt-history-nav 'previous))
 
 (defun eden-prompt-next ()
   "Replace current buffer content with next prompt.
 
-See `eden-prompt-history-state' and `eden-prompt-history'.
+See `eden-prompt-history-state' and `eden-prompt-history-nav'.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
   (interactive)
-  (eden-prompt-history 'next))
+  (eden-prompt-history-nav 'next))
 
 ;;;; Conversations
 
