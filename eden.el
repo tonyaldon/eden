@@ -1468,13 +1468,15 @@ If the current prompt is temporary with no corresponding request, return nil."
   (when-let ((current (aref eden-prompt-history-state 1)))
     (when (not (consp current)) current)))
 
-(defun eden-prompt-current ()
-  "Return current prompt in `eden-prompt-history-state' if any or nil."
-  (let ((current (aref eden-prompt-history-state 1)))
+(defun eden-prompt-current (dir prompt-history)
+  "Return current prompt in PROMPT-HISTORY if any or nil.
+
+The look up for the prompt is done in DIR.  See `eden-prompt-history-state'."
+  (let ((current (aref prompt-history 1)))
     (cond
      ((null current) nil)
      ((consp current) (plist-get current :prompt))
-     (t (eden-request-read 'prompt `(:dir ,eden-dir :uuid ,current))))))
+     (t (eden-request-read 'prompt `(:dir ,dir :uuid ,current))))))
 
 (defun eden-prompt-current-goto ()
   "Go to request's directory of current prompt in `eden-prompt-history-state'.
@@ -1592,7 +1594,9 @@ onto the respective stack of previous or next prompts based on
 DIRECTION.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
-  (let (prompts f)
+  (let (prompts
+        f
+        (dir eden-dir))
     (pcase direction
       ('previous (setq prompts (aref eden-prompt-history-state 0))
                  (setq f 'eden-prompt-history-previous))
@@ -1601,26 +1605,26 @@ This function should be called from `eden-prompt-buffer-name' buffer."
     (cond
      ((null prompts)
       (message "No more requests or prompts in history."))
-     ((eden-prompt-discard-current-p eden-dir eden-prompt-history-state)
+     ((eden-prompt-discard-current-p dir eden-prompt-history-state)
       (setq eden-prompt-history-state
             (funcall f eden-prompt-history-state nil 'discard-current))
       (eden-prompt-history-nav direction))
      (t (let* ((pcb (eden-prompt-current-buffer))
-               (pc (eden-prompt-current))
+               (pc (eden-prompt-current dir eden-prompt-history-state))
                (prompt (when (or (null pc) (not (string= pcb pc)))
                          `(:prompt ,pcb))))
           (setq eden-prompt-history-state
                 (funcall f eden-prompt-history-state prompt))
-          (if (eden-prompt-discard-current-p eden-dir eden-prompt-history-state)
+          (if (eden-prompt-discard-current-p dir eden-prompt-history-state)
               ;; This can happens if the UUID stored in prompt history
-              ;; doesn't match to a request in `eden-dir'.  If none
+              ;; doesn't match to a request in `dir'.  If none
               ;; of the UUIDs in prompt history correspond to an existing
               ;; request, we'll hit `max-lisp-eval-depth'.  But in practice,
               ;; this doesn't happens.
               (eden-prompt-history-nav direction)
             (erase-buffer)
             (save-excursion
-              (insert (or (eden-prompt-current) "")))))))))
+              (insert (or (eden-prompt-current dir eden-prompt-history-state) "")))))))))
 
 (defun eden-prompt-previous ()
   "Replace current buffer content with previous prompt.
