@@ -2700,28 +2700,14 @@ baz-assistant-content
   ;; - test `eden-pending-requests' value during all requests
   ;; - test that we can order responses according to their timestamp file
   ;; - test that we update `eden-request-history' variable
-
-  ;; NOTE:
-  ;;
-  ;; 1) if `eden-request-send' ever changes, we may have to change
-  ;;    its binding definition below
-  ;; 2) the way we redefine `eden-request-send' is ugly as hell.
-  ;;    we use `eval' and `macroexpand' and we repeat ourself
-  ;;    3 times. I think we have to do this because `eden-sentinel'
-  ;;    is a macro.  Anyway we're able to test the behavior we expect
-  ;;    from `eden-send-request'.
-
-  (let* (;; we modify these two variables in the callback function
-         ;; which is called for each request when we received a response.
-         ;; I don't know why but we need to define them globaly,
-         ;; let defined doesn't work!  Anyway.
-         (_ (progn
-              (defvar responses nil "...")
-              (setq responses nil)
-              ))
+  (let* ((_ (progn
+              ;; It must be a global dynamica variable so that we can
+              ;; access it and modify it in callback function bellow.
+              (defvar -callback-acc nil "...")
+              (setq -callback-acc nil)))
          (callback (lambda (req resp info)
                      (eden-pending-remove req)
-                     (push (eden-request-assistant-content resp) responses)
+                     (push (eden-request-assistant-content resp) -callback-acc)
                      (eden-conversation-update info req)
                      (eden-mode-line-waiting 'maybe-stop)
                      (message "Response for request %s received"
@@ -2773,89 +2759,49 @@ baz-assistant-content
       }
     ]
   }"))
-    (cl-letf (((symbol-function 'eden-request-send)
+    (cl-letf (((symbol-function 'eden-request-command)
                ;; Print response in stdout after 3 second
-               ;; with sentinel constructed using `eden-sentinel'
-               (lambda (req callback callback-error info)
-                 (eden-write-request req)
-                 (eden-test-echo-resp
-                  (format resp-fmt "resp-foo") (generate-new-buffer-name "eden")
-                  (eval (macroexpand-all
-                         `(eden-sentinel
-                           (quote ,req)
-                           ;; no need for `quote' because car is `lambda'
-                           ,callback
-                           ;; works because ,callback-error returns (closure ...)
-                           ;; because it is define with `lambda' in `eden-send-request'
-                           (quote ,callback-error)
-                           (quote ,info))))
-                  3))))
+               (lambda (req)
+                 (list
+                  (format "sleep 3 | echo %s"
+                          (shell-quote-argument (format resp-fmt "resp-foo")))
+                  "[redacted command]"))))
       (eden-send-request
        :req req-foo
        :callback callback
        :info `(:conversation-id ,conversation-id-foo)))
-    (cl-letf (((symbol-function 'eden-request-send)
+    (cl-letf (((symbol-function 'eden-request-command)
                ;; Print response in stdout after 3 second
-               ;; with sentinel constructed using `eden-sentinel'
-               (lambda (req callback callback-error info)
-                 (eden-write-request req)
-                 (eden-test-echo-resp
-                  (format resp-fmt "resp-foo-foo") (generate-new-buffer-name "eden")
-                  (eval (macroexpand-all
-                         `(eden-sentinel
-                           (quote ,req)
-                           ;; no need for `quote' because car is `lambda'
-                           ,callback
-                           ;; works because ,callback-error returns (closure ...)
-                           ;; because it is define with `lambda' in `eden-send-request'
-                           (quote ,callback-error)
-                           (quote ,info))))
-                  3))))
+               (lambda (req)
+                 (list
+                  (format "sleep 3 | echo %s"
+                          (shell-quote-argument (format resp-fmt "resp-foo-foo")))
+                  "[redacted command]"))))
       ;; this request won't be sent because `req-foo' in the same
       ;; conversation `conversation-id-foo' is running at the same time
       (eden-send-request
        :req req-foo-foo
        :callback callback
        :info `(:conversation-id ,conversation-id-foo)))
-    (cl-letf (((symbol-function 'eden-request-send)
+    (cl-letf (((symbol-function 'eden-request-command)
                ;; Print response in stdout after 1 second
-               ;; with sentinel constructed using `eden-sentinel'
-               (lambda (req callback callback-error info)
-                 (eden-write-request req)
-                 (eden-test-echo-resp
-                  (format resp-fmt "resp-bar") (generate-new-buffer-name "eden")
-                  (eval (macroexpand-all
-                         `(eden-sentinel
-                           (quote ,req)
-                           ;; no need for `quote' because car is `lambda'
-                           ,callback
-                           ;; works because ,callback-error returns (closure ...)
-                           ;; because it is define with `lambda' in `eden-send-request'
-                           (quote ,callback-error)
-                           (quote ,info))))
-                  1))))
+               (lambda (req)
+                 (list
+                  (format "sleep 1 | echo %s"
+                          (shell-quote-argument (format resp-fmt "resp-bar")))
+                  "[redacted command]"))))
       (eden-send-request
        :req req-bar
        :callback callback
        :info `(:conversation-id ,conversation-id-bar)))
     (cl-letf
-        (((symbol-function 'eden-request-send)
-          ;; Print response in stdout after 1 second
-          ;; with sentinel constructed using `eden-sentinel'
-          (lambda (req callback callback-error info)
-            (eden-write-request req)
-            (eden-test-echo-resp
-             (format resp-fmt "resp-baz") (generate-new-buffer-name "eden")
-             (eval (macroexpand-all
-                    `(eden-sentinel
-                      (quote ,req)
-                      ;; no need for `quote' because car is `lambda'
-                      ,callback
-                      ;; works because ,callback-error returns (closure ...)
-                      ;; because it is define with `lambda' in `eden-send-request'
-                      (quote ,callback-error)
-                      (quote ,info))))
-             2))))
+        (((symbol-function 'eden-request-command)
+          ;; Print response in stdout after 2 second
+          (lambda (req)
+            (list
+             (format "sleep 2 | echo %s"
+                     (shell-quote-argument (format resp-fmt "resp-baz")))
+             "[redacted command]"))))
       (eden-send-request
        :req req-baz
        :callback callback
@@ -2897,8 +2843,7 @@ baz-assistant-content
       (should (equal eden-pending-requests nil))
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string) ;; waiting widget is gone
-      (should (equal responses
-                     '("resp-foo" "resp-baz" "resp-bar")))
+      (should (equal -callback-acc '("resp-foo" "resp-baz" "resp-bar")))
       (should
        (equal eden-request-history
               (list
@@ -2918,45 +2863,39 @@ baz-assistant-content
       (should
        (seq-set-equal-p
         (mapcar #'car eden-conversations)
-        '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz"))))
+        '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
 
-    ;; Test that the callback-error function remove waiting widget
-    ;; in the modeline when an error occurs in the sentinel.  To
-    ;; do so we send "killed\n" event to the process (waiting for
-    ;; a response).  We use the same trick as above were we redefine
-    ;; `eden-request-send'.
-    (let ((debug-on-error t)
-          (proc-buff (generate-new-buffer-name "eden"))
-          pr-timer)
-      (should-error
-       (progn
-         (cl-letf
-             (((symbol-function 'eden-request-send)
-               ;; Print response in stdout after 1 second
-               ;; with sentinel constructed using `eden-sentinel'
-               (lambda (req callback callback-error info)
-                 (eden-write-request req)
-                 (eden-test-echo-resp
-                  (format resp-fmt "resp-baz") proc-buff
-                  (eval (macroexpand-all
-                         `(eden-sentinel
-                           (quote ,req)
-                           ;; no need for `quote' because car is `lambda'
-                           ,callback
-                           ;; works because ,callback-error returns (closure ...)
-                           ;; because it is define with `lambda' in `eden-send-request'
-                           (quote ,callback-error)
-                           (quote ,info))))
-                  1))))
-           (eden-send-request :req (eden-build-request :prompt "req")))
-         (setq pr-timer eden-pending-timer)
-         (kill-process (get-buffer-process (get-buffer proc-buff)))
-         (sleep-for 0.2)))
-      (should (equal eden-pending-requests nil))
-      (should (equal eden-pending-timer nil))
-      ;; waiting widget is gone
-      (should-not (memq pr-timer timer-list))
-      (should-not global-mode-string))))
+  ;; Test that the callback-error function remove waiting widget
+  ;; in the modeline when an error occurs in the sentinel.  To
+  ;; do so we trigger an JSON read error by filling Eden process
+  ;; buffer with non JSON content.
+  (let ((eden-pending-requests) ;; variable tested
+        (eden-pending-timer)    ;; variable tested
+        (timer-list)            ;; variable tested
+        (global-mode-string)    ;; variable tested
+        (dir (concat (make-temp-file "eden-" t) "/"))
+        (pr-timer)
+        ;; Don't catch errors in sentinel, so that we can catch
+        ;; and test them with `should-error' macro
+        (debug-on-error t))
+    (should-error
+     (cl-letf (((symbol-function 'eden-request-command)
+                (lambda (req)
+                  (list (format "echo not-json")
+                        "[redacted command]"))))
+       (eden-send-request
+        :req (eden-build-request :dir dir :prompt "req")
+        :callback (lambda (req resp info) nil))
+       (setq pr-timer eden-pending-timer)
+       ;; Wait for process to terminate
+       (let ((proc (plist-get (car eden-pending-requests) :proc)))
+         (while (accept-process-output proc))))
+     :type 'eden-error-json-read)
+    (should (equal eden-pending-requests nil))
+    (should (equal eden-pending-timer nil))
+    ;; waiting widget is gone
+    (should-not (memq pr-timer timer-list))
+    (should-not global-mode-string)))
 
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-build-request-test")))
