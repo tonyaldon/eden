@@ -1772,15 +1772,6 @@ See `eden-conversations', `eden-send-request' and `eden-send'."
     (setcdr cell (plist-put (copy-sequence (cdr cell))
                             :last-req-uuid req-uuid))))
 
-(transient-define-suffix eden-conversation-new ()
-  "Start a new conversation with title based on user's input.
-
-See `eden-conversation-add', `eden-conversations' and `eden-conversation-id'."
-  :transient t
-  (interactive)
-  (let ((title (read-string "New conversation with title: ")))
-    (eden-conversation-add title)
-    (message "New conversation `%s' initialized." title)))
 
 (transient-define-suffix eden-conversation-continue-from-req-history ()
   "Start a conversation from current request in history including all previous exchanges.
@@ -2578,7 +2569,6 @@ it becomes the value of `eden-model'."
   "Transient command to manage conversations, requests and Eden's settings.
 
 - Conversations:
-  - `eden-conversation-new'
   - `eden-conversation-continue-from-req-history'
   - `eden-conversation-edit-title'
   - `eden-conversation-pause'
@@ -2595,7 +2585,6 @@ it becomes the value of `eden-model'."
   - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'"
   [["Conversation"
-    ("n" "New conversation (cv)" eden-conversation-new)
     ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("SPC" "Pause current conversation" eden-conversation-pause)]
