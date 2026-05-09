@@ -1647,11 +1647,11 @@ For instance `eden-conversations' can be:
   (seq-some (lambda (c) (equal title (plist-get (cdr c) :title)))
             eden-conversations))
 
-(defun eden-conversation-add (title &optional req-uuid)
+(defun eden-conversation-add (dir title &optional req-uuid)
   "Add a conversation to `eden-conversations' with TITLE.
 
-If REQ-UUID is the UUID of an existing request, resume a conversation
-from that request.
+If REQ-UUID is the UUID of an existing request in DIR, resume a
+conversation from that request.
 
 Also set `eden-conversation-id' to the ID of the newly created conversation
 making it the current conversation.
@@ -1662,7 +1662,7 @@ Signal an error if the conversation cannot be added."
            title))
   (when req-uuid
     (condition-case err
-        (eden-request-check `(:dir ,eden-dir :uuid ,req-uuid))
+        (eden-request-check `(:dir ,dir :uuid ,req-uuid))
       (error
        (error "Cannot continue from that request.  %s"
               (error-message-string err)))))
@@ -1774,19 +1774,14 @@ See `eden-conversations', `eden-send-request' and `eden-send'."
 
 
 (transient-define-suffix eden-conversation-continue-from-req-history ()
-  "Start a conversation from current request in history including all previous exchanges.
-
-See `eden-prompt-history-state', `eden-conversation-add', `eden-conversations' and
-`eden-conversation-id'."
+  "Continue a conversation from current request in history."
   :transient t
   (interactive)
-  (if-let ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state)))
-      (let ((title (read-string "Continue conversation with title: ")))
-        (eden-conversation-add title req-uuid)
-        (message "Conversation `%s' initialized." title))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
+  (if-let ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state))
+           (title (read-string "Continue conversation with title: ")))
+      (progn (eden-conversation-add eden-dir title req-uuid)
+             (message "Conversation `%s' initialized." title))
+    (message "Current prompt is not associated with a request.")))
 
 (transient-define-suffix eden-conversation-pause ()
   "Pause the current conversation by setting `eden-conversation-id' to nil."
@@ -2585,7 +2580,7 @@ it becomes the value of `eden-model'."
   - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'"
   [["Conversation"
-    ("c" "Continue cv from current request in history" eden-conversation-continue-from-req-history)
+    ("c" "Continue conversation from current req" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
     ("SPC" "Pause current conversation" eden-conversation-pause)]
    ["Configuration"
@@ -2622,14 +2617,11 @@ the request cannot be found in `eden-dir'."
     (error "No request at point found")))
 
 (defun eden-req-at-point-continue-conversation ()
-  "Continue conversation from request at point.
-
-See `eden-req-at-point-uuid', `eden-conversation-add', `eden-conversations',
-and `eden-conversation-id'."
+  "Continue conversation from request at point."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid)))
     (eden-conversation-add
-     (read-string "Enter a conversation title: ") req-uuid))
+     eden-dir (read-string "Enter a conversation title: ") req-uuid))
   (eden))
 
 (defun eden-req-at-point-show-requests ()

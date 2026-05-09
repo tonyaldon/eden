@@ -1851,28 +1851,32 @@ foo bar baz
 (ert-deftest eden-conversation-add-test ()
 
   ;; Titles must be unique
-  (let ((eden-conversations
+  (let ((dir (concat (make-temp-file "eden-" t) "/"))
+        (eden-conversations
          '(("conversation-id-foo" . (:title "foo title"
                                      :last-req-uuid nil)))))
-    (should-error (eden-conversation-add "foo title")))
+    (should-error (eden-conversation-add dir "foo title")))
 
   ;; add a new conversations
-  (let (eden-conversations eden-conversation-id)
+  (let ((eden-conversations)   ;; variable tested
+        (eden-conversation-id) ;; variable tested
+        (dir (concat (make-temp-file "eden-" t) "/")))
     (cl-letf (((symbol-function 'eden-uuid)
                (lambda nil "conversation-id-foo")))
-      (eden-conversation-add "foo title")
+      (eden-conversation-add dir "foo title")
       (should
        (equal eden-conversations
               '(("conversation-id-foo" . (:title "foo title"
                                           :last-req-uuid nil)))))
       (should (string= eden-conversation-id "conversation-id-foo"))))
-  (let ((eden-conversations
+  (let ((eden-conversations    ;; variable tested
          '(("conversation-id-foo" . (:title "foo title"
                                      :last-req-uuid nil))))
-        eden-conversation-id)
+        (eden-conversation-id) ;; variable tested
+        (dir (concat (make-temp-file "eden-" t) "/")))
     (cl-letf (((symbol-function 'eden-uuid)
                (lambda nil "conversation-id-bar")))
-      (eden-conversation-add "bar title")
+      (eden-conversation-add dir "bar title")
       (should
        (seq-set-equal-p
         (mapcar #'car eden-conversations)
@@ -1882,40 +1886,39 @@ foo bar baz
               '(:title "bar title" :last-req-uuid nil)))
       (should (string= eden-conversation-id "conversation-id-bar"))))
 
-  ;; error - req associated with req-uuid doesn't exist in `eden-dir'
-  (let ((eden-conversations nil)
-        (eden-dir (concat (make-temp-file "eden-" t) "/")))
-    (should-error (eden-conversation-add "foo title" "foo-req-uuid")))
+  ;; error - req associated with req-uuid doesn't exist in dir
+  (let ((eden-conversations)
+        (dir (concat (make-temp-file "eden-" t) "/")))
+    (should-error (eden-conversation-add dir "foo title" "foo-req-uuid")))
 
   ;; error -  when an error.json file exists in req directory
-  (let* ((eden-conversations nil)
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
+  (let* ((eden-conversations)
+         (dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,dir :uuid "foo-req-uuid")))
     (eden-request-write 'error req "")
-    (should-error (eden-conversation-add "foo title" "foo-req-uuid")))
+    (should-error (eden-conversation-add dir "foo title" "foo-req-uuid")))
 
   ;; error - when req associated with req-uuid is in incomplete
-  (let* ((eden-conversations nil)
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:dir ,eden-dir :uuid "foo-req-uuid")))
+  (let* ((eden-conversations)
+         (dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:dir ,dir :uuid "foo-req-uuid")))
     (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-conversation-add "foo title" "foo-req-uuid")))
+    (should-error (eden-conversation-add dir "foo title" "foo-req-uuid")))
 
   ;; we can continue multiple different conversations from the same req-uuid
-  (let* (eden-conversations
-         eden-conversation-id
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (foo-req (eden-build-request :prompt "foo-req")) ;; depend on `eden-dir'
+  (let* ((eden-conversations)   ;; variable tested
+         (eden-conversation-id) ;; variable tested
+         (dir (concat (make-temp-file "eden-" t) "/"))
+         ;; (foo-req (eden-build-request :prompt "foo-req")) ;; depend on `eden-dir'
+         (foo-req
+          `(:req (:messages [(:role "user" :content "foo-req")])
+            :prompt "foo-req"
+            :dir ,dir
+            :uuid "foo-uuid"))
          (foo-req-uuid (plist-get foo-req :uuid))
          ;; we use the same response for two different requests
          ;; because we just need them to exist in the request directory
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "assistant" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
+         (resp '(:choices [(:message (:role "assistant" :content "assistant"))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request foo-req)
     (eden-write-response resp-str resp foo-req)
@@ -1923,9 +1926,9 @@ foo bar baz
     (let ((n 0))
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil (format "conversation-id-foo-%s" (cl-incf n)))))
-        (eden-conversation-add "foo-1 title" foo-req-uuid)
-        (eden-conversation-add "foo-2 title" foo-req-uuid)
-        (eden-conversation-add "foo-3 title" foo-req-uuid)))
+        (eden-conversation-add dir "foo-1 title" foo-req-uuid)
+        (eden-conversation-add dir "foo-2 title" foo-req-uuid)
+        (eden-conversation-add dir "foo-3 title" foo-req-uuid)))
 
     (should
      (seq-set-equal-p
