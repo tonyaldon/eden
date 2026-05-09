@@ -1609,9 +1609,7 @@ See `eden-request-dir'."
       (progn
         (eden-maybe-delete-window-prompt-buffer)
         (dired-other-window req-dir))
-    (message (concat "Current prompt is not associated with a request.  "
-                     "Try navigating the prompt history with `M-p' and `M-n', "
-                     "default binding of `eden-prompt-previous' and `eden-prompt-next'."))))
+    (message "Current prompt is not associated with a request.")))
 
 ;;;; Conversations
 
