@@ -1075,7 +1075,8 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (eden-test-echo-resp "" buff-name sentinel-wrapped)
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-process-buffer)
     (should-not (get-buffer buff-name))
     (message "%s" (eden-request-file 'error -req))
     (should
@@ -1102,7 +1103,8 @@ arr[0]
      (let ((debug-on-error t))
        (kill-process
         (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil nil) 1))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-process)
     (should-not (get-buffer buff-name))
     (should
      (equal (eden-request-read 'error -req)
@@ -1125,7 +1127,8 @@ arr[0]
      (let ((debug-on-error t))
        (interrupt-process
         (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil nil) 1))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-process)
     (should-not (get-buffer buff-name))
     (should
      (equal (eden-request-read 'error -req)
@@ -1145,7 +1148,8 @@ arr[0]
      (let ((debug-on-error t))
        (eden-test-echo-resp "not valid json" buff-name
                             (eden-sentinel -req nil nil nil))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-json-read)
     (should-not (get-buffer buff-name))
     (should
      (equal (eden-request-read 'error -req)
@@ -1174,7 +1178,8 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (eden-test-echo-resp resp-str buff-name (eden-sentinel -req nil nil nil))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-api)
     (should-not (get-buffer buff-name))
     (should
      (equal
@@ -1203,7 +1208,8 @@ arr[0]
        (eden-test-echo-resp
         resp-str buff-name
         (eden-sentinel -req 'callback-not-a-function nil nil))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-callback)
     (should-not (get-buffer buff-name))
     (should
      (equal
@@ -1232,7 +1238,8 @@ arr[0]
          "" buff-name
          (eden-sentinel -req nil 'callback-error-not-a-function nil)
          1))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-callback-error)
     (let* ((error.json (eden-request-read 'error -req))
            (original-error (plist-get error.json :original-error)))
       (should (string= (plist-get original-error :type)
@@ -1266,7 +1273,8 @@ arr[0]
          "" buff-name
          (eden-sentinel -req nil -callback-error -info)
          1))
-       (sleep-for 0.2)))
+       (sleep-for 0.2))
+     :type 'eden-error-process)
     (should
      (string=
       (plist-get (eden-request-read 'error -req) :type)
