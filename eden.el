@@ -2753,7 +2753,10 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("C" "Show citations of conversation at point" eden-req-at-point-show-citations)
     ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
-    ]])
+    ]]
+  (interactive)
+  (transient-setup 'eden-menu)
+  (define-key transient--transient-map (kbd "q") #'transient-quit-one))
 
 ;;;; Main command
 
