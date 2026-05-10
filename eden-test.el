@@ -2695,47 +2695,18 @@ baz-assistant-content
 (ert-deftest eden-send-request-test ()
   ;; We want to test that concurrent requests work as expected:
   ;;
-  ;; - observe mode-line during the test to be sure it doesn't stop
+  ;; - Observe mode-line during the test to be sure it doesn't stop
   ;;   after the first request done,
-  ;; - test `eden-pending-requests' value during all requests
-  ;; - test that we can order responses according to their timestamp file
-  ;; - test that we update `eden-request-history' variable
-  (let* ((_ (progn
-              ;; It must be a global dynamic variable so that we can
-              ;; access it and modify it in the callback function bellow.
-              (defvar -callback-acc nil "...")
-              (setq -callback-acc nil)))
-         (callback (lambda (req resp info)
-                     (eden-pending-remove req)
-                     (push (eden-get-in resp [:choices 0 :message :content])
-                           -callback-acc)
-                     (eden-conversation-update info req)
-                     (eden-mode-line-waiting 'maybe-stop)
-                     (message "Response for request %s received"
-                              (plist-get req :prompt))))
-         (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         (eden-request-history) ;; variable tested
-         (eden-conversations
-          '(("conversation-id-foo" . (:title "foo title"
-                                      :last-req-uuid nil))
-            ("conversation-id-bar" . (:title "bar title"
-                                      :last-req-uuid "last-bar-req-uuid"))
-            ("conversation-id-baz" . (:title "baz title"
-                                      :last-req-uuid "last-baz-req-uuid"))))
-         (req-foo (eden-build-request :prompt "foo"))
-         (req-foo-foo (eden-build-request :prompt "foo-foo"))
-         ;; We don't (but we should in real code) pass :exchanges
-         ;; with information about previous request because we're
-         ;; not testing it here.
-         (req-bar (eden-build-request :prompt "bar"))
-         (req-baz (eden-build-request :prompt "baz"))
-         (req-foo-uuid (plist-get req-foo :uuid))
-         (req-bar-uuid (plist-get req-bar :uuid))
-         (resp-fmt "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"%s\"}}]}")
-         ;; Meant to rebind eden-request-command.
-         ;; Print RESP-CONTENT after DELAY seconds in stdout wrapped in
-         ;; JSON response like OpenAI API (choices[0].message.content)
-         (print-to-stdout-after-delay
+  ;; - Test `eden-pending-requests' value during all requests
+  ;; - Test that two requests can't run simultaneously in the same
+  ;;   conversation (`eden-conversations')
+  ;; - Test that :last-req-uuid is updated correctly in `eden-conversations'
+  ;; - Test that the request's callback function is called in the order the
+  ;;   responses arrive.
+  ;; - Test that request are push onto `eden-request-history' stack
+  (let* ((print-to-stdout-after-delay
+          ;; Print RESP-CONTENT after DELAY seconds in stdout wrapped in
+          ;; JSON response like OpenAI API (choices[0].message.content)
           (lambda (resp-content delay)
             `(lambda (req)
                (let* ((resp-fmt "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"%s\"}}]}")
@@ -2743,11 +2714,38 @@ baz-assistant-content
                        (shell-quote-argument (format resp-fmt ,resp-content))))
                  (list
                   (format "sleep %s | echo %s" ,delay resp-str-quoted)
-                  "[redacted command]"))))))
+                  "[redacted command]")))))
+         (_ (progn
+              ;; It must be a global dynamic variable so that we can
+              ;; access it and modify it in the callback function bellow.
+              (defvar -callback-acc nil "...")
+              (setq -callback-acc nil)))
+         (callback (lambda (req resp info)
+                     (push (eden-get-in resp [:choices 0 :message :content])
+                           -callback-acc)
+                     ;; These functions must be called here to update
+                     ;; Eden state.  This is the only requirement imposed
+                     ;; on the callback function passed to `eden-send-request'.
+                     (eden-pending-remove req)
+                     (eden-conversation-update info req)
+                     (eden-mode-line-waiting 'maybe-stop)))
+         (eden-pending-requests) ;; variable tested
+         (eden-request-history)  ;; variable tested
+         (eden-conversations     ;; variable tested
+          '(("conversation-id-foo" . (:title "foo title"
+                                      :last-req-uuid nil))
+            ("conversation-id-bar" . (:title "bar title"
+                                      :last-req-uuid "last-bar-req-uuid"))
+            ("conversation-id-baz" . (:title "baz title"
+                                      :last-req-uuid "last-baz-req-uuid"))))
+         (dir (concat (make-temp-file "eden-" t) "/")))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-foo" 3)))
       (eden-send-request
-       :req req-foo
+       :req `(:req (:messages [(:role "user" :content "foo")])
+              :prompt "foo"
+              :dir ,dir
+              :uuid "req-foo-uuid")
        :callback callback
        :info '(:conversation-id "conversation-id-foo")))
     (cl-letf (((symbol-function 'eden-request-command)
@@ -2755,19 +2753,28 @@ baz-assistant-content
       ;; This request won't be sent because `req-foo', next request
       ;; in "conversation-id-foo" conversation is already running
       (eden-send-request
-       :req req-foo-foo
+       :req `(:req (:messages [(:role "user" :content "foo-foo")])
+              :prompt "foo-foo"
+              :dir ,dir
+              :uuid "req-foo-foo-uuid")
        :callback callback
        :info '(:conversation-id "conversation-id-foo")))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-bar" 1)))
       (eden-send-request
-       :req req-bar
+       :req `(:req (:messages [(:role "user" :content "bar")])
+              :prompt "bar"
+              :dir ,dir
+              :uuid "req-bar-uuid")
        :callback callback
        :info '(:conversation-id "conversation-id-bar")))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-baz" 2)))
       (eden-send-request
-       :req req-baz
+       :req `(:req (:messages [(:role "user" :content "baz")])
+              :prompt "baz"
+              :dir ,dir
+              :uuid "req-baz-uuid")
        :callback callback
        :info nil))
 
@@ -2808,22 +2815,18 @@ baz-assistant-content
       (should-not (memq pr-timer timer-list))
       (should-not global-mode-string) ;; waiting widget is gone
       (should (equal -callback-acc '("resp-foo" "resp-baz" "resp-bar")))
-      (should
-       (equal eden-request-history
-              (list
-               (plist-get req-baz :uuid)
-               (plist-get req-bar :uuid)
-               (plist-get req-foo :uuid))))
+      (should (equal eden-request-history
+                     '("req-baz-uuid" "req-bar-uuid" "req-foo-uuid")))
 
       ;; state of `eden-conversations'
       (should
        (equal
         (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-        `(:title "foo title" :last-req-uuid ,req-foo-uuid)))
+        '(:title "foo title" :last-req-uuid "req-foo-uuid")))
       (should
        (equal
         (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-        `(:title "bar title" :last-req-uuid ,req-bar-uuid)))
+        '(:title "bar title" :last-req-uuid "req-bar-uuid")))
       (should
        (seq-set-equal-p
         (mapcar #'car eden-conversations)
