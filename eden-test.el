@@ -2701,107 +2701,71 @@ baz-assistant-content
   ;; - test that we can order responses according to their timestamp file
   ;; - test that we update `eden-request-history' variable
   (let* ((_ (progn
-              ;; It must be a global dynamica variable so that we can
-              ;; access it and modify it in callback function bellow.
+              ;; It must be a global dynamic variable so that we can
+              ;; access it and modify it in the callback function bellow.
               (defvar -callback-acc nil "...")
               (setq -callback-acc nil)))
          (callback (lambda (req resp info)
                      (eden-pending-remove req)
-                     (push (eden-request-assistant-content resp) -callback-acc)
+                     (push (eden-get-in resp [:choices 0 :message :content])
+                           -callback-acc)
                      (eden-conversation-update info req)
                      (eden-mode-line-waiting 'maybe-stop)
                      (message "Response for request %s received"
                               (plist-get req :prompt))))
          (eden-dir (concat (make-temp-file "eden-" t) "/"))
-         eden-request-history
-         (conversation-id-foo "conversation-id-foo")
-         (conversation-id-bar "conversation-id-bar")
+         (eden-request-history) ;; variable tested
          (eden-conversations
-          '(("conversation-id-foo" .
-             (:title "foo title" :last-req-uuid nil))
-            ("conversation-id-bar" .
-             (:title "bar title" :last-req-uuid "last-bar-req-uuid"))
-            ("conversation-id-baz" .
-             (:title "baz title" :last-req-uuid "last-baz-req-uuid"))))
+          '(("conversation-id-foo" . (:title "foo title"
+                                      :last-req-uuid nil))
+            ("conversation-id-bar" . (:title "bar title"
+                                      :last-req-uuid "last-bar-req-uuid"))
+            ("conversation-id-baz" . (:title "baz title"
+                                      :last-req-uuid "last-baz-req-uuid"))))
          (req-foo (eden-build-request :prompt "foo"))
          (req-foo-foo (eden-build-request :prompt "foo-foo"))
-         ;; even if we don't use it (because we're not really sending
-         ;; the request to openai) we pass :exchanges argument
-         ;; to `eden-build-request' as we should do it given that
-         ;; below we send `req-baz' as part of the conversation
-         ;; "conversation-id-bar".
-         (req-bar (eden-build-request
-                   :prompt "bar"
-                   :exchanges [(:uuid "last-bar-req-uuid"
-                                :prompt "last bar prompt"
-                                :response "last bar response"
-                                :context [(:role "user" :content "last bar prompt")
-                                          (:role "system" :content "last bar response")]
-                                )]))
+         ;; We don't (but we should in real code) pass :exchanges
+         ;; with information about previous request because we're
+         ;; not testing it here.
+         (req-bar (eden-build-request :prompt "bar"))
          (req-baz (eden-build-request :prompt "baz"))
          (req-foo-uuid (plist-get req-foo :uuid))
          (req-bar-uuid (plist-get req-bar :uuid))
-         (resp-fmt "{
-    \"id\": \"chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8\",
-    \"object\": \"chat.completion\",
-    \"created\": 1733030031,
-    \"model\": \"gpt-4o-mini-2024-07-18\",
-    \"choices\": [
-      {
-        \"index\": 0,
-        \"message\": {
-          \"role\": \"assistant\",
-          \"content\": \"%s\",
-          \"refusal\": null
-        },
-        \"logprobs\": null,
-        \"finish_reason\": \"stop\"
-      }
-    ]
-  }"))
-    (cl-letf (((symbol-function 'eden-request-command)
-               ;; Print response in stdout after 3 second
-               (lambda (req)
+         (resp-fmt "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"%s\"}}]}")
+         ;; Meant to rebind eden-request-command.
+         ;; Print RESP-CONTENT after DELAY seconds in stdout wrapped in
+         ;; JSON response like OpenAI API (choices[0].message.content)
+         (print-to-stdout-after-delay
+          (lambda (resp-content delay)
+            `(lambda (req)
+               (let* ((resp-fmt "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"%s\"}}]}")
+                      (resp-str-quoted
+                       (shell-quote-argument (format resp-fmt ,resp-content))))
                  (list
-                  (format "sleep 3 | echo %s"
-                          (shell-quote-argument (format resp-fmt "resp-foo")))
-                  "[redacted command]"))))
+                  (format "sleep %s | echo %s" ,delay resp-str-quoted)
+                  "[redacted command]"))))))
+    (cl-letf (((symbol-function 'eden-request-command)
+               (funcall print-to-stdout-after-delay "resp-foo" 3)))
       (eden-send-request
        :req req-foo
        :callback callback
-       :info `(:conversation-id ,conversation-id-foo)))
+       :info '(:conversation-id "conversation-id-foo")))
     (cl-letf (((symbol-function 'eden-request-command)
-               ;; Print response in stdout after 3 second
-               (lambda (req)
-                 (list
-                  (format "sleep 3 | echo %s"
-                          (shell-quote-argument (format resp-fmt "resp-foo-foo")))
-                  "[redacted command]"))))
-      ;; this request won't be sent because `req-foo' in the same
-      ;; conversation `conversation-id-foo' is running at the same time
+               (funcall print-to-stdout-after-delay "resp-foo-foo" 3)))
+      ;; This request won't be sent because `req-foo', next request
+      ;; in "conversation-id-foo" conversation is already running
       (eden-send-request
        :req req-foo-foo
        :callback callback
-       :info `(:conversation-id ,conversation-id-foo)))
+       :info '(:conversation-id "conversation-id-foo")))
     (cl-letf (((symbol-function 'eden-request-command)
-               ;; Print response in stdout after 1 second
-               (lambda (req)
-                 (list
-                  (format "sleep 1 | echo %s"
-                          (shell-quote-argument (format resp-fmt "resp-bar")))
-                  "[redacted command]"))))
+               (funcall print-to-stdout-after-delay "resp-bar" 1)))
       (eden-send-request
        :req req-bar
        :callback callback
-       :info `(:conversation-id ,conversation-id-bar)))
-    (cl-letf
-        (((symbol-function 'eden-request-command)
-          ;; Print response in stdout after 2 second
-          (lambda (req)
-            (list
-             (format "sleep 2 | echo %s"
-                     (shell-quote-argument (format resp-fmt "resp-baz")))
-             "[redacted command]"))))
+       :info '(:conversation-id "conversation-id-bar")))
+    (cl-letf (((symbol-function 'eden-request-command)
+               (funcall print-to-stdout-after-delay "resp-baz" 2)))
       (eden-send-request
        :req req-baz
        :callback callback
@@ -2823,8 +2787,8 @@ baz-assistant-content
               '(("baz" . t)
                 ("bar" . t)
                 ("foo" . t))))
-      (should (eden-pending-conversation-p conversation-id-foo))
-      (should (eden-pending-conversation-p conversation-id-bar))
+      (should (eden-pending-conversation-p "conversation-id-foo"))
+      (should (eden-pending-conversation-p "conversation-id-bar"))
       ;; This means that the waiting widget still showing up
       ;; in the modeline
       (should (memq pr-timer timer-list))
@@ -2865,7 +2829,7 @@ baz-assistant-content
         (mapcar #'car eden-conversations)
         '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
 
-  ;; Test that the callback-error function remove waiting widget
+  ;; Test that the callback-error function removes waiting widget
   ;; in the modeline when an error occurs in the sentinel.  To
   ;; do so we trigger an JSON read error by filling Eden process
   ;; buffer with non JSON content.
