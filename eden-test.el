@@ -2634,48 +2634,38 @@ baz-assistant-content
 
 ;;;; Sending Requests
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-kill-last-request-test")))
 (ert-deftest eden-kill-last-request-test ()
-  ;; See test `eden-send-request-test' for explanation about
-  ;; redefining `eden-request-send'.
-
-  (let ((debug-on-error t)
-        (eden-dir (concat (make-temp-file "eden-" t) "/"))
-        pr-timer)
-    (cl-letf
-        (((symbol-function 'eden-request-send)
-          ;; Print "resp-baz" in stdout after 1 second
-          ;; with sentinel constructed using `eden-sentinel'
-          (lambda (req callback callback-error info)
-            (eden-write-request req)
-            (eden-test-echo-resp
-             "\"resp-baz\"" (generate-new-buffer-name "eden")
-             (eval (macroexpand-all
-                    `(eden-sentinel
-                      (quote ,req)
-                      ;; no need for `quote' because car is `lambda'
-                      ,callback
-                      ;; works because ,callback-error returns (closure ...)
-                      ;; because it is define with `lambda' in `eden-send-request'
-                      (quote ,callback-error)
-                      (quote ,info))))
-             1))))
-      (eden-send-request :req (eden-build-request :prompt "req")))
-    (setq pr-timer eden-pending-timer)
-    ;; When we kill the last request, we actually kill its
-    ;; associated process which signal an error.
-    ;; But here we are not interested in that error but in checking
-    ;; that global variables of interest are set back correctly after
-    ;; the process is killed.
-    (should-error
-     (progn
-       (eden-kill-last-request)
-       (sleep-for 0.2)))
-
-    (should (equal eden-pending-requests nil))
-    (should (equal eden-pending-timer nil))
-    ;; waiting widget is gone
-    (should-not (memq pr-timer timer-list))
-    (should-not global-mode-string)))
+  ;; We kill the last request sent with `eden-send-request' by killing
+  ;; its associated process.  This event is handle by the process sentinel
+  ;; which:
+  ;;
+  ;; 1) Logs the error on disk (we don't test this here)
+  ;; 2) Signals an `eden-error-process' error (we check this)
+  (let ((timer-list)            ;; to not interfer with global state
+        (global-mode-string)    ;; to not interfer with global state
+        (eden-pending-timer)    ;; to not interfer with global state
+        (eden-pending-requests) ;; to not interfer with global state
+        ;; Don't catch errors in sentinel, so that we can catch
+        ;; and test them with `should-error' macro
+        (debug-on-error t)
+        (dir (concat (make-temp-file "eden-" t) "/")))
+    (cl-letf (((symbol-function 'eden-request-command)
+               ;; Print "resp-foo" in stdout after 1 second
+               (lambda (req)
+                 (let* ((resp-fmt "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"%s\"}}]}")
+                        (resp-str-quoted
+                         (shell-quote-argument (format resp-fmt "resp-foo"))))
+                   (list
+                    (format "sleep 1 | echo %s" resp-str-quoted)
+                    "[redacted command]")))))
+      (eden-send-request
+       :req `(:req (:messages [(:role "user" :content "foo")])
+              :prompt "foo"
+              :dir ,dir
+              :uuid "req-foo-uuid")))
+    (should-error (progn (eden-kill-last-request) (sleep-for 0.2))
+                  :type 'eden-error-process)))
 
 
 (ert-deftest eden-pending-conversation-p-test ()
@@ -2729,6 +2719,9 @@ baz-assistant-content
                      (eden-pending-remove req)
                      (eden-conversation-update info req)
                      (eden-mode-line-waiting 'maybe-stop)))
+         (timer-list)            ;; variable tested
+         (global-mode-string)    ;; variable tested
+         (eden-pending-timer)    ;; variable tested
          (eden-pending-requests) ;; variable tested
          (eden-request-history)  ;; variable tested
          (eden-conversations     ;; variable tested
@@ -2832,10 +2825,10 @@ baz-assistant-content
         (mapcar #'car eden-conversations)
         '("conversation-id-foo" "conversation-id-bar" "conversation-id-baz")))))
 
-  ;; Test that the callback-error function removes waiting widget
-  ;; in the modeline when an error occurs in the sentinel.  To
-  ;; do so we trigger an JSON read error by filling Eden process
-  ;; buffer with non JSON content.
+  ;; Test that `eden-send-request''s default callback-error function
+  ;; removes waiting widget in the modeline when an error occurs in
+  ;; the sentinel.  To do so we trigger an JSON read error by filling
+  ;; Eden process buffer with non JSON content.
   (let ((eden-pending-requests) ;; variable tested
         (eden-pending-timer)    ;; variable tested
         (timer-list)            ;; variable tested
