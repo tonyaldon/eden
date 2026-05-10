@@ -2553,23 +2553,17 @@ it becomes the value of `eden-model'."
       (message "Include reasoning information in conversations.")
     (message "Do not include reasoning information in conversations.")))
 
-(defun eden-menu-quit ()
-  "Quit `eden-menu'."
-  (interactive)
-  nil)
-
 (transient-define-prefix eden-menu ()
   "Transient command to manage conversations, requests and Eden's settings.
 
-- Conversations:
+- Conversations and requests
   - `eden-conversation-continue-from-req-history'
   - `eden-conversation-edit-title'
   - `eden-conversation-pause'
-- Conversations and requests
   - `eden-show-current-conversation'
   - `eden-show-last-conversations'
-  - `eden-show-last-requests'
   - `eden-kill-last-request'
+  - `eden-show-last-requests'
   - `eden-prompt-current-goto'
 - Configuration
   - `eden-api-set'
@@ -2577,24 +2571,24 @@ it becomes the value of `eden-model'."
   - `eden-dir-set-suffix'
   - `eden-include-reasoning-toggle'
   - `eden-show-current-configuration'"
-  [["Conversation"
+  [["Conversations and requests"
     ("c" "Continue conversation from current req" eden-conversation-continue-from-req-history)
     ("e" "Edit current conversation title" eden-conversation-edit-title)
-    ("SPC" "Pause current conversation" eden-conversation-pause)]
+    ("SPC" "Pause current conversation" eden-conversation-pause)
+    ("v" "Show current conversation" eden-show-current-conversation)
+    ("l" "Show last conversations" eden-show-last-conversations)
+    ("L" "Show last requests" eden-show-last-requests)
+    ("k" "Kill last request" eden-kill-last-request)
+    ("g" "Go to current request in history" eden-prompt-current-goto)]
    ["Configuration"
     ("a" "Set API" eden-api-set)
     ("m" "Set model" eden-model-set)
     ("i" "Include reasoning information" eden-include-reasoning-toggle)
     ("d" "Set request directory" eden-dir-set-suffix)
     ("C" "Show current configuration" eden-show-current-configuration)]]
-  [["Conversations and requests"
-    ("k" "Kill last request" eden-kill-last-request)
-    ("v" "Show current conversation" eden-show-current-conversation)
-    ("l" "Show last conversations" eden-show-last-conversations)
-    ("L" "Show last requests" eden-show-last-requests)
-    ("g" "Go to current request in history" eden-prompt-current-goto)
-    "..............."
-    ("RET" "Quit menu" eden-menu-quit)]])
+  (interactive)
+  (transient-setup 'eden-menu)
+  (define-key transient--transient-map (kbd "q") #'transient-quit-one))
 
 ;;;; Request at point menu
 
