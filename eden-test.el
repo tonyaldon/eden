@@ -1847,6 +1847,20 @@ foo bar baz
       (eden-conversation-title "conversation-id-bar")
       "bar title"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-dir-test")))
+(ert-deftest eden-conversation-dir-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-dir "conversation-id-bar")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :dir "/tmp/eden/":last-req-uuid nil)))))
+    (should-not (eden-conversation-dir "conversation-id-bar")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :dir "/tmp/eden/":last-req-uuid nil)))))
+    (should
+     (string= (eden-conversation-dir "conversation-id-foo") "/tmp/eden/"))))
+
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-last-req-test")))
 (ert-deftest eden-conversation-last-req-test ()
   (let ((eden-conversations nil))

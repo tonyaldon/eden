@@ -1675,9 +1675,14 @@ Signal an error if the conversation cannot be added."
 (defun eden-conversation-title (conversation-id)
   "Return title of conversation with CONVERSATION-ID in `eden-conversations'.
 
-If no conversation with CONVERSATION-ID can be found in `eden-conversations',
-return nil."
+If no conversation found, return nil."
   (eden-get-in eden-conversations `(,conversation-id :title)))
+
+(defun eden-conversation-dir (conversation-id)
+  "Return directory of conversation with CONVERSATION-ID in `eden-conversations'.
+
+If no conversation found, return nil."
+  (eden-get-in eden-conversations `(,conversation-id :dir)))
 
 (defun eden-conversation-last-req (conversation-id)
   "Return last request of conversation with CONVERSATION-ID in `eden-conversations'.
