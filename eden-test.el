@@ -1769,7 +1769,7 @@ foo bar baz
         (mapcar #'car eden-conversations)
         '("conversation-id-foo" "conversation-id-bar")))
       (should
-       (equal (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+       (equal (map-elt eden-conversations "conversation-id-bar")
               `(:title "bar title" :dir ,dir :last-req-uuid nil)))
       (should (string= eden-conversation-id "conversation-id-bar"))))
 
@@ -1822,17 +1822,14 @@ foo bar baz
     (should (string= eden-conversation-id "conversation-id-foo-3"))
 
     (should
-     (equal
-      (alist-get "conversation-id-foo-1" eden-conversations nil nil 'string=)
-      `(:title "foo-1 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
+     (equal (map-elt eden-conversations "conversation-id-foo-1")
+            `(:title "foo-1 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
     (should
-     (equal
-      (alist-get "conversation-id-foo-2" eden-conversations nil nil 'string=)
-      `(:title "foo-2 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
+     (equal (map-elt eden-conversations "conversation-id-foo-2")
+            `(:title "foo-2 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
     (should
-     (equal
-      (alist-get "conversation-id-foo-3" eden-conversations nil nil 'string=)
-      `(:title "foo-3 title"  :dir ,dir :last-req-uuid "foo-req-uuid")))))
+     (equal (map-elt eden-conversations "conversation-id-foo-3")
+            `(:title "foo-3 title"  :dir ,dir :last-req-uuid "foo-req-uuid")))))
 
 
 (ert-deftest eden-conversation-title-test ()
@@ -1958,17 +1955,14 @@ foo bar baz
     (eden-conversation-rename "conversation-id-baz" "BAZ")
     (eden-conversation-rename "not-in--eden-conversations" "foo bar baz")
     (should
-     (equal
-      (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-      '(:title "FOO" :dir "/tmp/eden/" :last-req-uuid nil)))
+     (equal (map-elt eden-conversations "conversation-id-foo")
+            '(:title "FOO" :dir "/tmp/eden/" :last-req-uuid nil)))
     (should
-     (equal
-      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-      '(:title "BAR" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))
+     (equal (map-elt eden-conversations "conversation-id-bar")
+            '(:title "BAR" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))
     (should
-     (equal
-      (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
-      '(:title "BAZ" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))
+     (equal (map-elt eden-conversations "conversation-id-baz")
+            '(:title "BAZ" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))
     (should
      (seq-set-equal-p
       (mapcar #'car eden-conversations)
@@ -1996,11 +1990,11 @@ foo bar baz
 
     (should
      (equal
-      (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
+      (map-elt eden-conversations "conversation-id-foo")
       '(:title "foo title" :dir "/tmp/eden/" :last-req-uuid "new-foo-req-uuid")))
     (should
      (equal
-      (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
+      (map-elt eden-conversations "conversation-id-bar")
       '(:title "bar title" :dir "/tmp/eden/" :last-req-uuid "new-bar-req-uuid")))
     (should
      (seq-set-equal-p
@@ -2693,13 +2687,11 @@ baz-assistant-content
 
       ;; state of `eden-conversations'
       (should
-       (equal
-        (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-        '(:title "foo title" :last-req-uuid "req-foo-uuid")))
+       (equal (map-elt eden-conversations "conversation-id-foo")
+              '(:title "foo title" :last-req-uuid "req-foo-uuid")))
       (should
-       (equal
-        (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-        '(:title "bar title" :last-req-uuid "req-bar-uuid")))
+       (equal (map-elt eden-conversations "conversation-id-bar")
+              '(:title "bar title" :last-req-uuid "req-bar-uuid")))
       (should
        (seq-set-equal-p
         (mapcar #'car eden-conversations)
