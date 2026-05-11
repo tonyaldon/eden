@@ -1390,6 +1390,12 @@ See `eden-dir-set-suffix'."
    ((not (stringp new-dir))
     (error "Wrong `new-dir' type: `%s'.  It should be a string." new-dir))
    (t (setq eden-dir (file-name-as-directory (expand-file-name new-dir)))
+      ;; Reset current conversation when dirs don't match
+      (when-let ((conversation-dir (eden-conversation-dir eden-conversation-id)))
+        (message "foo")
+        (when (not (string= conversation-dir new-dir))
+          (message "bar")
+          (setq eden-conversation-id nil)))
       (eden-history-update :dir eden-dir))))
 
 ;;;; Prompt and Request history

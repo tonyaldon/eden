@@ -1492,6 +1492,8 @@ foo bar baz
   ;; While Eden is idle
   (cl-letf (((symbol-function 'eden-running-p)
              (lambda () nil)))
+    ;; The following expressions are order dependent, as we iteratively
+    ;; update `eden-dir' value with `eden-dir-set'.
     (let ((eden-dir "/tmp/eden/"))
       (should-error (eden-dir-set 'not-a-dir))
 
@@ -1501,8 +1503,31 @@ foo bar baz
       (eden-dir-set "/tmp/new-eden")
       (should (string= eden-dir "/tmp/new-eden/"))
 
-      ;; Check that we also update request history and
-      ;; prompt history state.
+      ;; Check that if new dir is different from :dir of the current
+      ;; conversation, we stop the current conversation by setting
+      ;; `eden-conversation-id' to nil
+      (let ((eden-conversations
+             '(("conversation-id-foo" . (:title "foo title"
+                                         :dir "/tmp/new-eden/"
+                                         :last-req-uuid "foo-req-uuid"))))
+            (eden-conversation-id "conversation-id-foo"))
+        (eden-dir-set "/tmp/new-new-eden/")
+        (should (string= eden-dir "/tmp/new-new-eden/"))
+        ;; id has been reset to nil
+        (should-not eden-conversation-id))
+      (let ((eden-conversations
+             '(("conversation-id-foo" . (:title "foo title"
+                                         :dir "/tmp/new-eden/"
+                                         :last-req-uuid "foo-req-uuid"))))
+            (eden-conversation-id "conversation-id-foo"))
+        (eden-dir-set "/tmp/new-eden/")
+        (should (string= eden-dir "/tmp/new-eden/"))
+        ;; id has been left unchanged
+        (should (string= eden-conversation-id "conversation-id-foo")))
+
+      ;; Check that we also update:
+      ;; - request history and
+      ;; - prompt history state.
       (let* ((new-dir (concat (make-temp-file "eden-" t) "/"))
              (req-foo `(:dir ,new-dir :uuid "foo"))
              (req-bar `(:dir ,new-dir :uuid "bar"))
