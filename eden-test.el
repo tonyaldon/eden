@@ -2642,14 +2642,17 @@ baz-assistant-content
          (eden-pending-timer)    ;; variable tested
          (eden-pending-requests) ;; variable tested
          (eden-request-history)  ;; variable tested
+         (dir (concat (make-temp-file "eden-" t) "/"))
          (eden-conversations     ;; variable tested
-          '(("conversation-id-foo" . (:title "foo title"
+          `(("conversation-id-foo" . (:title "foo title"
+                                      :dir ,dir
                                       :last-req-uuid nil))
             ("conversation-id-bar" . (:title "bar title"
+                                      :dir ,dir
                                       :last-req-uuid "last-bar-req-uuid"))
             ("conversation-id-baz" . (:title "baz title"
-                                      :last-req-uuid "last-baz-req-uuid"))))
-         (dir (concat (make-temp-file "eden-" t) "/")))
+                                      :dir ,dir
+                                      :last-req-uuid "last-baz-req-uuid")))))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-foo" 3)))
       (eden-send-request
@@ -2732,10 +2735,10 @@ baz-assistant-content
       ;; state of `eden-conversations'
       (should
        (equal (map-elt eden-conversations "conversation-id-foo")
-              '(:title "foo title" :last-req-uuid "req-foo-uuid")))
+              `(:title "foo title" :dir ,dir :last-req-uuid "req-foo-uuid")))
       (should
        (equal (map-elt eden-conversations "conversation-id-bar")
-              '(:title "bar title" :last-req-uuid "req-bar-uuid")))
+              `(:title "bar title" :dir ,dir :last-req-uuid "req-bar-uuid")))
       (should
        (seq-set-equal-p
         (mapcar #'car eden-conversations)
