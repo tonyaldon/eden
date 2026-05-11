@@ -1532,6 +1532,9 @@ See `eden-prompt-history-state'."
               (req `(:dir ,dir :uuid ,current)))
     (not (ignore-errors (eden-request-read 'prompt req)))))
 
+;; This function is not unit tested.  When making changes to
+;; it or any prompt history function, test it by starting a fresh
+;; emacs and in the eden prompt buffer, play with M-n and M-p.
 (defun eden-prompt-history-nav (dir direction prompt-history)
   "Replace current buffer content with previous or next prompt based on DIRECTION.
 
@@ -1546,9 +1549,6 @@ onto the respective stack of previous or next prompts based on
 DIRECTION.
 
 This function should be called from `eden-prompt-buffer-name' buffer."
-  ;; This function is not unit tested.  When making changes to
-  ;; it or any prompt history function, test it by starting a fresh
-  ;; emacs and in the eden prompt buffer, play with M-n and M-p.
   (let (prompts nav-fn)
     (pcase direction
       ('previous (setq prompts (aref prompt-history 0))
@@ -1621,16 +1621,18 @@ A conversation is a cons cells whose
 - car is an ID and
 - cdr is a plists with the following keys:
 
-  - :title         - The title of the conversation
+  - :dir           - The directory where the requests is stored.
+  - :title         - The title of the conversation.
   - :last-req-uuid - The UUID of the last request in the conversation.
                      nil for a new conversation.
 
 For instance `eden-conversations' can be:
 
     ((\"213940f6-fa87-4c27-9aa5-30d6ba3d2724\" .
-      (:title \"foo title\" :last-req-uuid nil))
+      (:title \"foo title\" :dir \"/tmp/eden/\" :last-req-uuid nil))
      (\"bcb3f6ee-1b85-4c92-904a-f8ae8f536f7c\" .
       (:title \"bar title\"
+       :dir \"/tmp/eden/\"
        :last-req-uuid \"04397cda-f623-425b-9a7d-c29caea3511f\")))")
 
 (defvar eden-conversation-id nil
@@ -1638,7 +1640,7 @@ For instance `eden-conversations' can be:
 
 (defun eden-conversation-exists-p (conversation-id)
   "Return t if a conversation with CONVERSATION-ID exists in `eden-conversations'."
-  (alist-get conversation-id eden-conversations nil nil 'string=))
+  (map-elt eden-conversations conversation-id))
 
 (defun eden-conversation-with-title-exists-p (title)
   "Return t if a conversation with TITLE exists in `eden-conversations'."
@@ -1665,7 +1667,8 @@ Signal an error if the conversation cannot be added."
        (error "Cannot continue from that request.  %s"
               (error-message-string err)))))
   (let ((conversation-id (eden-uuid)))
-    (push (cons conversation-id `(:title ,title :last-req-uuid ,req-uuid))
+    (push (cons conversation-id
+                `(:title ,title :dir ,dir :last-req-uuid ,req-uuid))
           eden-conversations)
     (setq eden-conversation-id conversation-id)))
 
@@ -1684,17 +1687,18 @@ return nil.
 
 For instance:
 
-    (let ((eden-dir \"/tmp/eden/\")
-          (eden-conversations
+    (let ((eden-conversations
            \\='((\"09b95117-ae13-41dc-aa76-53f63576b771\" .
               (:title \"baz title\"
+               :dir \"/tmp/eden/\"
                :last-req-uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\")))))
       (eden-conversation-last-req \"09b95117-ae13-41dc-aa76-53f63576b771\"))
     ;; (:uuid \"2086eac6-61ff-4a44-993a-a928b7a29007\"
     ;;  :dir \"/tmp/eden/\")"
-  (when-let ((uuid (eden-get-in
-                    eden-conversations `(,conversation-id :last-req-uuid))))
-    `(:uuid ,uuid :dir ,eden-dir)))
+  (when-let* ((conversation (map-elt eden-conversations conversation-id))
+              (uuid (plist-get conversation :last-req-uuid))
+              (dir (plist-get conversation :dir)))
+    `(:uuid ,uuid :dir ,dir)))
 
 (defun eden-conversation-buffer-name (conversation-id)
   "Return buffer name for conversation with CONVERSATION-ID."
@@ -1715,12 +1719,20 @@ See `eden-conversations' and `eden-request-conversation'."
 
 Signal an error if NEW-TITLE is already used by another conversation."
   (when (eden-conversation-with-title-exists-p new-title)
-    (error "Cannot rename conversation with `%s' which is already used by another conversation in `eden-conversations'"
+    (error "Cannot rename conversation to `%s' which is already used by another conversation in `eden-conversations'"
            new-title))
   (when-let ((cell (assoc conversation-id eden-conversations)))
     (setcdr cell (plist-put (copy-sequence (cdr cell))
                             :title new-title))))
 
+;; This function is not unit tested.  When making changes to
+;; it or any conversation function, test it by starting a fresh
+;; emacs, continue a conversation from some request making it
+;; current, display it in a buffer and finally edit the title.
+;; The new title must change in the mode line and in the
+;; conversation buffer.
+;; Also try to rename a conversation with a title already taken.
+;; This should diplay a message in the echo area.
 (transient-define-suffix eden-conversation-edit-title ()
   "Edit title of current conversation and its associated buffer based on user's input.
 
@@ -1747,29 +1759,33 @@ See `eden-conversation-id' and `eden-conversation-rename'."
     (message "Cannot rename current conversation which is not set.  Switch to an existing conversation first.")))
 
 (defun eden-conversation-update (info req)
-  "Update last request UUID of conversation specified by INFO to REQ's UUID.
+  "Set last request of the conversation specified in INFO to REQ.
 
-INFO plist must include a `:conversation-id' key while REQ must contain
-a `:uuid' key.
+This modifies `eden-conversations'.  Specifically, set last request UUID
+of conversation INFO's `:conversation-id' to REQ's `:uuid' key.
+
+If one of these keys is missing, do nothing.
+
+This function is meant to be used in `eden-send-request''s callback.
 
 For instance:
 
     (let ((eden-conversations
-           \\='((\"conversation-id-foo\" .
-              (:title \"foo title\" :last-req-uuid nil)))))
+           \\='((\"conversation-id-foo\" . (:title \"foo title\"
+                                       :dir \"/tmp/eden/\"
+                                       :last-req-uuid nil)))))
       (eden-conversation-update \\='(:conversation-id \"conversation-id-foo\")
                                 \\='(:uuid \"new-foo-req-uuid\"))
       eden-conversations)
     ;; ((\"conversation-id-foo\" .
-    ;;   (:title \"foo title\" :last-req-uuid \"new-foo-req-uuid\")))
-
-See `eden-conversations', `eden-send-request' and `eden-send'."
+    ;;   (:title \"foo title\"
+    ;;    :dir \"/tmp/eden/\"
+    ;;    :last-req-uuid \"new-foo-req-uuid\")))"
   (when-let* ((conversation-id (plist-get info :conversation-id))
               (req-uuid (plist-get req :uuid))
               (cell (assoc conversation-id eden-conversations)))
     (setcdr cell (plist-put (copy-sequence (cdr cell))
                             :last-req-uuid req-uuid))))
-
 
 (transient-define-suffix eden-conversation-continue-from-req-history ()
   "Continue a conversation from current request in history."

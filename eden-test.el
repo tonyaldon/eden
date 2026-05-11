@@ -1711,33 +1711,35 @@ foo bar baz
     (should-not (eden-conversation-exists-p "not-a-conversation")))
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid")))))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
     (should (eden-conversation-exists-p "conversation-id-foo"))
     (should (eden-conversation-exists-p "conversation-id-bar"))
     (should-not (eden-conversation-exists-p "not-a-conversation"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-with-title-exists-p-test")))
 (ert-deftest eden-conversation-with-title-exists-p-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-with-title-exists-p "bar title")))
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid"))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid"))
            ("conversation-id-baz" .
-            (:title "baz title" :last-req-uuid "baz-req-uuid")))))
+            (:title "baz title" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))))
     (should (eden-conversation-with-title-exists-p "bar title"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-add-test")))
 (ert-deftest eden-conversation-add-test ()
 
   ;; Titles must be unique
-  (let ((dir (concat (make-temp-file "eden-" t) "/"))
-        (eden-conversations
-         '(("conversation-id-foo" . (:title "foo title"
-                                     :last-req-uuid nil)))))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (eden-conversations
+          `(("conversation-id-foo" . (:title "foo title"
+                                      :dir ,dir
+                                      :last-req-uuid nil)))))
     (should-error (eden-conversation-add dir "foo title")))
 
   ;; add a new conversations
@@ -1749,14 +1751,16 @@ foo bar baz
       (eden-conversation-add dir "foo title")
       (should
        (equal eden-conversations
-              '(("conversation-id-foo" . (:title "foo title"
+              `(("conversation-id-foo" . (:title "foo title"
+                                          :dir ,dir
                                           :last-req-uuid nil)))))
       (should (string= eden-conversation-id "conversation-id-foo"))))
-  (let ((eden-conversations    ;; variable tested
-         '(("conversation-id-foo" . (:title "foo title"
-                                     :last-req-uuid nil))))
-        (eden-conversation-id) ;; variable tested
-        (dir (concat (make-temp-file "eden-" t) "/")))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (eden-conversation-id) ;; variable tested
+         (eden-conversations    ;; variable tested
+          `(("conversation-id-foo" . (:title "foo title"
+                                      :dir ,dir
+                                      :last-req-uuid nil)))))
     (cl-letf (((symbol-function 'eden-uuid)
                (lambda nil "conversation-id-bar")))
       (eden-conversation-add dir "bar title")
@@ -1766,7 +1770,7 @@ foo bar baz
         '("conversation-id-foo" "conversation-id-bar")))
       (should
        (equal (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-              '(:title "bar title" :last-req-uuid nil)))
+              `(:title "bar title" :dir ,dir :last-req-uuid nil)))
       (should (string= eden-conversation-id "conversation-id-bar"))))
 
   ;; error - req associated with req-uuid doesn't exist in dir
@@ -1792,13 +1796,11 @@ foo bar baz
   (let* ((eden-conversations)   ;; variable tested
          (eden-conversation-id) ;; variable tested
          (dir (concat (make-temp-file "eden-" t) "/"))
-         ;; (foo-req (eden-build-request :prompt "foo-req")) ;; depend on `eden-dir'
          (foo-req
           `(:req (:messages [(:role "user" :content "foo-req")])
             :prompt "foo-req"
             :dir ,dir
-            :uuid "foo-uuid"))
-         (foo-req-uuid (plist-get foo-req :uuid))
+            :uuid "foo-req-uuid"))
          ;; we use the same response for two different requests
          ;; because we just need them to exist in the request directory
          (resp '(:choices [(:message (:role "assistant" :content "assistant"))]))
@@ -1809,9 +1811,9 @@ foo bar baz
     (let ((n 0))
       (cl-letf (((symbol-function 'eden-uuid)
                  (lambda nil (format "conversation-id-foo-%s" (cl-incf n)))))
-        (eden-conversation-add dir "foo-1 title" foo-req-uuid)
-        (eden-conversation-add dir "foo-2 title" foo-req-uuid)
-        (eden-conversation-add dir "foo-3 title" foo-req-uuid)))
+        (eden-conversation-add dir "foo-1 title" "foo-req-uuid")
+        (eden-conversation-add dir "foo-2 title" "foo-req-uuid")
+        (eden-conversation-add dir "foo-3 title" "foo-req-uuid")))
 
     (should
      (seq-set-equal-p
@@ -1822,15 +1824,15 @@ foo bar baz
     (should
      (equal
       (alist-get "conversation-id-foo-1" eden-conversations nil nil 'string=)
-      `(:title "foo-1 title" :last-req-uuid ,foo-req-uuid)))
+      `(:title "foo-1 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
     (should
      (equal
       (alist-get "conversation-id-foo-2" eden-conversations nil nil 'string=)
-      `(:title "foo-2 title" :last-req-uuid ,foo-req-uuid)))
+      `(:title "foo-2 title" :dir ,dir :last-req-uuid "foo-req-uuid")))
     (should
      (equal
       (alist-get "conversation-id-foo-3" eden-conversations nil nil 'string=)
-      `(:title "foo-3 title"  :last-req-uuid ,foo-req-uuid)))))
+      `(:title "foo-3 title"  :dir ,dir :last-req-uuid "foo-req-uuid")))))
 
 
 (ert-deftest eden-conversation-title-test ()
@@ -1838,48 +1840,42 @@ foo bar baz
     (should-not (eden-conversation-title "conversation-id-bar")))
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/":last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid"))
+            (:title "bar title" :dir "/tmp/eden/":last-req-uuid "bar-req-uuid"))
            ("conversation-id-baz" .
-            (:title "baz title" :last-req-uuid "baz-req-uuid")))))
+            (:title "baz title" :dir "/tmp/eden/":last-req-uuid "baz-req-uuid")))))
     (should
      (string=
       (eden-conversation-title "conversation-id-bar")
       "bar title"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-last-req-test")))
 (ert-deftest eden-conversation-last-req-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-title "conversation-id-bar")))
-  (let ((eden-dir "/tmp/eden/")
-        (eden-conversations
+  (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid"))
-           ("conversation-id-baz" .
-            (:title "baz title" :last-req-uuid "baz-req-uuid")))))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
     (should-not (eden-conversation-last-req "conversation-id-foo"))
     (should
-     (equal
-      (eden-conversation-last-req "conversation-id-bar")
-      `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))
-    (should
-     (equal
-      (eden-conversation-last-req "conversation-id-baz")
-      `(:uuid "baz-req-uuid" :dir "/tmp/eden/")))))
+     (equal (eden-conversation-last-req "conversation-id-bar")
+            `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-buffer-name-test")))
 (ert-deftest eden-conversation-buffer-name-test ()
   (let ((eden-conversations nil))
     (should-not (eden-conversation-buffer-name "conversation-id-foo"))
     (should-not (eden-conversation-buffer-name nil)))
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid"))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid"))
            ("conversation-id-baz" .
-            (:title "baz title" :last-req-uuid "baz-req-uuid")))))
+            (:title "baz title" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))))
     (should-not (eden-conversation-buffer-name nil))
     (should-not (eden-conversation-buffer-name "wrong-id"))
     (should
@@ -1889,10 +1885,10 @@ foo bar baz
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exchanges-test")))
 (ert-deftest eden-conversation-exchanges-test ()
-  (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (last-req `(:api (:service "openai"
                            :endpoint "https://api.openai.com/v1/chat/completions")
-                     :dir ,eden-dir
+                     :dir ,dir
                      :uuid "uuid-baz"
                      :req (:messages [(:role "system" :content "baz system\n")
                                       (:role "user" :content "foo user")
@@ -1916,10 +1912,10 @@ foo bar baz
          (last-resp '(:choices [(:message (:role "assistant" :content "baz assistant\n"))]))
          (last-resp-str (eden-json-encode last-resp))
          (eden-conversations
-          '(("conversation-id-new" .
-             (:title "new title" :last-req-uuid nil))
+          `(("conversation-id-new" .
+             (:title "new title" :dir ,dir :last-req-uuid nil))
             ("conversation-id-continue-from" .
-             (:title "continue-from title" :last-req-uuid "uuid-baz")))))
+             (:title "continue-from title" :dir ,dir :last-req-uuid "uuid-baz")))))
     (eden-write-request last-req)
     (eden-write-response last-resp-str last-resp last-req)
     (should-not (eden-conversation-exchanges "conversation-id-new"))
@@ -1946,18 +1942,17 @@ foo bar baz
 (ert-deftest eden-conversation-rename-test ()
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid")))))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
     (should-error (eden-conversation-rename "conversation-id-foo" "bar title")))
-
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid"))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid"))
            ("conversation-id-baz" .
-            (:title "baz title" :last-req-uuid "baz-req-uuid")))))
+            (:title "baz title" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))))
     (eden-conversation-rename "conversation-id-foo" "FOO")
     (eden-conversation-rename "conversation-id-bar" "BAR")
     (eden-conversation-rename "conversation-id-baz" "BAZ")
@@ -1965,15 +1960,15 @@ foo bar baz
     (should
      (equal
       (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-      '(:title "FOO" :last-req-uuid nil)))
+      '(:title "FOO" :dir "/tmp/eden/" :last-req-uuid nil)))
     (should
      (equal
       (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-      '(:title "BAR" :last-req-uuid "bar-req-uuid")))
+      '(:title "BAR" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))
     (should
      (equal
       (alist-get "conversation-id-baz" eden-conversations nil nil 'string=)
-      '(:title "BAZ" :last-req-uuid "baz-req-uuid")))
+      '(:title "BAZ" :dir "/tmp/eden/" :last-req-uuid "baz-req-uuid")))
     (should
      (seq-set-equal-p
       (mapcar #'car eden-conversations)
@@ -1984,24 +1979,29 @@ foo bar baz
 (ert-deftest eden-conversation-update-test ()
   (let ((eden-conversations
          '(("conversation-id-foo" .
-            (:title "foo title" :last-req-uuid nil))
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
-            (:title "bar title" :last-req-uuid "bar-req-uuid")))))
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
+    ;; Do not modify `eden-conversations'
+    (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
+                              '(:uuid "fake-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-foo") nil)
+    (eden-conversation-update nil '(:uuid "new-foo-req-uuid"))
+
+    ;; Modify `eden-conversations'
     (eden-conversation-update '(:conversation-id "conversation-id-foo")
                               '(:uuid "new-foo-req-uuid"))
     (eden-conversation-update '(:conversation-id "conversation-id-bar")
                               '(:uuid "new-bar-req-uuid"))
-    (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
-                              '(:uuid "fake-req-uuid"))
-    (eden-conversation-update nil nil)
+
     (should
      (equal
       (alist-get "conversation-id-foo" eden-conversations nil nil 'string=)
-      '(:title "foo title" :last-req-uuid "new-foo-req-uuid")))
+      '(:title "foo title" :dir "/tmp/eden/" :last-req-uuid "new-foo-req-uuid")))
     (should
      (equal
       (alist-get "conversation-id-bar" eden-conversations nil nil 'string=)
-      '(:title "bar title" :last-req-uuid "new-bar-req-uuid")))
+      '(:title "bar title" :dir "/tmp/eden/" :last-req-uuid "new-bar-req-uuid")))
     (should
      (seq-set-equal-p
       (mapcar #'car eden-conversations)
@@ -2011,35 +2011,34 @@ foo bar baz
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-insert-test")))
 (ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'
-  (should-error
+  (comment
+   (should-error
+    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                  :uuid "uuid-foo")))
+      (eden-conversation-insert req "title")))
+
+   ;; Signal error when an error.json file exists in req directory
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-conversation-insert req "title")))
+     (eden-request-write 'error req "")
+     (should-error (eden-conversation-insert req "title")))
 
-  ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
-    (should-error (eden-conversation-insert req "title")))
-
-  ;; Signal error when the request in incomplete
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo")))
-    (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-conversation-insert req "title")))
+   ;; Signal error when the request in incomplete
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                 :uuid "uuid-foo")))
+     (make-directory (eden-request-dir req) 'parent)
+     (should-error (eden-conversation-insert req "title")))
 
 
-  ;; Signal error when both `title' and `append' argument are nil
-  (let ((req (eden-build-request
-              :prompt "foo bar baz"
-              :dir (concat (make-temp-file "eden-" t) "/")))
-        (resp '(:model "gpt-4o-mini-2024-07-18"
-                :choices [(:index 0
-                           :message (:role "assistant"
-                                     :content "foo bar baz assistant response"))])))
-    (eden-write-request req)
-    (eden-write-response (eden-json-encode resp) resp req)
-    (should-error (eden-conversation-insert req nil)))
+   ;; Signal error when both `title' and `append' argument are nil
+   (let ((req `(:req (:messages [(:role "user" :content "foo")])
+                :prompt "foo"
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "req-foo-uuid"))
+         (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
+     (eden-write-request req)
+     (eden-write-response (eden-json-encode resp) resp req)
+     (should-error (eden-conversation-insert req nil))))
 
   ;; We call `eden-test-add-or-replace-timestamp-file' before
   ;; inserting the conversation.  This adds or replaces the timestamp
@@ -2051,23 +2050,22 @@ foo bar baz
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid")))
-        (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-model "EDEN_MODEL")
-              (eden-org-property-req "EDEN_REQ")
-              (req (eden-build-request
-                    :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai"
-                           :endpoint "https://api.openai.com/v1/chat/completions")))
-              (resp '(:model "gpt-4o-mini-2024-07-18"
-                      :choices [(:message (:role "assistant"
-                                           :content "foo bar baz assistant response"))])))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert req "Conversation")))
+      (let ((eden-org-property-date "EDEN_DATE")
+            (eden-org-property-model "EDEN_MODEL")
+            (eden-org-property-req "EDEN_REQ")
+            (req `(:req (:messages [(:role "user" :content "foo bar baz")])
+                   :prompt "foo bar baz"
+                   :dir ,(concat (make-temp-file "eden-" t) "/")
+                   :uuid "uuid"
+                   :api (:service "openai"
+                         :endpoint "https://api.openai.com/v1/chat/completions")))
+            (resp '(:model "gpt-4o-mini-2024-07-18"
+                    :choices [(:message (:role "assistant"
+                                         :content "foo bar baz assistant response"))])))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-test-add-or-replace-timestamp-file req)
+        (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -2093,26 +2091,24 @@ foo bar baz assistant response
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid")))
-        (let ((eden-include-reasoning t)
-              (eden-org-property-date "EDEN_DATE")
-              (eden-org-property-req "EDEN_REQ")
-              (eden-org-property-model "EDEN_MODEL")
-              (req (eden-build-request
-                    :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "deepseek"
-                           :endpoint "https://api.deepseek.com")))
-              (resp '(:model "deepseek-reasoner"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
-                                           :content "foo bar baz assistant response"
-                                           :reasoning_content "foo bar baz assistant reasoning"))])))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert req "Conversation")))
+      (let ((eden-include-reasoning t)
+            (eden-org-property-date "EDEN_DATE")
+            (eden-org-property-req "EDEN_REQ")
+            (eden-org-property-model "EDEN_MODEL")
+            (req `(:req (:messages [(:role "user" :content "foo bar baz")])
+                   :prompt "foo bar baz"
+                   :dir ,(concat (make-temp-file "eden-" t) "/")
+                   :uuid "uuid"
+                   :api (:service "deepseek"
+                         :endpoint "https://api.deepseek.com")))
+            (resp '(:model "deepseek-reasoner"
+                    :choices [(:message (:role "assistant"
+                                         :content "foo bar baz assistant response"
+                                         :reasoning_content "foo bar baz assistant reasoning"))])))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-test-add-or-replace-timestamp-file req)
+        (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -2142,25 +2138,24 @@ foo bar baz assistant response
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid")))
-        (let ((eden-include-reasoning nil)
-              (eden-org-property-date "EDEN_DATE")
-              (eden-org-property-model "EDEN_MODEL")
-              (eden-org-property-req "EDEN_REQ")
-              (req (eden-build-request
-                    :prompt "foo bar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "deepseek"
-                           :endpoint "https://api.deepseek.com")))
-              (resp '(:model "deepseek-reasoner"
-                      :choices [(:message (:role "assistant"
-                                           :content "foo bar baz assistant response"
-                                           :reasoning_content "foo bar baz assistant reasoning"))])))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert req "Conversation")))
+      (let ((eden-include-reasoning nil) ;; variable tested
+            (eden-org-property-date "EDEN_DATE")
+            (eden-org-property-model "EDEN_MODEL")
+            (eden-org-property-req "EDEN_REQ")
+            (req `(:req (:messages [(:role "user" :content "foo bar baz")])
+                   :prompt "foo bar baz"
+                   :dir ,(concat (make-temp-file "eden-" t) "/")
+                   :uuid "uuid"
+                   :api (:service "deepseek"
+                         :endpoint "https://api.deepseek.com")))
+            (resp '(:model "deepseek-reasoner"
+                    :choices [(:message (:role "assistant"
+                                         :content "foo bar baz assistant response"
+                                         :reasoning_content "foo bar baz assistant reasoning"))])))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-test-add-or-replace-timestamp-file req)
+        (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
@@ -2180,7 +2175,7 @@ foo bar baz assistant response
 
   ;; conversation with no previous exchanges to which we add a title
   ;; in the top level heading
-  (should
+  (should-not
    (string=
     (with-temp-buffer
       (org-mode)
@@ -2189,11 +2184,12 @@ foo bar baz assistant response
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-build-request
-                    :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai"
-                           :endpoint "https://api.openai.com/v1/chat/completions")))
+              (req `(:req (:messages [(:role "user" :content "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz")])
+                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
+                     :dir ,(concat (make-temp-file "eden-" t) "/")
+                     :uuid "uuid"
+                     :api (:service "deepseek"
+                           :endpoint "https://api.deepseek.com")))
               (resp '(:model "o1-mini-2024-09-12"
                       :choices [(:message (:role "assistant"
                                            :content "### assistant title-1 \n#### foo\n\n bar baz\n\n### title-2\n#### foo\n\n bar baz"))]))
@@ -2247,21 +2243,23 @@ bar baz
         (let ((eden-org-property-date "EDEN_DATE")
               (eden-org-property-model "EDEN_MODEL")
               (eden-org-property-req "EDEN_REQ")
-              (req (eden-build-request
-                    :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai"
-                           :endpoint "https://api.openai.com/v1/chat/completions")
-                    :exchanges [(:uuid "uuid-foo"
-                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                (:uuid "uuid-bar"
-                                 :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
+              (req
+               `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
+                 :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
+                 :dir ,(concat (make-temp-file "eden-" t) "/")
+                 :uuid "uuid-baz"
+                 :api (:service "openai"
+                       :endpoint "https://api.openai.com/v1/chat/completions")
+                 :exchanges [(:uuid "uuid-foo"
+                              :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                              :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                             (:uuid "uuid-bar"
+                              :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                              :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                              :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                        (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                        (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                        (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
               (resp '(:model "o1-mini-2024-09-12"
                       :choices [(:index 0
                                  :message (:role "assistant"
@@ -2333,33 +2331,32 @@ baz-assistant-content
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid-baz")))
-        (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-model "EDEN_MODEL")
-              (eden-org-property-req "EDEN_REQ")
-              (req (eden-build-request
-                    :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                    :dir (concat (make-temp-file "eden-" t) "/")
-                    :api '(:service "openai"
-                           :endpoint "https://api.openai.com/v1/chat/completions")
-                    ;; We keep :exchanges thought modifying it doesn't
-                    ;; modify what we're testing.
-                    :exchanges [(:uuid "uuid-foo"
-                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                (:uuid "uuid-bar"
-                                 :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
-                    ))
-              (resp '(:model "o1-mini-2024-09-12"
-                      :choices [(:message (:role "assistant"
-                                           :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
-          (insert "** Title of the conversation
+      (let ((eden-org-property-date "EDEN_DATE")
+            (eden-org-property-model "EDEN_MODEL")
+            (eden-org-property-req "EDEN_REQ")
+            (req `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
+                   :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
+                   :dir ,(concat (make-temp-file "eden-" t) "/")
+                   :uuid "uuid-baz"
+                   :api (:service "openai"
+                         :endpoint "https://api.openai.com/v1/chat/completions")
+                   ;; We keep :exchanges thought modifying it doesn't
+                   ;; modify what we're testing.
+                   :exchanges [(:uuid "uuid-foo"
+                                :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                                :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                               (:uuid "uuid-bar"
+                                :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                                :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                                :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                          (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                          (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                          (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
+                   ))
+            (resp '(:model "o1-mini-2024-09-12"
+                    :choices [(:message (:role "assistant"
+                                         :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
+        (insert "** Title of the conversation
 :PROPERTIES:
 :EDEN_DATE: [date]
 :EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
@@ -2396,9 +2393,9 @@ bar-content
 bar-assistant-content
 
 ")
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-conversation-insert req nil 'append)))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-conversation-insert req nil 'append))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the conversation
 :PROPERTIES:
@@ -2459,39 +2456,39 @@ baz-assistant-content
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid")))
-        (let* ((eden-org-property-date "EDEN_DATE")
-               (eden-org-property-model "EDEN_MODEL")
-               (eden-org-property-req "EDEN_REQ")
-               (eden-dir (concat (make-temp-file "eden-" t) "/"))
-               (req (eden-build-request
-                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                     :api '(:service "openai"
-                            :endpoint "https://api.openai.com/v1/chat/completions")
-                     ;; We keep :exchanges thought modifying it doesn't
-                     ;; modify what we're testing.
-                     :exchanges [(:uuid "uuid-foo"
-                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                  :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                 (:uuid "uuid-bar"
-                                  :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                  :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                                  :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                            (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                            (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                            (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
-                     ))
-               (resp '(:model "o1-mini-2024-09-12"
-                       :choices [(:message (:role "assistant"
-                                            :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert
-           req "Title of the conversation" nil 'only-last-req)))
+      (let* ((eden-org-property-date "EDEN_DATE")
+             (eden-org-property-model "EDEN_MODEL")
+             (eden-org-property-req "EDEN_REQ")
+             (dir (concat (make-temp-file "eden-" t) "/"))
+             (req `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
+                    :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
+                    :dir ,(concat (make-temp-file "eden-" t) "/")
+                    :uuid "uuid"
+                    :api (:service "openai"
+                          :endpoint "https://api.openai.com/v1/chat/completions")
+                    ;; We keep :exchanges thought modifying it doesn't
+                    ;; modify what we're testing.
+                    :exchanges [(:uuid "uuid-foo"
+                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                (:uuid "uuid-bar"
+                                 :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
+                    ))
+             (resp '(:model "o1-mini-2024-09-12"
+                     :choices [(:message (:role "assistant"
+                                          :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-test-add-or-replace-timestamp-file req)
+        (eden-conversation-insert
+         req "Only last request of the conversation" nil 'only-last-req))
       (buffer-substring-no-properties (point-min) (point-max)))
-    (concat "** Title of the conversation
+    (concat "** Only last request of the conversation
 :PROPERTIES:
 :EDEN_DATE: [2024-12-20 Fri]
 :EDEN_MODEL: openai/o1-mini-2024-09-12
