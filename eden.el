@@ -2373,14 +2373,13 @@ For instance:
     (mapcar (lambda (p) (aref p (1- (length p))))
             branches)))
 
-(defun eden-paths-since (timestamp)
-  "Return the list of request paths from `eden-dir' since TIMESTAMP.
+(defun eden-paths-since (dir timestamp)
+  "Return the list of request paths in DIR since TIMESTAMP.
 
 Request paths are ordered chronologically.
 
 See `eden-request-conversation-path' and `eden-request-timestamp'."
-  (let* ((timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
+  (let* ((timestamp-files (directory-files-recursively dir "timestamp-.*")))
     (thread-last
       timestamp-files
       (mapcar (lambda (f)
@@ -2390,13 +2389,13 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
       (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
       (mapcar (lambda (r)
                 (when (<= timestamp (cdr r))
-                  (let ((req `(:dir ,eden-dir
+                  (let ((req `(:dir ,dir
                                :uuid ,(car r))))
                     (eden-request-conversation-path req)))))
       (delq nil))))
 
-(defun eden-last-paths (num-of-days)
-  "Return the list of request paths from `eden-dir' for the last NUM-OF-DAYS days.
+(defun eden-last-paths (dir num-of-days)
+  "Return the list of request paths in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
@@ -2409,28 +2408,27 @@ See `eden-paths-since' and `eden-request-timestamp'."
          (timestamp (thread-last (days-to-time (1- num-of-days))
                                  (time-subtract midnight)
                                  (float-time)))
-         (timestamp-files
-          (directory-files-recursively eden-dir "timestamp-.*")))
-    (eden-paths-since timestamp)))
+         (timestamp-files (directory-files-recursively dir "timestamp-.*")))
+    (eden-paths-since dir timestamp)))
 
-(defun eden-last-requests (num-of-days)
-  "Return the list of requests from `eden-dir' for the last NUM-OF-DAYS days.
+(defun eden-last-requests (dir num-of-days)
+  "Return the list of requests in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Request are ordered chronologically (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-last-paths num-of-days)))
+          (eden-last-paths dir num-of-days)))
 
-(defun eden-last-conversations (num-of-days)
-  "Return the latest requests of conversations from `eden-dir' for the last NUM-OF-DAYS days.
+(defun eden-last-conversations (dir num-of-days)
+  "Return the latest requests of conversations in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
-  (eden-paths-maximal (eden-last-paths num-of-days)))
+  (eden-paths-maximal (eden-last-paths dir num-of-days)))
 
 ;;;; Main menu
 
@@ -2467,7 +2465,7 @@ Conversations are ordered chronologically.
 See `eden-last-conversations'."
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
-         (conversations (eden-last-conversations num-of-days))
+         (conversations (eden-last-conversations eden-dir num-of-days))
          (buff (get-buffer-create (eden-buffer-name "last conversations"))))
     (with-current-buffer buff
       (save-excursion
@@ -2491,7 +2489,7 @@ Requests are ordered chronologically.
 See `eden-last-request'."
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
-         (requests (eden-last-requests num-of-days))
+         (requests (eden-last-requests eden-dir num-of-days))
          (buff (get-buffer-create (eden-buffer-name "last requests"))))
     (with-current-buffer buff
       (save-excursion
@@ -2695,7 +2693,8 @@ See `eden-req-at-point-uuid' and `eden-paths-branches'."
               (req `(:dir ,eden-dir :uuid ,req-uuid))
               (timestamp (eden-request-timestamp req))
               (branches
-               (eden-paths-branches req-uuid (eden-paths-since timestamp)))
+               (eden-paths-branches req-uuid
+                                    (eden-paths-since eden-dir timestamp)))
               (requests (mapcar
                          (lambda (uuid) `(:dir ,eden-dir :uuid ,uuid))
                          branches))

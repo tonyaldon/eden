@@ -2993,7 +2993,7 @@ baz system message append"))
     (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
     (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
 
-;;;; Main menu
+;;;; Conversation branches (paths)
 
 (ert-deftest eden-paths-maximal-test ()
   (should-not (eden-paths-maximal nil))
@@ -3050,10 +3050,13 @@ baz system message append"))
   (let ((n 0))
     (cl-letf (((symbol-function 'eden-uuid)
                (lambda nil (format "uuid-req-%s" (cl-incf n)))))
-      (let* ((eden-dir (concat (make-temp-file "eden-" t) "/"))
-             (req-1 (eden-build-request :prompt "req-1 prompt"))
+      (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+             (req-1 (eden-build-request
+                     :prompt "req-1 prompt"
+                     :dir dir))
              (req-2 (eden-build-request
                      :prompt "req-2 prompt"
+                     :dir dir
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
                                   :response "req-1 response"
@@ -3061,6 +3064,7 @@ baz system message append"))
                                             (:role "assistant" :content "req-1 response")])]))
              (req-3 (eden-build-request
                      :prompt "req-3 prompt"
+                     :dir dir
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
                                   :response "req-1 response")
@@ -3073,6 +3077,7 @@ baz system message append"))
                                             (:role "assistant" :content "req-2 response")])]))
              (req-4 (eden-build-request
                      :prompt "req-4 prompt"
+                     :dir dir
                      :exchanges [(:uuid "uuid-req-1"
                                   :prompt "req-1 prompt"
                                   :response "req-1 response")
@@ -3083,22 +3088,26 @@ baz system message append"))
                                             (:role "assistant" :content "req-1 response")
                                             (:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
-             (req-5 (eden-build-request :prompt "req-5 prompt"))
+             (req-5 (eden-build-request
+                     :prompt "req-5 prompt"
+                     :dir dir))
              (req-6 (eden-build-request
                      :prompt "req-6 prompt"
+                     :dir dir
                      :exchanges [(:uuid "uuid-req-2"
                                   :prompt "req-2 prompt"
                                   :response "req-2 response"
                                   :context [(:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
-             (req-7 (eden-build-request :prompt "req-7 prompt"))
+             (req-7 (eden-build-request
+                     :prompt "req-7 prompt"
+                     :dir dir))
              ;; Unix timestamps of the last 7 days including today
              (timestamps
               (mapcar (lambda (days)
                         (float-time
                          (time-subtract (current-time) (days-to-time days))))
                       '(6 5 4 3 2 1 0))))
-        (message "%s" eden-dir)
         (dotimes (idx 7)
           (let ((req (eval (intern (format "req-%s" (1+ idx))))))
             (eden-write-request req)
@@ -3118,48 +3127,48 @@ baz system message append"))
                 (eden-write-response resp-str resp req)))))
 
         ;; Test `eden-paths-since'
-        (should (equal (eden-paths-since (nth 0 timestamps))
+        (should (equal (eden-paths-since dir (nth 0 timestamps))
                        '(["uuid-req-1"]
                          ["uuid-req-1" "uuid-req-2"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
-        (should (equal (eden-paths-since (nth 6 timestamps)) '(["uuid-req-7"])))
-        (should (equal (eden-paths-since (nth 3 timestamps))
+        (should (equal (eden-paths-since dir (nth 6 timestamps)) '(["uuid-req-7"])))
+        (should (equal (eden-paths-since dir (nth 3 timestamps))
                        '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
 
         ;; Test `eden-last-paths'
-        (should (equal (eden-last-paths 10)
+        (should (equal (eden-last-paths dir 10)
                        '(["uuid-req-1"]
                          ["uuid-req-1" "uuid-req-2"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
-        (should (equal (eden-last-paths 1) '(["uuid-req-7"])))
-        (should (equal (eden-last-paths 4)
+        (should (equal (eden-last-paths dir 1) '(["uuid-req-7"])))
+        (should (equal (eden-last-paths dir 4)
                        '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
 
         ;; Test `eden-last-requests'
-        (should (equal (eden-last-requests 10)
+        (should (equal (eden-last-requests dir 10)
                        '("uuid-req-1"
                          "uuid-req-2"
                          "uuid-req-3"
                          "uuid-req-4"
                          "uuid-req-6"
                          "uuid-req-7")))
-        (should (equal (eden-last-requests 1) '("uuid-req-7")))
-        (should (equal (eden-last-requests 4)
+        (should (equal (eden-last-requests dir 1) '("uuid-req-7")))
+        (should (equal (eden-last-requests dir 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
         ;; Test `eden-last-conversations'
-        (should (equal (eden-last-conversations 10)
+        (should (equal (eden-last-conversations dir 10)
                        '("uuid-req-3" "uuid-req-4" "uuid-req-6" "uuid-req-7")))
-        (should (equal (eden-last-conversations 1) '("uuid-req-7")))
-        (should (equal (eden-last-conversations 4)
+        (should (equal (eden-last-conversations dir 1) '("uuid-req-7")))
+        (should (equal (eden-last-conversations dir 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
