@@ -3036,8 +3036,8 @@ baz system message append"))
       (eden-paths-branches "uuid-req-2" paths)
       '("uuid-req-3" "uuid-req-4" "uuid-req-5")))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-paths-last")))
-(ert-deftest eden-paths-last ()
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-paths-last-test")))
+(ert-deftest eden-paths-last-test ()
 
   ;; ["uuid-req-1"]                           ;; not a conversation
   ;; ["uuid-req-1" "uuid-req-2"]              ;; not a conversation
@@ -3046,129 +3046,134 @@ baz system message append"))
   ;; ["uuid-req-5"]                           ;; with no response.json file
   ;; ["uuid-req-2" "uuid-req-6"]
   ;; ["uuid-req-7"]
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-1 `(:req (:messages [(:role "user" :content "req-1 prompt")])
+                  :prompt "req-1 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-1"))
+         (req-2 `(:req (:messages [(:role "user" :content "req-2 prompt")])
+                  :prompt "req-2 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-2"
+                  :exchanges [(:uuid "uuid-req-1"
+                               :prompt "req-1 prompt"
+                               :response "req-1 response"
+                               :context [(:role "user" :content "req-1 prompt")
+                                         (:role "assistant" :content "req-1 response")])]))
+         (req-3 `(:req (:messages [(:role "user" :content "req-3 prompt")])
+                  :prompt "req-3 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-3"
+                  :exchanges [(:uuid "uuid-req-1"
+                               :prompt "req-1 prompt"
+                               :response "req-1 response")
+                              (:uuid "uuid-req-2"
+                               :prompt "req-2 prompt"
+                               :response "req-2 response"
+                               :context [(:role "user" :content "req-1 prompt")
+                                         (:role "assistant" :content "req-1 response")
+                                         (:role "user" :content "req-2 prompt")
+                                         (:role "assistant" :content "req-2 response")])]))
+         (req-4 `(:req (:messages [(:role "user" :content "req-4 prompt")])
+                  :prompt "req-4 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-4"
+                  :exchanges [(:uuid "uuid-req-1"
+                               :prompt "req-1 prompt"
+                               :response "req-1 response")
+                              (:uuid "uuid-req-2"
+                               :prompt "req-2 prompt"
+                               :response "req-2 response"
+                               :context [(:role "user" :content "req-1 prompt")
+                                         (:role "assistant" :content "req-1 response")
+                                         (:role "user" :content "req-2 prompt")
+                                         (:role "assistant" :content "req-2 response")])]))
+         (req-5 `(:req (:messages [(:role "user" :content "req-5 prompt")])
+                  :prompt "req-5 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-5"))
+         (req-6 `(:req (:messages [(:role "user" :content "req-6 prompt")])
+                  :prompt "req-6 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-6"
+                  :exchanges [(:uuid "uuid-req-2"
+                               :prompt "req-2 prompt"
+                               :response "req-2 response"
+                               :context [(:role "user" :content "req-2 prompt")
+                                         (:role "assistant" :content "req-2 response")])]))
+         (req-7 `(:req (:messages [(:role "user" :content "req-7 prompt")])
+                  :prompt "req-7 prompt"
+                  :dir ,dir
+                  :uuid "uuid-req-7"))
+         ;; Unix timestamps of the last 7 days including today
+         (timestamps
+          (mapcar (lambda (days)
+                    (float-time
+                     (time-subtract (current-time) (days-to-time days))))
+                  '(6 5 4 3 2 1 0))))
+    (dotimes (idx 7)
+      (let ((req (eval (intern (format "req-%s" (1+ idx))))))
+        (message "req: %S" (plist-get req :uuid))
+        (message "req: %S" req)
+        (eden-write-request req)
+        ;; We replace timestamp files in order to span requests
+        ;; over 7 days including today.
+        (eden-test-add-or-replace-timestamp-file
+         req (nth idx timestamps))
+        ;; add response.json except for req-5 such that this request
+        ;; is considered to be an error and so its path will not
+        ;; be listed by `eden-paths-last' function
+        (when (not (= idx 4)) ;;
+          (let* ((resp `(:choices
+                         [(:message
+                           (:role "assistant"
+                            :content ,(format "req-%s assistant" (1+ idx))))]))
+                 (resp-str (eden-json-encode resp)))
+            (eden-write-response resp-str resp req)))))
 
-  (let ((n 0))
-    (cl-letf (((symbol-function 'eden-uuid)
-               (lambda nil (format "uuid-req-%s" (cl-incf n)))))
-      (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-             (req-1 (eden-build-request
-                     :prompt "req-1 prompt"
-                     :dir dir))
-             (req-2 (eden-build-request
-                     :prompt "req-2 prompt"
-                     :dir dir
-                     :exchanges [(:uuid "uuid-req-1"
-                                  :prompt "req-1 prompt"
-                                  :response "req-1 response"
-                                  :context [(:role "user" :content "req-1 prompt")
-                                            (:role "assistant" :content "req-1 response")])]))
-             (req-3 (eden-build-request
-                     :prompt "req-3 prompt"
-                     :dir dir
-                     :exchanges [(:uuid "uuid-req-1"
-                                  :prompt "req-1 prompt"
-                                  :response "req-1 response")
-                                 (:uuid "uuid-req-2"
-                                  :prompt "req-2 prompt"
-                                  :response "req-2 response"
-                                  :context [(:role "user" :content "req-1 prompt")
-                                            (:role "assistant" :content "req-1 response")
-                                            (:role "user" :content "req-2 prompt")
-                                            (:role "assistant" :content "req-2 response")])]))
-             (req-4 (eden-build-request
-                     :prompt "req-4 prompt"
-                     :dir dir
-                     :exchanges [(:uuid "uuid-req-1"
-                                  :prompt "req-1 prompt"
-                                  :response "req-1 response")
-                                 (:uuid "uuid-req-2"
-                                  :prompt "req-2 prompt"
-                                  :response "req-2 response"
-                                  :context [(:role "user" :content "req-1 prompt")
-                                            (:role "assistant" :content "req-1 response")
-                                            (:role "user" :content "req-2 prompt")
-                                            (:role "assistant" :content "req-2 response")])]))
-             (req-5 (eden-build-request
-                     :prompt "req-5 prompt"
-                     :dir dir))
-             (req-6 (eden-build-request
-                     :prompt "req-6 prompt"
-                     :dir dir
-                     :exchanges [(:uuid "uuid-req-2"
-                                  :prompt "req-2 prompt"
-                                  :response "req-2 response"
-                                  :context [(:role "user" :content "req-2 prompt")
-                                            (:role "assistant" :content "req-2 response")])]))
-             (req-7 (eden-build-request
-                     :prompt "req-7 prompt"
-                     :dir dir))
-             ;; Unix timestamps of the last 7 days including today
-             (timestamps
-              (mapcar (lambda (days)
-                        (float-time
-                         (time-subtract (current-time) (days-to-time days))))
-                      '(6 5 4 3 2 1 0))))
-        (dotimes (idx 7)
-          (let ((req (eval (intern (format "req-%s" (1+ idx))))))
-            (eden-write-request req)
-            ;; We replace timestamp files in order to span requests
-            ;; over 7 days including today.
-            (eden-test-add-or-replace-timestamp-file
-             req (nth idx timestamps))
-            ;; add response.json except for req-5 such that this request
-            ;; is considered to be an error and so its path will not
-            ;; be listed by `eden-paths-last' function
-            (when (not (= idx 4)) ;;
-              (let* ((resp `(:choices
-                             [(:message
-                               (:role "assistant"
-                                :content ,(format "req-%s assistant" (1+ idx))))]))
-                     (resp-str (eden-json-encode resp)))
-                (eden-write-response resp-str resp req)))))
+    ;; Test `eden-paths-since'
+    (should (equal (eden-paths-since dir (nth 0 timestamps))
+                   '(["uuid-req-1"]
+                     ["uuid-req-1" "uuid-req-2"]
+                     ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+                     ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                     ["uuid-req-2" "uuid-req-6"]
+                     ["uuid-req-7"])))
+    (should (equal (eden-paths-since dir (nth 6 timestamps)) '(["uuid-req-7"])))
+    (should (equal (eden-paths-since dir (nth 3 timestamps))
+                   '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                     ["uuid-req-2" "uuid-req-6"]
+                     ["uuid-req-7"])))
 
-        ;; Test `eden-paths-since'
-        (should (equal (eden-paths-since dir (nth 0 timestamps))
-                       '(["uuid-req-1"]
-                         ["uuid-req-1" "uuid-req-2"]
-                         ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
-                         ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-                         ["uuid-req-2" "uuid-req-6"]
-                         ["uuid-req-7"])))
-        (should (equal (eden-paths-since dir (nth 6 timestamps)) '(["uuid-req-7"])))
-        (should (equal (eden-paths-since dir (nth 3 timestamps))
-                       '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-                         ["uuid-req-2" "uuid-req-6"]
-                         ["uuid-req-7"])))
+    ;; Test `eden-paths-last'
+    (should (equal (eden-paths-last dir 10)
+                   '(["uuid-req-1"]
+                     ["uuid-req-1" "uuid-req-2"]
+                     ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
+                     ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                     ["uuid-req-2" "uuid-req-6"]
+                     ["uuid-req-7"])))
+    (should (equal (eden-paths-last dir 1) '(["uuid-req-7"])))
+    (should (equal (eden-paths-last dir 4)
+                   '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
+                     ["uuid-req-2" "uuid-req-6"]
+                     ["uuid-req-7"])))
 
-        ;; Test `eden-paths-last'
-        (should (equal (eden-paths-last dir 10)
-                       '(["uuid-req-1"]
-                         ["uuid-req-1" "uuid-req-2"]
-                         ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
-                         ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-                         ["uuid-req-2" "uuid-req-6"]
-                         ["uuid-req-7"])))
-        (should (equal (eden-paths-last dir 1) '(["uuid-req-7"])))
-        (should (equal (eden-paths-last dir 4)
-                       '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
-                         ["uuid-req-2" "uuid-req-6"]
-                         ["uuid-req-7"])))
+    ;; Test `eden-paths-last-requests'
+    (should (equal (eden-paths-last-requests dir 10)
+                   '("uuid-req-1"
+                     "uuid-req-2"
+                     "uuid-req-3"
+                     "uuid-req-4"
+                     "uuid-req-6"
+                     "uuid-req-7")))
+    (should (equal (eden-paths-last-requests dir 1) '("uuid-req-7")))
+    (should (equal (eden-paths-last-requests dir 4)
+                   '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
-        ;; Test `eden-paths-last-requests'
-        (should (equal (eden-paths-last-requests dir 10)
-                       '("uuid-req-1"
-                         "uuid-req-2"
-                         "uuid-req-3"
-                         "uuid-req-4"
-                         "uuid-req-6"
-                         "uuid-req-7")))
-        (should (equal (eden-paths-last-requests dir 1) '("uuid-req-7")))
-        (should (equal (eden-paths-last-requests dir 4)
-                       '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
-
-        ;; Test `eden-paths-last-conversations'
-        (should (equal (eden-paths-last-conversations dir 10)
-                       '("uuid-req-3" "uuid-req-4" "uuid-req-6" "uuid-req-7")))
-        (should (equal (eden-paths-last-conversations dir 1) '("uuid-req-7")))
-        (should (equal (eden-paths-last-conversations dir 4)
-                       '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))))
+    ;; Test `eden-paths-last-conversations'
+    (should (equal (eden-paths-last-conversations dir 10)
+                   '("uuid-req-3" "uuid-req-4" "uuid-req-6" "uuid-req-7")))
+    (should (equal (eden-paths-last-conversations dir 1) '("uuid-req-7")))
+    (should (equal (eden-paths-last-conversations dir 4)
+                   '("uuid-req-4" "uuid-req-6" "uuid-req-7")))))
