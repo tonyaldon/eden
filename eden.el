@@ -2321,29 +2321,7 @@ See `eden-send-request'."
   (message "Eden sent a request to %s."
            (plist-get eden-api :service)))
 
-;;;; Main menu
-
-(defun eden-show-current-conversation ()
-  "Display current conversation.
-
-See `eden-conversations' and `eden-conversation-id'."
-  (interactive)
-  (cond
-   ((not (eden-conversation-exists-p eden-conversation-id))
-    (message "No current conversation to display."))
-   ((null (eden-conversation-last-req eden-conversation-id))
-    (message "Current conversation is empty."))
-   (t (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
-            (title (eden-conversation-title eden-conversation-id))
-            (last-req (eden-conversation-last-req eden-conversation-id)))
-        (when (not (get-buffer buff-name))
-          (with-current-buffer (get-buffer-create buff-name)
-            (save-excursion
-              (org-mode)
-              (eden-conversation-insert last-req title))))
-        (eden-maybe-delete-window-prompt-buffer)
-        (select-window
-         (display-buffer buff-name '(display-buffer-reuse-window)))))))
+;;;; Conversation branches (paths)
 
 (defun eden-paths-maximal (paths)
   "Return last entry of maximal paths in PATHS.
@@ -2453,6 +2431,30 @@ representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
   (eden-paths-maximal (eden-last-paths num-of-days)))
+
+;;;; Main menu
+
+(defun eden-show-current-conversation ()
+  "Display current conversation.
+
+See `eden-conversations' and `eden-conversation-id'."
+  (interactive)
+  (cond
+   ((not (eden-conversation-exists-p eden-conversation-id))
+    (message "No current conversation to display."))
+   ((null (eden-conversation-last-req eden-conversation-id))
+    (message "Current conversation is empty."))
+   (t (let ((buff-name (eden-conversation-buffer-name eden-conversation-id))
+            (title (eden-conversation-title eden-conversation-id))
+            (last-req (eden-conversation-last-req eden-conversation-id)))
+        (when (not (get-buffer buff-name))
+          (with-current-buffer (get-buffer-create buff-name)
+            (save-excursion
+              (org-mode)
+              (eden-conversation-insert last-req title))))
+        (eden-maybe-delete-window-prompt-buffer)
+        (select-window
+         (display-buffer buff-name '(display-buffer-reuse-window)))))))
 
 (defun eden-show-last-conversations ()
   "Show last conversations from `eden-dir' for a period of time entered in the minibuffer.
