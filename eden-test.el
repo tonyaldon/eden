@@ -2763,7 +2763,10 @@ baz-assistant-content
                   (list (format "echo not-json")
                         "[redacted command]"))))
        (eden-send-request
-        :req (eden-build-request :dir dir :prompt "req")
+        :req `(:req (:messages [(:role "user" :content "req")])
+               :prompt "req"
+               :dir ,dir
+               :uuid "req-uuid")
         :callback (lambda (req resp info) nil))
        (setq pr-timer eden-pending-timer)
        ;; Wait for process to terminate
