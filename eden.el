@@ -2421,7 +2421,7 @@ Request are ordered chronologically (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
           (eden-paths-last dir num-of-days)))
 
-(defun eden-last-conversations (dir num-of-days)
+(defun eden-paths-last-conversations (dir num-of-days)
   "Return the latest requests of conversations in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
@@ -2462,10 +2462,10 @@ and so on.
 
 Conversations are ordered chronologically.
 
-See `eden-last-conversations'."
+See `eden-paths-last-conversations'."
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
-         (conversations (eden-last-conversations eden-dir num-of-days))
+         (conversations (eden-paths-last-conversations eden-dir num-of-days))
          (buff (get-buffer-create (eden-buffer-name "last conversations"))))
     (with-current-buffer buff
       (save-excursion
