@@ -3092,26 +3092,6 @@ baz system message append"))
                                   :context [(:role "user" :content "req-2 prompt")
                                             (:role "assistant" :content "req-2 response")])]))
              (req-7 (eden-build-request :prompt "req-7 prompt"))
-             ;; to be completly correct we should also modify
-             ;; the value of `created' key.  But it doesn't matter here.
-             (resp-fmt "{
-    \"id\": \"chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8\",
-    \"object\": \"chat.completion\",
-    \"created\": 1733030031,
-    \"model\": \"gpt-4o-mini-2024-07-18\",
-    \"choices\": [
-      {
-        \"index\": 0,
-        \"message\": {
-          \"role\": \"assistant\",
-          \"content\": \"%s\",
-          \"refusal\": null
-        },
-        \"logprobs\": null,
-        \"finish_reason\": \"stop\"
-      }
-    ]
-  }")
              ;; Unix timestamps of the last 7 days including today
              (timestamps
               (mapcar (lambda (days)
@@ -3130,10 +3110,11 @@ baz system message append"))
             ;; is considered to be an error and so its path will not
             ;; be listed by `eden-last-paths' function
             (when (not (= idx 4)) ;;
-              (let* ((resp-str (format resp-fmt (format "req-%s assistant" (1+ idx))))
-                     (resp (with-temp-buffer
-                             (save-excursion (insert resp-str))
-                             (eden-json-read))))
+              (let* ((resp `(:choices
+                             [(:message
+                               (:role "assistant"
+                                :content ,(format "req-%s assistant" (1+ idx))))]))
+                     (resp-str (eden-json-encode resp)))
                 (eden-write-response resp-str resp req)))))
 
         ;; Test `eden-paths-since'
