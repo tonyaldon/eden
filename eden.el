@@ -2606,7 +2606,8 @@ it becomes the value of `eden-model'."
     ("C" "Show current configuration" eden-show-current-configuration)]]
   (interactive)
   (transient-setup 'eden-menu)
-  (define-key transient--transient-map (kbd "q") #'transient-quit-one))
+  (define-key transient--transient-map (kbd "q") #'transient-quit-one)
+  (define-key transient--transient-map (kbd "RET") #'transient-quit-one))
 
 ;;;; Request at point menu
 
@@ -2774,7 +2775,8 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ]]
   (interactive)
   (transient-setup 'eden-menu)
-  (define-key transient--transient-map (kbd "q") #'transient-quit-one))
+  (define-key transient--transient-map (kbd "q") #'transient-quit-one)
+  (define-key transient--transient-map (kbd "RET") #'transient-quit-one))
 
 ;;;; Main command
 
