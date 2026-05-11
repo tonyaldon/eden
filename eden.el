@@ -1721,6 +1721,8 @@ Signal an error if NEW-TITLE is already used by another conversation."
   (when (eden-conversation-with-title-exists-p new-title)
     (error "Cannot rename conversation to `%s' which is already used by another conversation in `eden-conversations'"
            new-title))
+  (when (string-empty-p new-title)
+    (error "Cannot rename current conversation with an empty title."))
   (when-let ((cell (assoc conversation-id eden-conversations)))
     (setcdr cell (plist-put (copy-sequence (cdr cell))
                             :title new-title))))

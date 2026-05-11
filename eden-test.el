@@ -1937,12 +1937,17 @@ foo bar baz
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-rename-test")))
 (ert-deftest eden-conversation-rename-test ()
+  ;; Signal error:
+  ;; - if try to rename to a taken title or
+  ;; - if try to rename to empty title
   (let ((eden-conversations
          '(("conversation-id-foo" .
             (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
            ("conversation-id-bar" .
             (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
-    (should-error (eden-conversation-rename "conversation-id-foo" "bar title")))
+    (should-error (eden-conversation-rename "conversation-id-foo" "bar title"))
+    (should-error (eden-conversation-rename "conversation-id-foo" "")))
+  ;; Rename or ignore if conversation doesn't exist
   (let ((eden-conversations
          '(("conversation-id-foo" .
             (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
