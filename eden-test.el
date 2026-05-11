@@ -3154,16 +3154,16 @@ baz system message append"))
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
 
-        ;; Test `eden-last-requests'
-        (should (equal (eden-last-requests dir 10)
+        ;; Test `eden-paths-last-requests'
+        (should (equal (eden-paths-last-requests dir 10)
                        '("uuid-req-1"
                          "uuid-req-2"
                          "uuid-req-3"
                          "uuid-req-4"
                          "uuid-req-6"
                          "uuid-req-7")))
-        (should (equal (eden-last-requests dir 1) '("uuid-req-7")))
-        (should (equal (eden-last-requests dir 4)
+        (should (equal (eden-paths-last-requests dir 1) '("uuid-req-7")))
+        (should (equal (eden-paths-last-requests dir 4)
                        '("uuid-req-4" "uuid-req-6" "uuid-req-7")))
 
         ;; Test `eden-last-conversations'

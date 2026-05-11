@@ -2411,7 +2411,7 @@ See `eden-paths-since' and `eden-request-timestamp'."
          (timestamp-files (directory-files-recursively dir "timestamp-.*")))
     (eden-paths-since dir timestamp)))
 
-(defun eden-last-requests (dir num-of-days)
+(defun eden-paths-last-requests (dir num-of-days)
   "Return the list of requests in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
@@ -2489,7 +2489,7 @@ Requests are ordered chronologically.
 See `eden-last-request'."
   (interactive)
   (let* ((num-of-days (read-number "Enter the number of days: "))
-         (requests (eden-last-requests eden-dir num-of-days))
+         (requests (eden-paths-last-requests eden-dir num-of-days))
          (buff (get-buffer-create (eden-buffer-name "last requests"))))
     (with-current-buffer buff
       (save-excursion
