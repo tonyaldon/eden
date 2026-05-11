@@ -3036,8 +3036,8 @@ baz system message append"))
       (eden-paths-branches "uuid-req-2" paths)
       '("uuid-req-3" "uuid-req-4" "uuid-req-5")))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-last-paths/conversations/requests-test")))
-(ert-deftest eden-last-paths/conversations/requests-test ()
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-paths-last")))
+(ert-deftest eden-paths-last ()
 
   ;; ["uuid-req-1"]                           ;; not a conversation
   ;; ["uuid-req-1" "uuid-req-2"]              ;; not a conversation
@@ -3117,7 +3117,7 @@ baz system message append"))
              req (nth idx timestamps))
             ;; add response.json except for req-5 such that this request
             ;; is considered to be an error and so its path will not
-            ;; be listed by `eden-last-paths' function
+            ;; be listed by `eden-paths-last' function
             (when (not (= idx 4)) ;;
               (let* ((resp `(:choices
                              [(:message
@@ -3140,16 +3140,16 @@ baz system message append"))
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
 
-        ;; Test `eden-last-paths'
-        (should (equal (eden-last-paths dir 10)
+        ;; Test `eden-paths-last'
+        (should (equal (eden-paths-last dir 10)
                        '(["uuid-req-1"]
                          ["uuid-req-1" "uuid-req-2"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-3"]
                          ["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))
-        (should (equal (eden-last-paths dir 1) '(["uuid-req-7"])))
-        (should (equal (eden-last-paths dir 4)
+        (should (equal (eden-paths-last dir 1) '(["uuid-req-7"])))
+        (should (equal (eden-paths-last dir 4)
                        '(["uuid-req-1" "uuid-req-2" "uuid-req-4"]
                          ["uuid-req-2" "uuid-req-6"]
                          ["uuid-req-7"])))

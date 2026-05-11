@@ -2394,7 +2394,7 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
                     (eden-request-conversation-path req)))))
       (delq nil))))
 
-(defun eden-last-paths (dir num-of-days)
+(defun eden-paths-last (dir num-of-days)
   "Return the list of request paths in DIR for the last NUM-OF-DAYS days.
 
 The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
@@ -2419,7 +2419,7 @@ representing today and yesterday, and so on.
 
 Request are ordered chronologically (see `eden-request-timestamp')."
   (mapcar (lambda (p) (aref p (1- (length p))))
-          (eden-last-paths dir num-of-days)))
+          (eden-paths-last dir num-of-days)))
 
 (defun eden-last-conversations (dir num-of-days)
   "Return the latest requests of conversations in DIR for the last NUM-OF-DAYS days.
@@ -2428,7 +2428,7 @@ The range for NUM-OF-DAYS starts at 1 (indicating today), with 2
 representing today and yesterday, and so on.
 
 Latest request of conversations are ordered chronologically."
-  (eden-paths-maximal (eden-last-paths dir num-of-days)))
+  (eden-paths-maximal (eden-paths-last dir num-of-days)))
 
 ;;;; Main menu
 
