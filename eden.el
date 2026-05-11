@@ -1741,24 +1741,35 @@ Signal an error if NEW-TITLE is already used by another conversation."
 See `eden-conversation-id' and `eden-conversation-rename'."
   :transient t
   (interactive)
-  (if-let ((buff-name (eden-conversation-buffer-name eden-conversation-id)))
-      (let* ((old-title (eden-conversation-title eden-conversation-id))
-             (new-title (read-string (format "Edit conversation title `%s': " old-title))))
-        (if (string-empty-p new-title)
-            (message "Cannot rename current conversation with an empty title.  Please enter a non empty string.")
-          (eden-conversation-rename eden-conversation-id new-title)
-          (when (get-buffer buff-name)
-            (with-current-buffer buff-name
-              (save-excursion
-                (goto-char (point-min))
-                ;; This replacement works because when we insert a
-                ;; conversation in the first place with
-                ;; `eden-conversation-insert' we put the title
-                ;; on the first line of the buffer.
-                (when (search-forward old-title (line-end-position) t)
-                  (replace-match new-title t t)))
-              (rename-buffer (eden-conversation-buffer-name eden-conversation-id))))))
-    (message "Cannot rename current conversation which is not set.  Switch to an existing conversation first.")))
+  (when (null eden-conversation-id)
+    (user-error "No current conversation to edit.  Start a conversation first."))
+  ;; This should never happens, but who knows.
+  (when (not (eden-conversation-exists-p eden-conversation-id))
+    (let ((id eden-conversation-id))
+      (setq eden-conversation-id nil)
+      (error (concat "Current conversation `eden-conversation-id' not found in `eden-conversations'.\n"
+                     "eden-conversation-id: %S\n"
+                     "eden-conversations: %S\n"
+                     "`eden-conversation-id' has been reset to nil.")
+             id eden-conversations)))
+  (let* ((old-buff-name (eden-conversation-buffer-name eden-conversation-id))
+         (old-title (eden-conversation-title eden-conversation-id))
+         (new-title (read-string (format "Edit conversation title `%s': " old-title)))
+         (_ (eden-conversation-rename eden-conversation-id new-title))
+         (new-buff-name (eden-conversation-buffer-name eden-conversation-id)))
+    ;; Update conversation title in old-buff-name and rename buffer
+    ;; to new-buff-name
+    (when (get-buffer old-buff-name)
+      (with-current-buffer old-buff-name
+        (save-excursion
+          (goto-char (point-min))
+          ;; This replacement works because when we insert a
+          ;; conversation in the first place with
+          ;; `eden-conversation-insert' we put the title
+          ;; on the first line of the buffer.
+          (when (search-forward old-title (line-end-position) t)
+            (replace-match new-title t t)))
+        (rename-buffer new-buff-name)))))
 
 (defun eden-conversation-update (info req)
   "Set last request of the conversation specified in INFO to REQ.
