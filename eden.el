@@ -3,7 +3,7 @@
 ;; Copyright (C) 2025 Tony Aldon
 ;;
 ;; Author: Tony Aldon <tony@tonyaldon.com>
-;; Version: 1.30
+;; Version: 1.31
 ;; Package-Requires: ((emacs "28.1"))
 ;; Homepage: https://tonyaldon.com
 ;;
