@@ -2872,67 +2872,111 @@ baz-assistant-content
                    [(:role "system" :content "# foo system\n\n\n# foo system append")
                     (:role "user" :content "foo prompt")])))
 
-  ;; :exchanges
+  ;; :prev-req-uuid
   ;;
+  ;; Error when :prev-req-uuid refer to bad/missing request
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (exchanges [(:uuid "uuid-foo"
-                      :prompt "foo prompt"
-                      :response "foo response")
-                     (:uuid "uuid-bar"
-                      :prompt "bar prompt"
-                      :response "bar response"
-                      :context [(:role "user" :content "foo user")
-                                (:role "assistant" :content "foo assistant")
-                                (:role "user" :content "bar user")
-                                (:role "assistant" :content "bar assistant")])])
+         (api '(:service "openai"
+                :endpoint "https://api.openai.com/v1/chat/completions"))
+         (model "gpt-5.4"))
+    (should-error
+     (eden-build-request
+      :dir dir
+      :api '(:service "openai"
+             :endpoint "https://api.openai.com/v1/chat/completions")
+      :model "gpt-5.4"
+      :prompt "foo prompt"
+      :prev-req-uuid "request-missing-so-cannot-be-used")
+     :type 'eden-error-req))
+  ;; Note that (eden-org-to-markdown "foo\n") ;; "foo" (last newline trimmed)
+  ;; and that org content are save to file with last newline at
+  ;; the end (maybe due to some Emacs config - I'm not sure)
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (api '(:service "openai"
+                :endpoint "https://api.openai.com/v1/chat/completions"))
+         (model "gpt-5.4")
+         (req-foo (eden-build-request
+                   :dir dir
+                   :api api
+                   :model model
+                   :prompt "foo prompt\n"))
+         (req-foo-uuid (plist-get req-foo :uuid))
+         ;; We must save this request with a response in `dir'
+         ;; before referencing it as previous request for the
+         ;; new request `req-bar'
+         (_ (eden-write-request req-foo))
+         (resp-foo '(:choices
+                     [(:message (:role "assistant" :content "foo response\n"))]))
+         (_ (eden-write-response (eden-json-encode resp-foo) resp-foo req-foo))
+         (req-bar (eden-build-request
+                   :dir dir
+                   :api api
+                   :model model
+                   :prompt "bar prompt\n"
+                   :prev-req-uuid req-foo-uuid))
+         (req-bar-uuid (plist-get req-bar :uuid))
+         ;; Same here
+         (_ (eden-write-request req-bar))
+         (resp-bar '(:choices
+                     [(:message (:role "assistant" :content "bar response\n"))]))
+         (_ (eden-write-response (eden-json-encode resp-bar) resp-bar req-bar))
+         (exchanges (vector
+                     `(:uuid ,req-foo-uuid
+                       :prompt "foo prompt\n"
+                       :response "foo response\n")
+                     `(:uuid ,req-bar-uuid
+                       :prompt "bar prompt\n"
+                       :response "bar response\n"
+                       :context [(:role "user" :content "foo prompt")
+                                 (:role "assistant" :content "foo response\n")
+                                 (:role "user" :content "bar prompt")
+                                 (:role "assistant" :content "bar response\n")])))
          (req-with-system-msg-with-prompt (eden-build-request
                                            :dir dir
                                            :api '(:service "openai"
                                                   :endpoint "https://api.openai.com/v1/chat/completions")
-                                           :model "gpt-5.4"
-                                           :system-message "baz system"
-                                           :prompt "baz prompt"
-                                           :exchanges exchanges))
+                                           :model model
+                                           :system-message "baz system\n"
+                                           :prompt "baz prompt\n"
+                                           :prev-req-uuid req-bar-uuid))
          (req-with-system-msg-no-prompt (eden-build-request
                                          :dir dir
-                                         :api '(:service "openai"
-                                                :endpoint "https://api.openai.com/v1/chat/completions")
-                                         :model "gpt-5.4"
-                                         :system-message "baz system"
-                                         :exchanges exchanges))
+                                         :api api
+                                         :model model
+                                         :system-message "baz system\n"
+                                         :prev-req-uuid req-bar-uuid))
          (req-no-system-msg-no-prompt (eden-build-request
                                        :dir dir
-                                       :api '(:service "openai"
-                                              :endpoint "https://api.openai.com/v1/chat/completions")
-                                       :model "gpt-5.4"
-                                       :exchanges exchanges)))
+                                       :api api
+                                       :model model
+                                       :prev-req-uuid req-bar-uuid)))
     (should (equal (plist-get req-with-system-msg-with-prompt :exchanges)
                    exchanges))
     (should (equal (eden-get-in req-with-system-msg-with-prompt
                                 [:req :messages])
                    [(:role "system" :content "baz system")
-                    (:role "user" :content "foo user")
-                    (:role "assistant" :content "foo assistant")
-                    (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")
+                    (:role "user" :content "foo prompt")
+                    (:role "assistant" :content "foo response\n")
+                    (:role "user" :content "bar prompt")
+                    (:role "assistant" :content "bar response\n")
                     (:role "user" :content "baz prompt")]))
     (should (equal (plist-get req-with-system-msg-no-prompt :exchanges)
                    exchanges))
     (should (equal (eden-get-in req-with-system-msg-no-prompt
                                 [:req :messages])
                    [(:role "system" :content "baz system")
-                    (:role "user" :content "foo user")
-                    (:role "assistant" :content "foo assistant")
-                    (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")]))
+                    (:role "user" :content "foo prompt")
+                    (:role "assistant" :content "foo response\n")
+                    (:role "user" :content "bar prompt")
+                    (:role "assistant" :content "bar response\n")]))
     (should (equal (plist-get req-no-system-msg-no-prompt :exchanges)
                    exchanges))
     (should (equal (eden-get-in req-no-system-msg-no-prompt
                                 [:req :messages])
-                   [(:role "user" :content "foo user")
-                    (:role "assistant" :content "foo assistant")
-                    (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")])))
+                   [(:role "user" :content "foo prompt")
+                    (:role "assistant" :content "foo response\n")
+                    (:role "user" :content "bar prompt")
+                    (:role "assistant" :content "bar response\n")])))
 
   ;; :include-reasoning
   ;;

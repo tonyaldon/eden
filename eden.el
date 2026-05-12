@@ -774,7 +774,7 @@ See `eden-request-file'."
   (eden-request-write 'error req (eden-json-encode err)))
 
 (defvar eden-errors
-  '((eden-error-req . "Request mal formed")
+  '((eden-error-req . "Bad request")
     (eden-error-api . "API error")
     (eden-error-api-key . "Error setting API key")
     (eden-error-callback . "Error while calling callback function in sentinel")
@@ -2173,7 +2173,8 @@ conversation, INFO argument must be structured as:
         (eden-history-update :new-req-uuid (plist-get req :uuid))
         (eden-mode-line-waiting 'maybe-start)))))
 
-(cl-defun eden-build-request (&key prompt system-message exchanges
+(cl-defun eden-build-request (&key prompt system-message
+                                   prev-req-uuid
                                    system-message-append
                                    model
                                    api dir
@@ -2188,6 +2189,17 @@ conversation, INFO argument must be structured as:
            ((null system-message-append) system-message)
            ((null system-message) system-message-append)
            (t (format "%s\n\n%s" system-message system-message-append))))
+         (exchanges
+          (when prev-req-uuid
+            (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
+              (condition-case err
+                  (eden-request-conversation prev-req)
+                (error
+                 (signal 'eden-error-req
+                         (list (format "Cannot build request with this prev request:\n%S\nError: %s"
+                                       prev-req
+                                       (error-message-string err)))))))
+            (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
          (-messages
           `(,(when -system-message
                `(:role "system"
@@ -2276,7 +2288,7 @@ See `eden-send-request'."
          :api eden-api
          :dir eden-dir
          :include-reasoning eden-include-reasoning
-         :exchanges (eden-conversation-exchanges eden-conversation-id))
+         :prev-req-uuid (eden-conversation-last-req-uuid eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id
            :created ,(float-time))
    :callback 'eden-callback)
