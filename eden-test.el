@@ -1612,7 +1612,7 @@ foo bar baz
 (ert-deftest eden-prompt-current-test ()
   (let ((dir (concat (make-temp-file "eden-" t) "/"))
         (prompt-history [nil nil nil]))
-    (should (string= (eden-prompt-current dir prompt-history) "")))
+    (should-not (eden-prompt-current dir prompt-history)))
   (let ((dir (concat (make-temp-file "eden-" t) "/"))
         (prompt-history [nil (:prompt "scratch prompt") nil]))
     (should (string= (eden-prompt-current dir prompt-history)
