@@ -2078,37 +2078,24 @@ foo bar baz
      (eden-write-response (eden-json-encode resp) resp req)
      (should-error (eden-conversation-insert req nil))))
 
-  ;; We call `eden-test-add-or-replace-timestamp-file' before
-  ;; inserting the conversation.  This adds or replaces the timestamp
-  ;; file that `eden-conversation-insert' uses to determine the
-  ;; date of the request
-
   ;; conversation with no previous exchanges
   (should
    (string=
     (with-temp-buffer
       (org-mode)
-      (let ((eden-org-property-date "EDEN_DATE")
-            (eden-org-property-model "EDEN_MODEL")
-            (eden-org-property-req "EDEN_REQ")
+      (let ((eden-org-property-req "EDEN_REQ")
             (req `(:req (:messages [(:role "user" :content "foo bar baz")])
                    :prompt "foo bar baz"
                    :dir ,(concat (make-temp-file "eden-" t) "/")
-                   :uuid "uuid"
-                   :api (:service "openai"
-                         :endpoint "https://api.openai.com/v1/chat/completions")))
-            (resp '(:model "gpt-4o-mini-2024-07-18"
-                    :choices [(:message (:role "assistant"
+                   :uuid "uuid"))
+            (resp '(:choices [(:message (:role "assistant"
                                          :content "foo bar baz assistant response"))])))
         (eden-write-request req)
         (eden-write-response (eden-json-encode resp) resp req)
-        (eden-test-add-or-replace-timestamp-file req)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2123,35 +2110,33 @@ foo bar baz assistant response
 
   ;; conversation:
   ;; - with no previous exchanges
-  ;; - with reasoning content
-  ;; - with `eden-include-reasoning' sets to t
+  ;; - with reasoning
+  ;;   - we use Deepseek reasoning model to generate the response
+  ;;   - the reasoning is inserted in the buffer
+  ;;     because we set `eden-include-reasoning' to t
+  ;;   - Note: this should work for any reasoning model given the reasoning
+  ;;     is written in a reasoning.org file in the req directory
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (let ((eden-include-reasoning t)
-            (eden-org-property-date "EDEN_DATE")
             (eden-org-property-req "EDEN_REQ")
-            (eden-org-property-model "EDEN_MODEL")
             (req `(:req (:messages [(:role "user" :content "foo bar baz")])
                    :prompt "foo bar baz"
                    :dir ,(concat (make-temp-file "eden-" t) "/")
                    :uuid "uuid"
                    :api (:service "deepseek"
                          :endpoint "https://api.deepseek.com")))
-            (resp '(:model "deepseek-reasoner"
-                    :choices [(:message (:role "assistant"
+            (resp '(:choices [(:message (:role "assistant"
                                          :content "foo bar baz assistant response"
                                          :reasoning_content "foo bar baz assistant reasoning"))])))
         (eden-write-request req)
         (eden-write-response (eden-json-encode resp) resp req)
-        (eden-test-add-or-replace-timestamp-file req)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: deepseek/deepseek-reasoner
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2170,15 +2155,17 @@ foo bar baz assistant response
 
   ;; conversation:
   ;; - with no previous exchanges
-  ;; - with reasoning content
-  ;; - with `eden-include-reasoning' sets to nil
+  ;; - with reasoning
+  ;;   - we use Deepseek reasoning model to generate the response
+  ;;   - we don't inserted the reasoning in the buffer
+  ;;     by setting `eden-include-reasoning' to nil
+  ;;   - Note: this should work for any reasoning model given the reasoning
+  ;;     is written in a reasoning.org file in the req directory
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (let ((eden-include-reasoning nil) ;; variable tested
-            (eden-org-property-date "EDEN_DATE")
-            (eden-org-property-model "EDEN_MODEL")
             (eden-org-property-req "EDEN_REQ")
             (req `(:req (:messages [(:role "user" :content "foo bar baz")])
                    :prompt "foo bar baz"
@@ -2192,13 +2179,10 @@ foo bar baz assistant response
                                          :reasoning_content "foo bar baz assistant reasoning"))])))
         (eden-write-request req)
         (eden-write-response (eden-json-encode resp) resp req)
-        (eden-test-add-or-replace-timestamp-file req)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: deepseek/deepseek-reasoner
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2213,34 +2197,24 @@ foo bar baz assistant response
 
   ;; conversation with no previous exchanges to which we add a title
   ;; in the top level heading
-  (should-not
+  (should
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid")))
-        (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-model "EDEN_MODEL")
-              (eden-org-property-req "EDEN_REQ")
-              (req `(:req (:messages [(:role "user" :content "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz")])
-                     :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
-                     :dir ,(concat (make-temp-file "eden-" t) "/")
-                     :uuid "uuid"
-                     :api (:service "deepseek"
-                           :endpoint "https://api.deepseek.com")))
-              (resp '(:model "o1-mini-2024-09-12"
-                      :choices [(:message (:role "assistant"
-                                           :content "### assistant title-1 \n#### foo\n\n bar baz\n\n### title-2\n#### foo\n\n bar baz"))]))
-              (title "Title of the request"))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert req title)))
+      (let ((eden-org-property-req "EDEN_REQ")
+            (req `(:req (:messages [(:role "user" :content "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz")])
+                   :prompt "* title-1\n** foo\n\nbar baz\n\n* title-2\n** foo\n\nbar baz"
+                   :dir ,(concat (make-temp-file "eden-" t) "/")
+                   :uuid "uuid"))
+            (resp '(:choices [(:message (:role "assistant"
+                                         :content "### assistant title-1 \n#### foo\n\n bar baz\n\n### title-2\n#### foo\n\n bar baz"))]))
+            (title "Title of the request"))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-conversation-insert req title))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the request
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2276,42 +2250,33 @@ bar baz
    (string=
     (with-temp-buffer
       (org-mode)
-      (cl-letf (((symbol-function 'eden-uuid)
-                 (lambda nil "uuid-baz")))
-        (let ((eden-org-property-date "EDEN_DATE")
-              (eden-org-property-model "EDEN_MODEL")
-              (eden-org-property-req "EDEN_REQ")
-              (req
-               `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
-                 :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
-                 :dir ,(concat (make-temp-file "eden-" t) "/")
-                 :uuid "uuid-baz"
-                 :api (:service "openai"
-                       :endpoint "https://api.openai.com/v1/chat/completions")
-                 :exchanges [(:uuid "uuid-foo"
-                              :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                              :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                             (:uuid "uuid-bar"
-                              :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                              :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                              :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                        (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                        (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                        (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
-              (resp '(:model "o1-mini-2024-09-12"
-                      :choices [(:index 0
-                                 :message (:role "assistant"
-                                           :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
-          (message "%s" (plist-get req :dir))
-          (eden-write-request req)
-          (eden-write-response (eden-json-encode resp) resp req)
-          (eden-test-add-or-replace-timestamp-file req)
-          (eden-conversation-insert req "Conversation")))
+      (let ((eden-org-property-req "EDEN_REQ")
+            (req
+             `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
+               :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
+               :dir ,(concat (make-temp-file "eden-" t) "/")
+               :uuid "uuid-baz"
+               :api (:service "openai"
+                     :endpoint "https://api.openai.com/v1/chat/completions")
+               :exchanges [(:uuid "uuid-foo"
+                            :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                            :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                           (:uuid "uuid-bar"
+                            :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                            :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
+                            :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
+                                      (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                      (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
+                                      (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
+            (resp '(:choices [(:message (:role "assistant"
+                                         :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
+        (message "%s" (plist-get req :dir))
+        (eden-write-request req)
+        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid-baz
 :END:
 *** Prompt
@@ -2361,25 +2326,21 @@ baz-assistant-content
 
 
   ;; Append last request to an existing conversation.
-  ;; As we're appending, the date is not inserted again by
-  ;; `eden-conversation-insert', so we don't need to call
-  ;; `eden-test-add-or-replace-timestamp-file' to add a timestamp
-  ;; file
   (should
    (string=
     (with-temp-buffer
       (org-mode)
-      (let ((eden-org-property-date "EDEN_DATE")
-            (eden-org-property-model "EDEN_MODEL")
-            (eden-org-property-req "EDEN_REQ")
+      (let ((eden-org-property-req "EDEN_REQ")
             (req `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
                    :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
                    :dir ,(concat (make-temp-file "eden-" t) "/")
                    :uuid "uuid-baz"
                    :api (:service "openai"
                          :endpoint "https://api.openai.com/v1/chat/completions")
-                   ;; We keep :exchanges thought modifying it doesn't
-                   ;; modify what we're testing.
+                   ;; We keep :exchanges thought modifying it doesn't affect
+                   ;; `eden-conversation-insert' as we are only appending
+                   ;; the last request (i.e. this request) not the previous
+                   ;; exchanges
                    :exchanges [(:uuid "uuid-foo"
                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
@@ -2391,13 +2352,10 @@ baz-assistant-content
                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
                    ))
-            (resp '(:model "o1-mini-2024-09-12"
-                    :choices [(:message (:role "assistant"
+            (resp '(:choices [(:message (:role "assistant"
                                          :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (insert "** Title of the conversation
 :PROPERTIES:
-:EDEN_DATE: [date]
-:EDEN_MODEL: openai/gpt-4o-mini-2024-07-18
 :EDEN_REQ: uuid-bar
 :END:
 *** Prompt
@@ -2437,8 +2395,6 @@ bar-assistant-content
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the conversation
 :PROPERTIES:
-:EDEN_DATE: [date]
-:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid-baz
 :END:
 *** Prompt
@@ -2494,9 +2450,7 @@ baz-assistant-content
    (string=
     (with-temp-buffer
       (org-mode)
-      (let* ((eden-org-property-date "EDEN_DATE")
-             (eden-org-property-model "EDEN_MODEL")
-             (eden-org-property-req "EDEN_REQ")
+      (let* ((eden-org-property-req "EDEN_REQ")
              (dir (concat (make-temp-file "eden-" t) "/"))
              (req `(:req (:messages [(:role "user" :content "* baz-heading-1\n** baz-heading-2\n\nbaz-content")])
                     :prompt "* baz-heading-1\n** baz-heading-2\n\nbaz-content"
@@ -2504,8 +2458,10 @@ baz-assistant-content
                     :uuid "uuid"
                     :api (:service "openai"
                           :endpoint "https://api.openai.com/v1/chat/completions")
-                    ;; We keep :exchanges thought modifying it doesn't
-                    ;; modify what we're testing.
+                    ;; We keep :exchanges thought modifying it doesn't affect
+                    ;; `eden-conversation-insert' as we are only inserting
+                    ;; the last request (i.e. this request) not the previous
+                    ;; exchanges
                     :exchanges [(:uuid "uuid-foo"
                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
                                  :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
@@ -2515,21 +2471,16 @@ baz-assistant-content
                                  :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
                                            (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
                                            (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
-                    ))
-             (resp '(:model "o1-mini-2024-09-12"
-                     :choices [(:message (:role "assistant"
+                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
+             (resp '(:choices [(:message (:role "assistant"
                                           :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (eden-write-request req)
         (eden-write-response (eden-json-encode resp) resp req)
-        (eden-test-add-or-replace-timestamp-file req)
         (eden-conversation-insert
          req "Only last request of the conversation" nil 'only-last-req))
       (buffer-substring-no-properties (point-min) (point-max)))
     (concat "** Only last request of the conversation
 :PROPERTIES:
-:EDEN_DATE: [2024-12-20 Fri]
-:EDEN_MODEL: openai/o1-mini-2024-09-12
 :EDEN_REQ: uuid
 :END:
 *** Prompt
@@ -2547,8 +2498,7 @@ baz-content
 
 baz-assistant-content
 
-")))
-  )
+"))))
 
 ;;;; Sending Requests
 
