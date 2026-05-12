@@ -2049,34 +2049,33 @@ foo bar baz
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-insert-test")))
 (ert-deftest eden-conversation-insert-test ()
   ;; Signal error if the request doesn't exist in `:dir'
-  (comment
-   (should-error
-    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                  :uuid "uuid-foo")))
-      (eden-conversation-insert req "title")))
-
-   ;; Signal error when an error.json file exists in req directory
+  (should-error
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-request-write 'error req "")
-     (should-error (eden-conversation-insert req "title")))
+     (eden-conversation-insert req "title")))
 
-   ;; Signal error when the request in incomplete
-   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                 :uuid "uuid-foo")))
-     (make-directory (eden-request-dir req) 'parent)
-     (should-error (eden-conversation-insert req "title")))
+  ;; Signal error when an error.json file exists in req directory
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (eden-request-write 'error req "")
+    (should-error (eden-conversation-insert req "title")))
+
+  ;; Signal error when the request in incomplete
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (make-directory (eden-request-dir req) 'parent)
+    (should-error (eden-conversation-insert req "title")))
 
 
-   ;; Signal error when both `title' and `append' argument are nil
-   (let ((req `(:req (:messages [(:role "user" :content "foo")])
-                :prompt "foo"
-                :dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "req-foo-uuid"))
-         (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
-     (eden-write-request req)
-     (eden-write-response (eden-json-encode resp) resp req)
-     (should-error (eden-conversation-insert req nil))))
+  ;; Signal error when both `title' and `append' argument are nil
+  (let ((req `(:req (:messages [(:role "user" :content "foo")])
+               :prompt "foo"
+               :dir ,(concat (make-temp-file "eden-" t) "/")
+               :uuid "req-foo-uuid"))
+        (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
+    (eden-write-request req)
+    (eden-write-response (eden-json-encode resp) resp req)
+    (should-error (eden-conversation-insert req nil)))
 
   ;; conversation with no previous exchanges
   (should
