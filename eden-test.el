@@ -1895,7 +1895,7 @@ foo bar baz
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-last-req-test")))
 (ert-deftest eden-conversation-last-req-test ()
   (let ((eden-conversations nil))
-    (should-not (eden-conversation-title "conversation-id-bar")))
+    (should-not (eden-conversation-last-req "conversation-id-bar")))
   (let ((eden-conversations
          '(("conversation-id-foo" .
             (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
@@ -1905,6 +1905,20 @@ foo bar baz
     (should
      (equal (eden-conversation-last-req "conversation-id-bar")
             `(:uuid "bar-req-uuid" :dir "/tmp/eden/")))))
+
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-last-req-uuid-test")))
+(ert-deftest eden-conversation-last-req-uuid-test ()
+  (let ((eden-conversations nil))
+    (should-not (eden-conversation-last-req-uuid "conversation-id-bar")))
+  (let ((eden-conversations
+         '(("conversation-id-foo" .
+            (:title "foo title" :dir "/tmp/eden/" :last-req-uuid nil))
+           ("conversation-id-bar" .
+            (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
+    (should-not (eden-conversation-last-req-uuid "conversation-id-foo"))
+    (should
+     (string= (eden-conversation-last-req-uuid "conversation-id-bar")
+              "bar-req-uuid"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-buffer-name-test")))
 (ert-deftest eden-conversation-buffer-name-test ()

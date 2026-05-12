@@ -1701,6 +1701,12 @@ For instance:
               (dir (plist-get conversation :dir)))
     `(:uuid ,uuid :dir ,dir)))
 
+(defun eden-conversation-last-req-uuid (conversation-id)
+  "Return UUID of last request of conversation with CONVERSATION-ID in `eden-conversations'.
+
+If no conversation found, return nil."
+  (plist-get (eden-conversation-last-req conversation-id) :uuid))
+
 (defun eden-conversation-buffer-name (conversation-id)
   "Return buffer name for conversation with CONVERSATION-ID."
   (when-let ((title (eden-conversation-title conversation-id)))
