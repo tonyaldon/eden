@@ -2737,57 +2737,130 @@ baz-assistant-content
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-build-request-test")))
 (ert-deftest eden-build-request-test ()
-  ;; Test :uuid
-  (should
-   (stringp
-    (plist-get (eden-build-request :prompt "foo prompt")
-               :uuid)))
+  ;; Errors
+  (should-error (eden-build-request :dir nil) :type 'eden-error-req)
 
-  ;; Test :dir
-  (should
-   (string=
-    (let ((eden-dir nil))
-      (plist-get (eden-build-request :prompt "foo prompt")
-                 :dir))
-    (concat (temporary-file-directory) "eden/")))
-  (should
-   (string=
-    (plist-get
-     (eden-build-request :prompt "foo prompt" :dir "/tmp/foo/")
-     :dir)
-    "/tmp/foo/"))
-  (should
-   (string=
-    (let ((eden-dir "/tmp/bar/"))
-      (plist-get (eden-build-request :prompt "foo prompt")
-                 :dir))
-    "/tmp/bar/"))
-
-  ;; Check :prompt, :system-message, :exchanges
+  ;; :prompt
   ;;
-  ;; :prompt argument is mandatory
-  (should-error (eden-build-request))
-  ;; :prompt and :system-message
-  (let* ((eden-system-message nil)
-         (eden-system-message-append nil)
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (string= (plist-get req :prompt) "foo prompt"))
-    (should (string= (plist-get req :system-message) ""))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "user" :content "foo prompt")])))
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (eden-model "gpt-4o-mini")
-         (req (eden-build-request :prompt "foo prompt"
-                                  :system-message "foo system")))
-    (should (string= (plist-get req :system-message) "foo system"))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "system" :content "foo system")
+  ;; If blank string, we don't pass it as input/messages in the API request
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-prompt-blank (eden-build-request
+                            :dir dir
+                            :api '(:service "openai"
+                                   :endpoint "https://api.openai.com/v1/chat/completions")
+                            :prompt " \n \t "))
+         (req-prompt-nil (eden-build-request
+                          :dir dir
+                          :api '(:service "openai"
+                                 :endpoint "https://api.openai.com/v1/chat/completions")
+                          :prompt nil))
+         (req-prompt-not-blank (eden-build-request
+                                :dir dir
+                                :api '(:service "openai"
+                                       :endpoint "https://api.openai.com/v1/chat/completions")
+                                ;; :prompt is expected to use org-mode syntax
+                                ;; and is converted to markdown in request body
+                                :prompt "* foo prompt")))
+    (should (string-empty-p (plist-get req-prompt-blank :prompt)))
+    (should (equal (eden-get-in req-prompt-blank [:req :messages]) []))
+    (should (string-empty-p (plist-get req-prompt-nil :prompt)))
+    (should (equal (eden-get-in req-prompt-nil [:req :messages]) []))
+    (should (string= (plist-get req-prompt-not-blank :prompt)
+                     "* foo prompt"))
+    (should (equal (eden-get-in req-prompt-not-blank [:req :messages])
+                   [(:role "user" :content "# foo prompt")])))
+
+
+  ;; :uuid
+  ;;
+  ;; TODO: add case where we pass :uuid
+  (cl-letf (((symbol-function 'eden-uuid)
+             (lambda nil "foo-uuid")))
+    (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+           (req (eden-build-request
+                 :dir dir
+                 :api '(:service "openai"
+                        :endpoint "https://api.openai.com/v1/chat/completions")
+                 :prompt "foo prompt")))
+      (should (string= (plist-get req :uuid) "foo-uuid"))))
+
+
+  ;; :api
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (api '(:service "openai"
+                :endpoint "https://api.openai.com/v1/chat/completions"))
+         (req (eden-build-request
+               :dir dir
+               :api api
+               :prompt "foo prompt")))
+    (should (equal (plist-get req :api) api)))
+
+  ;; :model and stream false
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :dir dir
+               :api '(:service "openai"
+                      :endpoint "https://api.openai.com/v1/chat/completions")
+               :model "gpt-5.4"
+               :prompt "foo prompt")))
+    (should (equal (eden-get-in req [:req :stream]) :false))
+    (should (equal (eden-get-in req [:req :model]) "gpt-5.4")))
+
+  ;; :system-message and :system-message-append
+  ;;
+  ;; :system-message and :system-message-append are expected to use
+  ;; org-mode syntax and are converted to markdown in request body
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-no-system-msg-no-append (eden-build-request
+                                       :dir dir
+                                       :api '(:service "openai"
+                                              :endpoint "https://api.openai.com/v1/chat/completions")
+                                       :model "gpt-5.4"
+                                       :prompt "foo prompt"))
+         (req-no-system-with-append (eden-build-request
+                                     :dir dir
+                                     :api '(:service "openai"
+                                            :endpoint "https://api.openai.com/v1/chat/completions")
+                                     :model "gpt-5.4"
+                                     :system-message-append "* foo system append"
+                                     :prompt "foo prompt"))
+         (req-with-system-msg-no-append (eden-build-request
+                                         :dir dir
+                                         :api '(:service "openai"
+                                                :endpoint "https://api.openai.com/v1/chat/completions")
+                                         :model "gpt-5.4"
+                                         :system-message "* foo system"
+                                         :prompt "foo prompt"))
+         (req-with-system-msg-with-append (eden-build-request
+                                           :dir dir
+                                           :api '(:service "openai"
+                                                  :endpoint "https://api.openai.com/v1/chat/completions")
+                                           :model "gpt-5.4"
+                                           :system-message "* foo system"
+                                           :system-message-append "* foo system append"
+                                           :prompt "foo prompt")))
+    (should-not (plist-get req-no-system-msg-no-append :system-message))
+    (should (equal (eden-get-in req-no-system-msg-no-append [:req :messages])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-no-system-with-append :system-message)
+                     "* foo system append"))
+    (should (equal (eden-get-in req-no-system-with-append [:req :messages])
+                   [(:role "system" :content "# foo system append")
+                    (:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-no-append :system-message)
+                     "* foo system"))
+    (should (equal (eden-get-in req-with-system-msg-no-append [:req :messages])
+                   [(:role "system" :content "# foo system")
+                    (:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-with-append :system-message)
+                     "* foo system\n\n* foo system append"))
+    (should (equal (eden-get-in req-with-system-msg-with-append [:req :messages])
+                   [(:role "system" :content "# foo system\n\n\n# foo system append")
                     (:role "user" :content "foo prompt")])))
-  ;; :prompt, :system-message and :exchanges
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (eden-model "gpt-4o-mini")
+
+  ;; :exchanges
+  ;;
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (exchanges [(:uuid "uuid-foo"
                       :prompt "foo prompt"
                       :response "foo response")
@@ -2798,155 +2871,81 @@ baz-assistant-content
                                 (:role "assistant" :content "foo assistant")
                                 (:role "user" :content "bar user")
                                 (:role "assistant" :content "bar assistant")])])
-         (req (eden-build-request
-               :prompt "baz prompt"
-               :system-message "baz system"
-               :exchanges exchanges)))
-    (should (string= (plist-get req :system-message) "baz system"))
-    (should (equal (plist-get req :exchanges) exchanges))
-    (should (equal (eden-get-in req [:req :messages])
+         (req-with-system-msg-with-prompt (eden-build-request
+                                           :dir dir
+                                           :api '(:service "openai"
+                                                  :endpoint "https://api.openai.com/v1/chat/completions")
+                                           :model "gpt-5.4"
+                                           :system-message "baz system"
+                                           :prompt "baz prompt"
+                                           :exchanges exchanges))
+         (req-with-system-msg-no-prompt (eden-build-request
+                                         :dir dir
+                                         :api '(:service "openai"
+                                                :endpoint "https://api.openai.com/v1/chat/completions")
+                                         :model "gpt-5.4"
+                                         :system-message "baz system"
+                                         :exchanges exchanges))
+         (req-no-system-msg-no-prompt (eden-build-request
+                                       :dir dir
+                                       :api '(:service "openai"
+                                              :endpoint "https://api.openai.com/v1/chat/completions")
+                                       :model "gpt-5.4"
+                                       :exchanges exchanges)))
+    (should (equal (plist-get req-with-system-msg-with-prompt :exchanges)
+                   exchanges))
+    (should (equal (eden-get-in req-with-system-msg-with-prompt
+                                [:req :messages])
                    [(:role "system" :content "baz system")
                     (:role "user" :content "foo user")
                     (:role "assistant" :content "foo assistant")
                     (:role "user" :content "bar user")
                     (:role "assistant" :content "bar assistant")
-                    (:role "user" :content "baz prompt")])))
-  ;; :prompt and :system-message
-  ;; both converted from org-mode to markdown
-  (let* ((eden-system-message nil)
-         (eden-system-message-append nil)
-         (req (eden-build-request :prompt "* prompt h1\n** prompt h2")))
-    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-message) ""))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (eden-model "gpt-4o-mini")
-         (req (eden-build-request :prompt "* prompt h1\n** prompt h2"
-                                  :system-message "* system h1\n** system h2")))
-    (should (string= (plist-get req :prompt) "* prompt h1\n** prompt h2"))
-    (should (string= (plist-get req :system-message) "* system h1\n** system h2"))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "system" :content "# system h1\n\n\n## system h2")
-                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  (let* ((eden-system-message->developer-for-models '("o1" "o1-mini"))
-         (eden-system-message-append nil)
-         (eden-model "gpt-4o-mini")
-         (exchanges [(:uuid "uuid-foo"
-                      :prompt "foo prompt"
-                      :response "foo response")
-                     (:uuid "uuid-bar"
-                      :prompt "bar prompt"
-                      :response "bar response"
-                      :context [(:role "user" :content "foo user")
-                                (:role "assistant" :content "foo assistant")
-                                (:role "user" :content "bar user")
-                                (:role "assistant" :content "bar assistant")])])
-         (req (eden-build-request
-               :prompt "* prompt h1\n** prompt h2"
-               :system-message "* system h1\n** system h2"
-               :exchanges exchanges)))
-    (should (equal (eden-get-in req [:req :messages])
-                   [(:role "system" :content "# system h1\n\n\n## system h2")
+                    (:role "user" :content "baz prompt")]))
+    (should (equal (plist-get req-with-system-msg-no-prompt :exchanges)
+                   exchanges))
+    (should (equal (eden-get-in req-with-system-msg-no-prompt
+                                [:req :messages])
+                   [(:role "system" :content "baz system")
                     (:role "user" :content "foo user")
                     (:role "assistant" :content "foo assistant")
                     (:role "user" :content "bar user")
-                    (:role "assistant" :content "bar assistant")
-                    (:role "user" :content "# prompt h1\n\n\n## prompt h2")])))
-  ;; :system-message and default `eden-system-message'
-  (should
-   (string=
-    (let ((eden-system-message nil)
-          (eden-system-message-append nil))
-      (plist-get (eden-build-request :prompt "foo prompt")
-                 :system-message))
-    ""))
-  (should
-   (string=
-    (let ((eden-system-message
-           '("bar system message title" . "bar system message"))
-          (eden-system-message-append nil))
-      (plist-get
-       (eden-build-request :prompt "foo prompt"
-                           :system-message "foo system message")
-       :system-message))
-    "foo system message"))
-  (should
-   (string=
-    (let ((eden-system-message
-           '("bar system message title" . "bar system message"))
-          (eden-system-message-append nil))
-      (plist-get (eden-build-request :prompt "foo prompt")
-                 :system-message))
-    "bar system message"))
+                    (:role "assistant" :content "bar assistant")]))
+    (should (equal (plist-get req-no-system-msg-no-prompt :exchanges)
+                   exchanges))
+    (should (equal (eden-get-in req-no-system-msg-no-prompt
+                                [:req :messages])
+                   [(:role "user" :content "foo user")
+                    (:role "assistant" :content "foo assistant")
+                    (:role "user" :content "bar user")
+                    (:role "assistant" :content "bar assistant")])))
 
-  ;; `eden-system-message', :system-message-append and `eden-system-message-append'
-  (should
-   (string=
-    (let ((eden-system-message
-           '("bar system message title" . "bar system message"))
-          (eden-system-message-append nil))
-      (plist-get (eden-build-request
-                  :prompt "foo prompt"
-                  :system-message-append "baz system message append")
-                 :system-message))
-    "bar system message
-
-baz system message append"))
-  (should
-   (string=
-    (let ((eden-system-message
-           '("bar system message title" . "bar system message") )
-          (eden-system-message-append "baz system message append"))
-      (plist-get (eden-build-request :prompt "foo prompt")
-                 :system-message))
-    "bar system message
-
-baz system message append"))
-
-  ;; Test :model
-  (let* ((eden-model "gpt-4o")
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (equal
-             (plist-get (plist-get req :req) :model)
-             "gpt-4o")))
-  (let* ((eden-model "gpt-4o")
-         (req (eden-build-request :prompt "foo prompt"
-                                  :model "gpt-4o-mini")))
-    (should (equal
-             (plist-get (plist-get req :req) :model)
-             "gpt-4o-mini")))
-
-  ;; Test :api
-  (let* ((eden-api '(:service "openai"
-                     :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (equal (plist-get req :api) eden-api)))
-  (let* ((eden-api '(:service "openai"
-                     :endpoint "https://api.openai.com/v1/chat/completions"))
+  ;; :include-reasoning
+  ;;
+  ;; Anthopic API specific
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req (eden-build-request
+               :dir dir
+               :api '(:service "anthropic"
+                      :endpoint "https://api.anthropic.com/v1/messages")
+               :model "claude-opus-4-7"
                :prompt "foo prompt"
-               :api '(:service "openai-service"
-                      :endpoint "https://openai-endpoint"))))
-    (should (equal (plist-get req :api)
-                   '(:service "openai-service"
-                     :endpoint "https://openai-endpoint"))))
+               :include-reasoning t)))
+    (should (equal (eden-get-in req [:req :thinking])
+                   '(:type "enabled" :budget_tokens 2048))))
 
-  ;; Test :api when service is anthropic
-  (let* ((eden-api '(:service "anthropic"
-                     :endpoint "https://api.anthropic.com/v1/messages"))
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (equal (eden-get-in req [:req :max_tokens]) 4096)))
-
-  ;; Test :api when service is anthropic with reasoning
-  ;; `eden-include-reasoning' is t
-  (let* ((eden-api '(:service "anthropic"
-                     :endpoint "https://api.anthropic.com/v1/messages"))
-         (eden-include-reasoning t)
-         (req (eden-build-request :prompt "foo prompt")))
-    (should (equal (eden-get-in req [:req :thinking :type]) "enabled"))
-    (should (equal (eden-get-in req [:req :thinking :budget_tokens]) 2048))))
+  ;; Anthropic API specific
+  ;;
+  ;; :max_tokens sets by default in request body
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :dir dir
+               :api '(:service "anthropic"
+                      :endpoint "https://api.anthropic.com/v1/messages")
+               :model "claude-opus-4-7"
+               :prompt "foo prompt"
+               :include-reasoning t)))
+    (should (equal (eden-get-in req [:req :max_tokens]) 4096))))
 
 ;;;; Conversation branches (paths)
 

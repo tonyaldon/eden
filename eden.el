@@ -2170,66 +2170,44 @@ conversation, INFO argument must be structured as:
 (cl-defun eden-build-request (&key prompt system-message exchanges
                                    system-message-append
                                    model
-                                   api dir)
-  "Return a request as defined in `eden-request-send'.
-
-`:prompt' is mandatory.
-
-If `:system-message' is missing, it is replaced by `eden-system-message'
-or \"\".
-
-If `:system-message-append' or `eden-system-message-append' (in that order)
-is non-nil, it is appended to the system message of the return request.
-
-If `:model' is missing, it is replaced by `eden-model'.
-
-Both the prompt and the system message considered `org-mode' strings
-are converted to markdown using `eden-org-to-markdown' function.
-
-If `:api' is missing, it is replaced by `eden-api'.
-If `:dir' is missing, it is replaced by `eden-dir'
-or a temporary directory."
-  (when (null prompt)
-    (error "You must provide a prompt via `:prompt' key to build a request"))
-  (let* ((-model (or model eden-model))
+                                   api dir
+                                   include-reasoning)
+  "Return a request as defined in `eden-request-send'."
+  (let* ((uuid (eden-uuid))
+         (_ (eden-request-dir `(:dir ,dir :uuid ,uuid))) ;; signal error if not ok)
+         (-prompt (if (or (null prompt) (string-blank-p prompt)) "" prompt))
          (-system-message
-          (or system-message (cdr-safe eden-system-message) ""))
-         (-system-message-append
-          (or system-message-append eden-system-message-append))
-         (--system-message
-          (format "%s%s"
-                  -system-message
-                  (if -system-message-append
-                      (concat "\n\n" -system-message-append)
-                    "")))
+          (cond
+           ((and (null system-message) (null system-message-append)) nil)
+           ((null system-message-append) system-message)
+           ((null system-message) system-message-append)
+           (t (format "%s\n\n%s" system-message system-message-append))))
          (-messages
-          `(,(when (not (string-empty-p --system-message))
+          `(,(when -system-message
                `(:role "system"
-                 :content ,(eden-org-to-markdown --system-message)))
+                 :content ,(eden-org-to-markdown -system-message)))
             ,@(when (not (null exchanges))
                 (let ((last-exchange (aref exchanges (1- (length exchanges)))))
                   (plist-get last-exchange :context)))
-            (:role "user" :content ,(eden-org-to-markdown prompt))))
+            ,(when (not (string-empty-p -prompt))
+               `(:role "user" :content ,(eden-org-to-markdown -prompt)))))
          (req-messages (apply 'vector (remq nil -messages)))
-         (-api (or api eden-api))
-         (service (plist-get -api :service))
          (request `(:stream :false
-                    :model ,-model
+                    :model ,model
                     :messages ,req-messages)))
     ;; Anthropic API
-    (when (string= service "anthropic")
+    (when (string= (plist-get api :service) "anthropic")
       (plist-put request :max_tokens 4096)
-      (when eden-include-reasoning
+      (when include-reasoning
         (plist-put request :thinking '(:type "enabled" :budget_tokens 2048))))
+    ;; Done
     `(:req ,request
-      :api ,-api
-      :prompt ,prompt
-      :system-message ,--system-message
+      :api ,api
+      :prompt ,-prompt
+      :system-message ,-system-message
       :exchanges ,exchanges
-      :dir ,(or dir
-                eden-dir
-                (concat (temporary-file-directory) "eden/"))
-      :uuid ,(eden-uuid))))
+      :dir ,dir
+      :uuid ,uuid)))
 
 (defun eden-callback (req _resp info)
   "Default callback function used in `eden-send'."
@@ -2286,6 +2264,12 @@ See `eden-send-request'."
   (eden-send-request
    :req (eden-build-request
          :prompt (eden-prompt-current-buffer)
+         :system-message eden-system-message
+         :system-message-append eden-system-message-append
+         :model eden-model
+         :api eden-api
+         :dir eden-dir
+         :include-reasoning eden-include-reasoning
          :exchanges (eden-conversation-exchanges eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id
            :created ,(float-time))
