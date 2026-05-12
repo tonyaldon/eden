@@ -2773,7 +2773,7 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]]
   (interactive)
-  (transient-setup 'eden-menu)
+  (transient-setup 'eden-req-at-point-menu)
   (define-key transient--transient-map (kbd "q") #'transient-quit-one)
   (define-key transient--transient-map (kbd "RET") #'transient-quit-one))
 
