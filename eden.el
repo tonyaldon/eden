@@ -1480,11 +1480,10 @@ See `eden-prompt-history-state'."
   "Return current prompt in PROMPT-HISTORY if any or nil.
 
 The look up for the prompt is done in DIR.  See `eden-prompt-history-state'."
-  (let ((current (aref prompt-history 1)))
-    (cond
-     ((null current) nil)
-     ((consp current) (plist-get current :prompt))
-     (t (eden-request-read 'prompt `(:dir ,dir :uuid ,current))))))
+  (pcase (aref prompt-history 1)
+    ('nil nil)
+    ((and p (pred consp)) (plist-get p :prompt))
+    (uuid (eden-request-read 'prompt `(:dir ,dir :uuid ,uuid)))))
 
 (defun eden-prompt-history-previous (prompt-history &optional prompt discard-current)
   "Update in-place the PROMPT-HISTORY backward.
