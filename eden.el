@@ -71,9 +71,12 @@ For instance:
 Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
   (let ((dir (plist-get req :dir))
         (uuid (plist-get req :uuid)))
-    (when (or (not (stringp dir)) (not (stringp uuid)))
-      (error "Request mal formed.  `req' must contain `:dir' and `:uuid' keys and their value must be strings: %S"
-             req))
+    (when (not (stringp dir))
+      (signal 'eden-error-req
+               (list (format "`:dir' key missing or not a string: %S" req))))
+    (when (not (stringp uuid))
+      (signal 'eden-error-req
+               (list (format "`:uuid' key missing or not a string: %S" req))))
     (concat (file-name-as-directory (expand-file-name dir)) uuid "/")))
 
 (defun eden-request-file (file-type req)
@@ -771,7 +774,8 @@ See `eden-request-file'."
   (eden-request-write 'error req (eden-json-encode err)))
 
 (defvar eden-errors
-  '((eden-error-api . "API error")
+  '((eden-error-req . "Request mal formed")
+    (eden-error-api . "API error")
     (eden-error-api-key . "Error setting API key")
     (eden-error-callback . "Error while calling callback function in sentinel")
     (eden-error-callback-error . "Error while calling callback-error function when signaling an error in sentinel")

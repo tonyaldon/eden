@@ -112,14 +112,20 @@
                                           :rejected_prediction_tokens 0))
       :system_fingerprint "fp_0705bf87c0"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-dir-test")))
 (ert-deftest eden-request-dir-test ()
   ;; signal error when one of the keys `:dir' or `:uuid'
   ;; is missing or is not a string
-  (should-error (eden-request-dir '(:dir "/tmp/eden/")))
-  (should-error (eden-request-dir '(:dir "/tmp/eden/" :uuid 1)))
-  (should-error (eden-request-dir '(:uuid "foo-uuid")))
-  (should-error (eden-request-dir '(:uuid "foo-uuid" :dir 1)))
-  (should-error (eden-request-dir nil))
+  (should-error (eden-request-dir '(:dir "/tmp/eden/"))
+                :type 'eden-error-req)
+  (should-error (eden-request-dir '(:dir "/tmp/eden/" :uuid 1))
+                :type 'eden-error-req)
+  (should-error (eden-request-dir '(:uuid "foo-uuid"))
+                :type 'eden-error-req)
+  (should-error (eden-request-dir '(:uuid "foo-uuid" :dir 1))
+                :type 'eden-error-req)
+  (should-error (eden-request-dir nil)
+                :type 'eden-error-req)
 
   (should
    (string= (eden-request-dir '(:dir "/tmp/eden/" :uuid "foo-uuid"))
