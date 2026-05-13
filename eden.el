@@ -2183,7 +2183,10 @@ When PROMPT is nil, it isn't included in the request parameters.
 
 When PREV-REQ-UUID is provided, the request build is chained to this
 previous request, and all previous context is included.  See
-'eden-request-conversation'."
+'eden-request-conversation'.
+
+This function is self-contained.  Its output doesn't depend on any
+Eden global variable."
   (cl-destructuring-bind
       ;; All profile keys must be listed here even if we don't use them.
       (&key dir api model system-message system-message-append
@@ -2234,7 +2237,8 @@ previous request, and all previous context is included.  See
         :system-message ,-system-message
         :exchanges ,exchanges
         :dir ,dir
-        :uuid ,uuid))))
+        :uuid ,uuid
+        :conversation-id ,conversation-id))))
 
 (defun eden-callback (req _resp info)
   "Default callback function used in `eden-send'."

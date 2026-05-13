@@ -2973,6 +2973,27 @@ baz-assistant-content
                     (:role "user" :content "bar prompt")
                     (:role "assistant" :content "bar response\n")])))
 
+  ;; :conversation-id
+  ;;
+  ;; We include :conversation-id key in the output request.
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :profile `(:dir ,dir
+                          :api (:service "openai"
+                                :endpoint "https://api.openai.com/v1/chat/completions")
+                          :model "gpt-5.4"
+                          ;; In practice, when this id in non-nil, we should
+                          ;; pass the corresponding :last-req-uuid as
+                          ;; :prev-req-uuid of `eden-build-request'.
+                          ;; We don't do any lookup in `eden-conversations'
+                          ;; so that `eden-build-request' keep being
+                          ;; self-contained.  We just pass the conversation
+                          ;; id to be used in callback of the sentinel
+                          ;; after receiving a response from OpenAI API.
+                          :conversation-id "foo-conversation-id")
+               :prompt "foo prompt")))
+    (should (string= (plist-get req :conversation-id) "foo-conversation-id")))
+
   ;; :include-reasoning
   ;;
   ;; Anthopic API specific
