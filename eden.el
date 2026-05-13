@@ -1817,6 +1817,35 @@ For instance:
     (message "No current conversation."))
   (setq eden-conversation-id nil))
 
+;; It's behavior is unit tested when we test `eden-conversation-insert'.
+(defun eden-conversation-insert-or-update-top-heading (req title append)
+  "Insert heading with TITLE for REQ conversation in current buffer.
+
+If APPEND is t, don't insert the TITLE.  Only update the request UUID
+of the conversation in current buffer.
+
+In both cases, point is left at the end of current buffer.
+
+This function depends on `eden-org-property-req'.
+
+See `eden-conversation-insert'."
+  (let ((req-uuid (plist-get req :uuid)))
+    (if (and append
+             (progn (goto-char (point-min))
+                    (re-search-forward
+                     (format "^:%s: \\(.*\\)" eden-org-property-req) nil t)))
+        (progn
+          (replace-match req-uuid nil nil nil 1)
+          (goto-char (point-max)))
+      (insert
+       ;; If we change how we insert the title below, we may also
+       ;; have to change how we rename conversation title in
+       ;; `eden-conversation-edit-title' command.
+       "** " (or title "Conversation") "\n"
+       ":PROPERTIES:\n"
+       ":" eden-org-property-req ": " req-uuid "\n"
+       ":END:\n"))))
+
 (defun eden-conversation-insert (req title &optional append only-last-req)
   "Format and insert the conversation whose last request is REQ into current buffer.
 
@@ -1859,37 +1888,17 @@ See `eden-request-conversation'."
   (eden-request-check req)
   (when (and (null title) (null append))
     (error "`title' argument can be nil only when `append' argument is non-nil"))
-  (let* ((uuid (plist-get req :uuid))
-         (service-model
-          (format "%s/%s"
-                  (plist-get (eden-request-read 'api req) :service)
-                  (plist-get (eden-request-read 'response req) :model)))
-         (format-exchange
+  (let* ((format-exchange
           (lambda (exchange)
             (delq nil
                   (list (eden-org-demote (plist-get exchange :prompt) 4)
                         (eden-org-demote (plist-get exchange :response) 4)
                         (when-let ((reasoning (plist-get exchange :reasoning)))
                           (eden-org-demote reasoning 4))))))
-         (conversation
-          (mapcar format-exchange (eden-request-conversation req)))
+         (conversation (mapcar format-exchange (eden-request-conversation req)))
          (conversation
           (if (or append only-last-req) (last conversation) conversation)))
-    (if (and append
-             (progn (goto-char (point-min))
-                    (re-search-forward
-                     (format "^:%s: \\(.*\\)" eden-org-property-req) nil t)))
-        (progn
-          (replace-match uuid nil nil nil 1)
-          (goto-char (point-max)))
-      (insert
-       ;; If we change how we insert the title below, we may also
-       ;; have to change how we rename conversation title in
-       ;; `eden-conversation-edit-title' command.
-       "** " (or title "Conversation") "\n"
-       ":PROPERTIES:\n"
-       ":" eden-org-property-req ": " uuid "\n"
-       ":END:\n"))
+    (eden-conversation-insert-or-update-top-heading req title append)
     (dolist (exchange conversation)
       (seq-let (prompt response reasoning) exchange
         (insert "*** Prompt\n\n" prompt)
