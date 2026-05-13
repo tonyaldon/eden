@@ -2685,8 +2685,6 @@ baz-assistant-content
 
 
   ;; :uuid
-  ;;
-  ;; TODO: add case where we pass :uuid
   (cl-letf (((symbol-function 'eden-uuid)
              (lambda nil "foo-uuid")))
     (let* ((dir (concat (make-temp-file "eden-" t) "/"))
@@ -2719,6 +2717,15 @@ baz-assistant-content
 
   ;; :system-message and :system-message-append
   ;;
+  ;; Error when :system-message provided but not a cons cell
+  (let* ((dir (concat (make-temp-file "eden-" t) "/")))
+    (should-error (eden-build-request
+                   :profile `(:dir ,dir
+                              :api (:service "openai"
+                                    :endpoint "https://api.openai.com/v1/chat/completions")
+                              :model "gpt-5.4"
+                              :system-message "not-a-cons-cell")
+                   :prompt "foo prompt")))
   ;; :system-message and :system-message-append are expected to use
   ;; org-mode syntax and are converted to markdown in request body
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
@@ -2743,7 +2750,7 @@ baz-assistant-content
                       :api (:service "openai"
                             :endpoint "https://api.openai.com/v1/chat/completions")
                       :model "gpt-5.4"
-                      :system-message "* foo system")
+                      :system-message ("foo system title" . "* foo system"))
            :prompt "foo prompt"))
          (req-with-system-msg-with-append
           (eden-build-request
@@ -2751,7 +2758,7 @@ baz-assistant-content
                       :api (:service "openai"
                             :endpoint "https://api.openai.com/v1/chat/completions")
                       :model "gpt-5.4"
-                      :system-message "* foo system"
+                      :system-message ("foo system title" . "* foo system")
                       :system-message-append "* foo system append")
            :prompt "foo prompt")))
     (should-not (plist-get req-no-system-msg-no-append :system-message))
@@ -2828,13 +2835,13 @@ baz-assistant-content
          (req-with-system-msg-with-prompt
           (eden-build-request
            :profile `(:dir ,dir :api ,api :model model
-                      :system-message "baz system\n")
+                      :system-message ("baz system title" . "baz system\n"))
            :prompt "baz prompt\n"
            :prev-req-uuid req-bar-uuid))
          (req-with-system-msg-no-prompt
           (eden-build-request
            :profile `(:dir ,dir :api ,api :model ,model
-                      :system-message "baz system\n")
+                      :system-message ("baz system title" . "baz system\n"))
            :prev-req-uuid req-bar-uuid))
          (req-no-system-msg-no-prompt
           (eden-build-request

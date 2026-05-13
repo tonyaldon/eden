@@ -1234,25 +1234,11 @@ Examples of valid model for OpenAI API: \"gpt-5.1\", \"gpt-5\", \"gpt-4.1\".
 This variable can be modified via `eden-menu'.")
 
 (defvar eden-system-message nil
-  "System message used by `eden-send' to send requests to `eden-api'.
+  "System message to include in the request sent to the LLM API using `eden-send'.
 
-Don't set `eden-system-message' directly.  Use one of the following
-command instead:
+It is a cons cell (\"title\" . \"system message\")
 
-- `eden-system-message-set',
-- `eden-system-message-reset',
-- `eden-system-message-add' or
-- `eden-system-message-update'.
-
-It is a cons cell (\"title\" . \"system message\"), where \"system message\"
-serves as `:content' of the first message in request's `:messages'.
-
-Additionally,`eden-system-message' may be nil, in which case `:messages'
-will omit the initial system message.
-
-According to OpenAI API documentation, a system message consists of
-\"Developer-provided instructions that the model should follow,
-regardless of messages sent by the user.\"")
+See `eden-profile-current'and `eden-build-request'.")
 
 (defvar eden-system-message-append nil
   "Instructions (a string) appended to the system message used by `eden-send'.
@@ -2213,10 +2199,12 @@ Eden global variable."
            (-prompt (if (or (null prompt) (string-blank-p prompt)) "" prompt))
            (-system-message
             (cond
+             ((and (not (consp system-message)) (not (null system-message)))
+              (error "Wrong type for `:system-message'.  It must be a cons cell or nil. Not: %S." system-message))
              ((and (null system-message) (null system-message-append)) nil)
-             ((null system-message-append) system-message)
+             ((null system-message-append) (cdr system-message))
              ((null system-message) system-message-append)
-             (t (format "%s\n\n%s" system-message system-message-append))))
+             (t (format "%s\n\n%s" (cdr system-message) system-message-append))))
            (exchanges
             (when prev-req-uuid
               (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
