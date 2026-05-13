@@ -792,15 +792,15 @@ See `eden-error-log-and-signal'.")
 
 (cl-defun eden-error-log-and-signal (type req process
                                           &key error event process-stdout
-                                          callback-error info)
+                                          callback-error)
   "Signal error of TYPE type that happened when sending REQ request.
 
 Before signaling the error:
 
 1) PROCESS process is killed,
 2) produce the error data,
-2) CALLBACK-ERROR function is called with 3 arguments: REQ,
-   the error data and INFO,
+2) CALLBACK-ERROR function is called with 2 arguments: REQ and
+   the error data.
 3) the error data (maybe modified by CALLBACK-ERROR) is logged
    to REQ's directory in an error file type.
 
@@ -847,21 +847,21 @@ error data looks like this:
     (kill-buffer (process-buffer process))
     (when callback-error
       (condition-case -error
-          (funcall callback-error req err info)
+          (funcall callback-error req err)
         (error
          (setq type 'eden-error-callback-error)
          (setq err (funcall error-function type req -error nil nil err)))))
     (eden-write-error err req)
     (signal type err)))
 
-(defmacro eden-sentinel (req callback callback-error info)
+(defmacro eden-sentinel (req callback callback-error)
   "Return a sentinel to be used in `eden-request-send'.
 
 The return sentinel is a function that takes two arguments `process'
 and `event' as described in `make-process'.
 
 When no error occurs during execution of the sentinel, CALLBACK function
-is called.  It takes 3 arguments
+is called.  It takes 2 arguments
 
 - REQ   - plist of information about the request where :req
           is an OpenAI-compatible API request.  For instance:
@@ -876,12 +876,11 @@ is called.  It takes 3 arguments
                :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
 
 - resp  - plist of the response received from OpenAI-compatible API
-- INFO  - plist of additional data, can be nil
 
 and must be use for side effects.
 
 When an error occurs, CALLBACK-ERROR function (if not nil) is called
-just before signaling the error.  It takes 3 arguments:
+just before signaling the error.  It takes 2 arguments:
 
 - REQ  - the same as decscribed above,
 - err  - plist describing the error which is also the data that is
@@ -906,8 +905,7 @@ just before signaling the error.  It takes 3 arguments:
          `:process-buffer-content' keys are optionals and depend of the
          type of error.
 
-         See `eden-errors' and `eden-error-log-and-signal'.
-- INFO  - plist of additional data, can be nil"
+         See `eden-errors' and `eden-error-log-and-signal'."
   `(lambda (process event)
      (let ((stdout (lambda (process)
                      (with-current-buffer (process-buffer process)
@@ -916,8 +914,7 @@ just before signaling the error.  It takes 3 arguments:
         ((not (buffer-name (process-buffer process)))
          (eden-error-log-and-signal
           'eden-error-process-buffer ,req process
-          :callback-error ,callback-error
-          :info ,info))
+          :callback-error ,callback-error))
         ((string= event "finished\n")
          (let ((resp (condition-case err
                          (with-current-buffer (process-buffer process)
@@ -927,40 +924,35 @@ just before signaling the error.  It takes 3 arguments:
                                'eden-error-json-read ,req process
                                :error err
                                :process-stdout (funcall stdout process)
-                               :callback-error ,callback-error
-                               :info ,info)))))
+                               :callback-error ,callback-error)))))
            (if-let ((err (plist-get resp :error)))
                (eden-error-log-and-signal
                 'eden-error-api ,req process
                 :error err
-                :callback-error ,callback-error
-                :info ,info)
+                :callback-error ,callback-error)
              (condition-case err
                  (progn
                    (eden-write-response (funcall stdout process) resp ,req)
                    (kill-buffer (process-buffer process))
-                   (funcall ,callback ,req resp ,info))
+                   (funcall ,callback ,req resp))
                (error (eden-error-log-and-signal
                        'eden-error-callback ,req process
                        :error err
-                       :callback-error ,callback-error
-                       :info ,info))))))
+                       :callback-error ,callback-error))))))
         (t (eden-error-log-and-signal
             'eden-error-process ,req process
             :process-stdout (funcall stdout process)
             :event event
-            :callback-error ,callback-error
-            :info ,info))))))
+            :callback-error ,callback-error))))))
 
-(defun eden-request-send (req callback &optional callback-error info)
+(defun eden-request-send (req callback &optional callback-error)
   "Send REQ request asynchronously to OpenAI-compatible API using `make-process'.
 
 Return the process handling the request.
 
 If the request succeed, CALLBACK function is called in the sentinel.
 If the request failed or there's an error in the sentinel, CALLBACK-ERROR
-function is called.  In both cases, INFO, plist of additional data, is
-passed as last argument to these functions.  See `eden-sentinel'.
+function is called.
 
 For the request to have a chance to succeed, OpenAI-compatible API key
 must be set correctly beforehand.  See `eden-request-command' and
@@ -1081,7 +1073,7 @@ Perplexity API and a system message:
      :buffer (generate-new-buffer-name "eden")
      :command (list "sh" "-c" command)
      :connection-type 'pipe
-     :sentinel (eden-sentinel req callback callback-error info))))
+     :sentinel (eden-sentinel req callback callback-error))))
 
 ;;; UI
 ;;;; User options
@@ -1780,10 +1772,9 @@ See `eden-conversation-id' and `eden-conversation-rename'."
         (rename-buffer new-buff-name)))))
 
 (defun eden-conversation-update (req)
-  "Set last request of the conversation specified in INFO to REQ.
+  "Set last request UUID of conversation REQ's `:conversation-id' to REQ's `:uuid' key.
 
-This modifies `eden-conversations'.  Specifically, set last request UUID
-of conversation REQ's `:conversation-id' to REQ's `:uuid' key.
+This modifies `eden-conversations'.
 
 If one of these keys is missing, do nothing.
 
@@ -2110,7 +2101,7 @@ See `eden-conversations'."
        (string= conversation-id id)))
    eden-pending-requests))
 
-(cl-defun eden-send-request (&key req callback info)
+(cl-defun eden-send-request (&key req callback)
   "Send REQ request asynchronously to OpenAI-compatible API.
 
 This function wraps around `eden-request-send', and performs the
@@ -2123,7 +2114,7 @@ following actions:
 In case of an error during sentinel execution, the following callback-error
 function is called:
 
-    (lambda (req _err _info)
+    (lambda (req _err)
       (eden-pending-remove req)
       (eden-mode-line-waiting \\='maybe-stop))
 
@@ -2137,7 +2128,7 @@ sentinel and must call these three functions in this specific order:
 Here's a valid CALLBACK function which appends responses in the
 buffer \"*eden[requests]*\":
 
-    (lambda (req resp info)
+    (lambda (req resp)
       (with-current-buffer (get-buffer-create \"*eden[requests]*\")
         (org-mode)
         (save-excursion
@@ -2148,27 +2139,18 @@ buffer \"*eden[requests]*\":
       (eden-pending-remove req)
       (eden-conversation-update req)
       (eden-mode-line-waiting \\='maybe-stop)
-      (message \"Eden received a response\"))
-
-If REQ belongs to a conversation present in `eden-conversations', we
-must include its conversation ID in INFO argument using `:conversation-id'
-key.
-
-For instance, if \"conversation-id-foo\" is the ID for an ongoing
-conversation, INFO argument must be structured as:
-
-    (:conversation-id \"conversation-id-foo\" ...)"
+      (message \"Eden received a response\"))"
   (let ((conversation-id (plist-get req :conversation-id)))
     (if (eden-pending-conversation-p conversation-id)
         (progn
           (message "Cannot send two concurrent requests in the same conversation.")
           (let ((inhibit-message t))
             (message "conversation: %s\nreq: %S" conversation-id req)))
-      (let ((callback-error (lambda (req _err _info)
+      (let ((callback-error (lambda (req _err)
                               (eden-pending-remove req)
                               (eden-mode-line-waiting 'maybe-stop))))
         (push (list :req req
-                    :proc (eden-request-send req callback callback-error info))
+                    :proc (eden-request-send req callback callback-error))
               eden-pending-requests)
         (eden-history-update :new-req-uuid (plist-get req :uuid))
         (eden-mode-line-waiting 'maybe-start)))))
@@ -2212,9 +2194,9 @@ Eden global variable."
                     (eden-request-conversation prev-req)
                   (error
                    (signal 'eden-error-req
-                            (list (format "Cannot build request with this prev request:\n%S\nError: %s"
-                                          prev-req
-                                          (error-message-string err)))))))
+                           (list (format "Cannot build request with this prev request:\n%S\nError: %s"
+                                         prev-req
+                                         (error-message-string err)))))))
               (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
            (-messages
             `(,(when -system-message
@@ -2245,7 +2227,12 @@ Eden global variable."
         :conversation-id ,conversation-id
         :info ,info))))
 
-(defun eden-callback (req _resp info)
+;; This function is not unit tested.  When making changes to
+;; it or any code related to `eden-send', `eden-send-request'
+;; and `eden-sentinel', test it by starting a fresh emacs,
+;; call `eden' then in the prompt buffer call `eden-send'
+;; with any prompt then with an active conversation.
+(defun eden-callback (req _resp)
   "Default callback function used in `eden-send'."
   (let* ((conversation-id (plist-get req :conversation-id))
          (title (or (eden-conversation-title conversation-id)
@@ -2281,9 +2268,14 @@ Eden global variable."
     (eden-mode-line-waiting 'maybe-stop)
     (message "Eden received a response from %s after %.3fs.  See `%s' buffer."
              (plist-get eden-api :service)
-             (- (float-time) (plist-get info :created))
+             (- (float-time) (eden-get-in req [:info :created]))
              buff-name)))
 
+;; This function is not unit tested.  When making changes to
+;; it or any code related to `eden-send-request', `eden-callback'
+;; and `eden-sentinel', test it by starting a fresh emacs,
+;; call `eden' then in the prompt buffer call `eden-send'
+;; with any prompt then with an active conversation.
 (defun eden-send ()
   "Send current prompt to `eden-api' OpenAI-compatible API.
 
@@ -2301,8 +2293,8 @@ See `eden-send-request'."
    :req (eden-build-request
          :profile (eden-profile-current)
          :prompt (eden-prompt-current-buffer)
-         :prev-req-uuid (eden-conversation-last-req-uuid eden-conversation-id))
-   :info `(:created ,(float-time))
+         :prev-req-uuid (eden-conversation-last-req-uuid eden-conversation-id)
+         :info `(:created ,(float-time)))
    :callback 'eden-callback)
   ;; When we select a profile with `eden-profile-next' or
   ;; `eden-profile-previous', the profile, if not recently accessed,

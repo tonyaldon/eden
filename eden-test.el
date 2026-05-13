@@ -1061,9 +1061,9 @@ arr[0]
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-sentinel-test")))
 (ert-deftest eden-sentinel-test ()
   ;; we let-bind requests, callbacks and infos with the variables
-  ;; `-req', `-callback' and `-info' to be sure that `eden-sentinel'
-  ;; macro doesn't rely on `req', `callback' and `info' (its argument names)
-  ;; variables to be defined during its expansion.
+  ;; `-req', `-callback' to be sure that `eden-sentinel' macro
+  ;; doesn't rely on `req', `callback' variables to be defined
+  ;; during its expansion.
 
   ;; Throw error when process buffer is killed
   (let* ((-req `(:dir ,(concat (make-temp-file "eden-" t) "/")
@@ -1076,7 +1076,7 @@ arr[0]
          (sentinel-wrapped
           (lambda (process event)
             (kill-buffer (process-buffer process))
-            (funcall (eden-sentinel -req nil nil nil) process event)))
+            (funcall (eden-sentinel -req nil nil) process event)))
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
@@ -1108,7 +1108,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (kill-process
-        (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil nil) 1))
+        (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil) 1))
        (sleep-for 0.2))
      :type 'eden-error-process)
     (should-not (get-buffer buff-name))
@@ -1132,7 +1132,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (interrupt-process
-        (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil nil) 1))
+        (eden-test-echo-resp "" buff-name (eden-sentinel -req nil nil) 1))
        (sleep-for 0.2))
      :type 'eden-error-process)
     (should-not (get-buffer buff-name))
@@ -1153,7 +1153,7 @@ arr[0]
     (should-error
      (let ((debug-on-error t))
        (eden-test-echo-resp "not valid json" buff-name
-                            (eden-sentinel -req nil nil nil))
+                            (eden-sentinel -req nil nil))
        (sleep-for 0.2))
      :type 'eden-error-json-read)
     (should-not (get-buffer buff-name))
@@ -1183,7 +1183,7 @@ arr[0]
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
-       (eden-test-echo-resp resp-str buff-name (eden-sentinel -req nil nil nil))
+       (eden-test-echo-resp resp-str buff-name (eden-sentinel -req nil nil))
        (sleep-for 0.2))
      :type 'eden-error-api)
     (should-not (get-buffer buff-name))
@@ -1205,15 +1205,12 @@ arr[0]
          (-req `(:req (:foo "bar")
                  :dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo"))
-         (-callback 'callback-not-a-function)
-         (-callback-error nil) ;; we don't call it
-         (-info nil)           ;; we don't use it
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
        (eden-test-echo-resp
         resp-str buff-name
-        (eden-sentinel -req 'callback-not-a-function nil nil))
+        (eden-sentinel -req 'callback-not-a-function nil))
        (sleep-for 0.2))
      :type 'eden-error-callback)
     (should-not (get-buffer buff-name))
@@ -1242,7 +1239,7 @@ arr[0]
        (kill-process
         (eden-test-echo-resp
          "" buff-name
-         (eden-sentinel -req nil 'callback-error-not-a-function nil)
+         (eden-sentinel -req nil 'callback-error-not-a-function)
          1))
        (sleep-for 0.2))
      :type 'eden-error-callback-error)
@@ -1259,26 +1256,22 @@ arr[0]
           :request ,(plist-get -req :req)
           :error ["void-function" "callback-error-not-a-function"])))))
   ;; 2) Then we test that `callback-error' is called correctly
-  (let* ((resp-str "")
-         (-req `(:req (:foo "bar")
+  (let* ((-req `(:req (:foo "bar")
                  :dir ,(concat (make-temp-file "eden-" t) "/")
-                 :uuid "uuid-foo"))
-         (-callback nil) ;; we don't call it
+                 :uuid "uuid-foo"
+                 :info (:foo (:bar "baz"))))
          (in-callback-error)
-         (-callback-error (lambda (req err info)
+         (-callback-error (lambda (req err)
                             (setq in-callback-error
                                   (list :req req
                                         :error-type (plist-get err :type)
-                                        :info info))))
-         (-info '(:foo "bar"))
+                                        :info (plist-get req :info)))))
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (should-error
      (let ((debug-on-error t))
        (kill-process
         (eden-test-echo-resp
-         "" buff-name
-         (eden-sentinel -req nil -callback-error -info)
-         1))
+         "" buff-name (eden-sentinel -req nil -callback-error) 1))
        (sleep-for 0.2))
      :type 'eden-error-process)
     (should
@@ -1289,7 +1282,7 @@ arr[0]
      (equal in-callback-error
             (list :req -req
                   :error-type "eden-error-process"
-                  :info -info))))
+                  :info '(:foo (:bar "baz"))))))
 
 
   ;; everything's ok
@@ -1299,21 +1292,22 @@ arr[0]
                        :model "gpt-4o-mini"
                        :messages [(:role "user" :content "foo bar baz")])
                  :dir ,(concat (make-temp-file "eden-" t) "/")
-                 :uuid "uuid-foo"))
+                 :uuid "uuid-foo"
+                 :info (:foo (:bar "baz"))))
          (in-callback)
-         (-callback (lambda (req resp info)
-                      (setq in-callback (list :req req :resp resp :info info))))
-         (-callback-error nil) ;; we don't call it
-         (-info '(:foo "bar"))
+         (-callback (lambda (req resp)
+                      (setq in-callback
+                            (list :req req
+                                  :resp resp
+                                  :info (plist-get req :info)))))
          (buff-name (generate-new-buffer-name "*ai-test*")))
     (let ((debug-on-error t))
-      (eden-test-echo-resp
-       resp-str buff-name
-       (eden-sentinel -req -callback nil -info))
+      (eden-test-echo-resp resp-str buff-name (eden-sentinel -req -callback nil))
       (sleep-for 0.2))
     (should-not (get-buffer buff-name))
     (should (equal (eden-request-read 'response -req) resp))
-    (should (equal in-callback `(:req ,-req :resp ,resp :info ,-info)))))
+    (should (equal in-callback
+                   `(:req ,-req :resp ,resp :info (:foo (:bar "baz")))))))
 
 ;; Because we need it to be dynamic and declared before we
 ;; let-bind it and use it in `eden-request-command'.
@@ -2598,7 +2592,7 @@ baz-assistant-content
               ;; access it and modify it in the callback function bellow.
               (defvar -callback-acc nil "...")
               (setq -callback-acc nil)))
-         (callback (lambda (req resp info)
+         (callback (lambda (req resp)
                      (push (eden-get-in resp [:choices 0 :message :content])
                            -callback-acc)
                      ;; These functions must be called here to update
@@ -2736,7 +2730,7 @@ baz-assistant-content
                :prompt "req"
                :dir ,dir
                :uuid "req-uuid")
-        :callback (lambda (req resp info) nil))
+        :callback (lambda (req resp) nil))
        (setq pr-timer eden-pending-timer)
        ;; Wait for process to terminate
        (let ((proc (plist-get (car eden-pending-requests) :proc)))
