@@ -509,7 +509,7 @@ Specifically, 6 files are written to disk:
 - a `timestamp' file      - see `eden-request-timestamp' for more details
                             on that file,
 - a `request' file        - a JSON file with content being the value
-                            under `:req' key of REQ plist,
+                            under `:req-params' key of REQ plist,
 - an `api' file           - a JSON file with content being the value
                             under `:api' key of REQ plist,
 - a `prompt' file         - an `org-mode' file with content being the value
@@ -524,14 +524,14 @@ Specifically, 6 files are written to disk:
 Here's an example with a typical request (third of a conversation)
 that we would send to OpenAI API.  Evaluating the following expression
 
-    (let ((req \\='(:req (:stream :false
-                       :model \"gpt-4o-mini\"
-                       :messages [(:role \"system\" :content \"baz system message\")
-                                  (:role \"user\" :content \"foo user\")
-                                  (:role \"assistant\" :content \"foo assistant\")
-                                  (:role \"user\" :content \"bar prompt\")
-                                  (:role \"assistant\" :content \"bar assistant\")
-                                  (:role \"user\" :content \"baz user prompt\")])
+    (let ((req \\='(:req-params (:stream :false
+                              :model \"gpt-4o-mini\"
+                              :messages [(:role \"system\" :content \"baz system message\")
+                                         (:role \"user\" :content \"foo user\")
+                                         (:role \"assistant\" :content \"foo assistant\")
+                                         (:role \"user\" :content \"bar prompt\")
+                                         (:role \"assistant\" :content \"bar assistant\")
+                                         (:role \"user\" :content \"baz user prompt\")])
                  :api (:service \"openai\"
                        :endpoint \"https://api.openai.com/v1/chat/completions\")
                  :prompt \"baz user prompt\"
@@ -559,7 +559,7 @@ the moment we evaluate that expression):
 - /tmp/eden/uuid-baz/request.json
 - /tmp/eden/uuid-baz/system-message.org
 - /tmp/eden/uuid-baz/timestamp-1736137516.050655"
-  (let ((request (eden-json-encode (plist-get req :req)))
+  (let ((request (eden-json-encode (plist-get req :req-params)))
         (api (eden-json-encode (plist-get req :api)))
         (prompt (plist-get req :prompt))
         (system-message (or (plist-get req :system-message) ""))
@@ -836,7 +836,7 @@ error data looks like this:
                   `(:type ,(symbol-name type)
                     :message ,(alist-get type eden-errors)
                     :directory ,(eden-request-dir req)
-                    :request ,(plist-get req :req)
+                    :request ,(plist-get req :req-params)
                     ,@(when error `(:error ,error))
                     ,@(when event `(:process-event ,event))
                     ,@(when process-stdout
@@ -863,12 +863,12 @@ and `event' as described in `make-process'.
 When no error occurs during execution of the sentinel, CALLBACK function
 is called.  It takes 2 arguments
 
-- REQ   - plist of information about the request where :req
+- REQ   - plist of information about the request where :req-params
           is an OpenAI-compatible API request.  For instance:
 
-              (:req (:stream :false
-                     :model \"gpt-4o-mini\"
-                     :messages [(:role \"user\" :content \"foo bar baz\")])
+              (:req-params (:stream :false
+                            :model \"gpt-4o-mini\"
+                            :messages [(:role \"user\" :content \"foo bar baz\")])
                :api (:service \"openai\"
                      :endpoint \"https://api.openai.com/v1/chat/completions\")
                :prompt \"foo bar baz\"
@@ -988,7 +988,7 @@ REQ request is a plist with the following keys:
 
                     See `eden-request-command'.
 
-- :req            - The request that we send to OpenAI API or a compatible
+- :req-params     - The request that we send to OpenAI API or a compatible
                     API like Perplexity.  See:
 
                     - https://platform.openai.com/docs/guides/text-generation/,
@@ -1031,9 +1031,9 @@ message and no previous exchanges:
 
     (:api (:service \"openai\"
            :endpoint \"https://api.openai.com/v1/chat/completions\")
-     :req (:stream :false
-           :model \"gpt-4o-mini\"
-           :messages [(:role \"user\" :content \"foo bar baz\")])
+     :req-params (:stream :false
+                  :model \"gpt-4o-mini\"
+                  :messages [(:role \"user\" :content \"foo bar baz\")])
      :prompt \"foo bar baz\"
      :dir \"/tmp/eden/\"
      :uuid \"40e73d38-7cb9-4558-b11f-542f8a2d1f9c\")
@@ -1043,14 +1043,14 @@ Perplexity API and a system message:
 
     (:api (:service \"perplexity\"
            :endpoint \"https://api.perplexity.ai/chat/completions\")
-     :req (:stream :false
-           :model \"gpt-4o-mini\"
-           :messages [(:role \"system\" :content \"baz system message\")
-                      (:role \"user\" :content \"foo prompt\")
-                      (:role \"assistant\" :content \"foo response\")
-                      (:role \"user\" :content \"bar prompt\")
-                      (:role \"assistant\" :content \"bar response\")
-                      (:role \"user\" :content \"baz prompt\")])
+     :req-params (:stream :false
+                  :model \"gpt-4o-mini\"
+                  :messages [(:role \"system\" :content \"baz system message\")
+                             (:role \"user\" :content \"foo prompt\")
+                             (:role \"assistant\" :content \"foo response\")
+                             (:role \"user\" :content \"bar prompt\")
+                             (:role \"assistant\" :content \"bar response\")
+                             (:role \"user\" :content \"baz prompt\")])
      :prompt \"baz user prompt\"
      :system-message \"baz system message\"
      :exchanges [(:uuid \"uuid-foo\"
@@ -1593,8 +1593,7 @@ the user about it.
 See `eden-request-dir'."
   (interactive)
   (if-let* ((req-uuid (eden-prompt-current-req-uuid eden-prompt-history-state))
-            (req-dir (eden-request-dir
-                      `(:dir ,eden-dir :uuid ,req-uuid))))
+            (req-dir (eden-request-dir `(:dir ,eden-dir :uuid ,req-uuid))))
       (progn
         (eden-maybe-delete-window-prompt-buffer)
         (dired-other-window req-dir))
@@ -2009,9 +2008,6 @@ See `eden-profile-ring' and `eden-profile-current'."
 Each element is a plist with the following keys:
 
 - :req             - A request created with `eden-build-request'.
-- :conversation-id - The ID for the conversation if `:req' is part of an
-                     ongoing conversation in `eden-conversations';  nil
-                     if not part of a conversation.
 - :proc            - The process object handling `:req', as returned by
                      `eden-request-send'.
 
@@ -2096,8 +2092,8 @@ exists with a request being part of CONVERSATION-ID conversation.
 
 See `eden-conversations'."
   (seq-some
-   (lambda (r)
-     (when-let ((id (eden-get-in r [:req :conversation-id])))
+   (lambda (p)
+     (when-let ((id (eden-get-in p [:req :conversation-id])))
        (string= conversation-id id)))
    eden-pending-requests))
 
@@ -2208,16 +2204,16 @@ Eden global variable."
               ,(when (not (string-empty-p -prompt))
                  `(:role "user" :content ,(eden-org-to-markdown -prompt)))))
            (req-messages (apply 'vector (remq nil -messages)))
-           (request `(:stream :false
-                      :model ,model
-                      :messages ,req-messages)))
+           (req-params `(:stream :false
+                         :model ,model
+                         :messages ,req-messages)))
       ;; Anthropic API
       (when (string= (plist-get api :service) "anthropic")
-        (plist-put request :max_tokens 4096)
+        (plist-put req-params :max_tokens 4096)
         (when include-reasoning
-          (plist-put request :thinking '(:type "enabled" :budget_tokens 2048))))
+          (plist-put req-params :thinking '(:type "enabled" :budget_tokens 2048))))
       ;; Done
-      `(:req ,request
+      `(:req-params ,req-params
         :api ,api
         :prompt ,-prompt
         :system-message ,-system-message
@@ -2375,8 +2371,7 @@ See `eden-request-conversation-path' and `eden-request-timestamp'."
       (seq-sort (lambda (t1 t2) (< (cdr t1) (cdr t2))))
       (mapcar (lambda (r)
                 (when (<= timestamp (cdr r))
-                  (let ((req `(:dir ,dir
-                               :uuid ,(car r))))
+                  (let ((req `(:dir ,dir :uuid ,(car r))))
                     (eden-request-conversation-path req)))))
       (delq nil))))
 
@@ -2628,8 +2623,7 @@ heading which includes the property `eden-org-property-req'.
 Signal an error either if there is no request at point, or if
 the request cannot be found in `eden-dir'."
   (if-let* ((req-uuid (org-entry-get nil eden-org-property-req))
-            (req-dir (eden-request-dir
-                      `(:dir ,eden-dir :uuid ,req-uuid))))
+            (req-dir (eden-request-dir `(:dir ,eden-dir :uuid ,req-uuid))))
       (if (file-exists-p req-dir)
           req-uuid
         (error "Request `%s' doesn't exist" req-dir))
@@ -2731,8 +2725,7 @@ See `eden-req-at-point-uuid' and `eden-request-citations'."
                 (insert (format "- %s\n" citation)))))
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))
-      (message "No citations for `%s' conversation"
-               (eden-request-dir req)))))
+      (message "No citations for `%s' conversation" (eden-request-dir req)))))
 
 (defun eden-req-at-point-show-reasoning ()
   "Show reasoning of the request at point.
@@ -2759,8 +2752,7 @@ See `eden-req-at-point-uuid' and `eden-request-assistant-reasoning'."
 See `eden-req-at-point-uuid' and `eden-request-dir'."
   (interactive)
   (when-let ((req-uuid (eden-req-at-point-uuid))
-             (req-dir (eden-request-dir
-                       `(:dir ,eden-dir :uuid ,req-uuid))))
+             (req-dir (eden-request-dir `(:dir ,eden-dir :uuid ,req-uuid))))
     (dired req-dir)))
 
 (transient-define-prefix eden-req-at-point-menu ()
