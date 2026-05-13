@@ -2994,6 +2994,19 @@ baz-assistant-content
                :prompt "foo prompt")))
     (should (string= (plist-get req :conversation-id) "foo-conversation-id")))
 
+  ;; :info
+  ;;
+  ;; We include :conversation-id key in the output request.
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :profile `(:dir ,dir
+                          :api (:service "openai"
+                                :endpoint "https://api.openai.com/v1/chat/completions")
+                          :model "gpt-5.4")
+               :prompt "foo prompt"
+               :info '(:foo (:bar "baz")))))
+    (should (equal (plist-get req :info) '(:foo (:bar "baz")))))
+
   ;; :include-reasoning
   ;;
   ;; Anthopic API specific

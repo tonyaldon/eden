@@ -2173,16 +2173,21 @@ conversation, INFO argument must be structured as:
         (eden-history-update :new-req-uuid (plist-get req :uuid))
         (eden-mode-line-waiting 'maybe-start)))))
 
-(cl-defun eden-build-request (&key profile prompt prev-req-uuid)
-  "Return a request as defined in 'eden-request-send'.
+(cl-defun eden-build-request (&key profile prompt prev-req-uuid info)
+  "Return a request as defined in `eden-request-send'.
 
-PROFILE is a plist as defined in 'eden-profile-current'.
+PROFILE is a plist as defined in `eden-profile-current'.
 
 When PROMPT is nil, it isn't included in the request parameters.
 
-When PREV-REQ-UUID is provided, the request build is chained to this
+When PREV-REQ-UUID is provided, the request built is chained to this
 previous request, and all previous context is included.  See
-'eden-request-conversation'.
+`eden-request-conversation'.
+
+INFO plist is pass as :info value in the return request.  This is useful
+to pass data not in PROFILE that could then be used in the callback called
+in the sentinel after receiving a response from the LLM API.
+See `eden-send-request'.
 
 This function is self-contained.  Its output doesn't depend on any
 Eden global variable."
@@ -2207,9 +2212,9 @@ Eden global variable."
                     (eden-request-conversation prev-req)
                   (error
                    (signal 'eden-error-req
-                           (list (format "Cannot build request with this prev request:\n%S\nError: %s"
-                                         prev-req
-                                         (error-message-string err)))))))
+                            (list (format "Cannot build request with this prev request:\n%S\nError: %s"
+                                          prev-req
+                                          (error-message-string err)))))))
               (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
            (-messages
             `(,(when -system-message
@@ -2237,7 +2242,8 @@ Eden global variable."
         :exchanges ,exchanges
         :dir ,dir
         :uuid ,uuid
-        :conversation-id ,conversation-id))))
+        :conversation-id ,conversation-id
+        :info ,info))))
 
 (defun eden-callback (req _resp info)
   "Default callback function used in `eden-send'."
