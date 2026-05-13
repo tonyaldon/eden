@@ -32,6 +32,21 @@
       (setq plist (cddr plist)))
     p))
 
+(defun eden-plist-merge (&rest plists)
+  "Create a single property list from all plists in PLISTS.
+The process starts by copying the first list, and then setting properties
+from the other lists.  Settings in the last list are the most significant
+ones and overrule settings in the other lists."
+  ;; From org-macs.el.
+  (let ((rtn (copy-sequence (pop plists)))
+	      p v ls)
+    (while plists
+      (setq ls (pop plists))
+      (while ls
+	      (setq p (pop ls) v (pop ls))
+	      (setq rtn (plist-put rtn p v))))
+    rtn))
+
 (defun eden-json-encode (object)
   "Return a JSON representation of OBJECT as a string.
 
@@ -1246,6 +1261,11 @@ Setting this variable doesn't modify `eden-system-message'.
 
 See `eden-build-request'.")
 
+(defvar eden-req-params-extra nil
+  "Plist of parameters that overrides request body's parameters sent to the LLM API.
+
+See `eden-build-request'.")
+
 (defvar eden-dir (concat user-emacs-directory "eden/")
   "Directory where all requests sent by `eden-send' are stored.
 
@@ -1943,6 +1963,7 @@ It is a plist with the following key/value pairs:
 - :conversation-id       - See `eden-conversation-id'
 - :system-message        - See `eden-system-message'
 - :system-message-append - See `eden-system-message-append'
+- :req-params-extra      - See `eden-req-params-extra'
 
 See `eden-profile-push'."
   (list :api eden-api
@@ -1951,7 +1972,8 @@ See `eden-profile-push'."
         :include-reasoning eden-include-reasoning
         :conversation-id eden-conversation-id
         :system-message eden-system-message
-        :system-message-append eden-system-message-append))
+        :system-message-append eden-system-message-append
+        :req-params-extra eden-req-params-extra))
 
 (defun eden-profile-push ()
   "Push current profile into `eden-profile-ring'.
@@ -1974,11 +1996,13 @@ See `eden-profile-current'."
             (error-message-string err))))
 
   (setq eden-api (plist-get profile :api))
+  (setq eden-dir (plist-get profile :dir))
   (setq eden-model (plist-get profile :model))
   (setq eden-include-reasoning (plist-get profile :include-reasoning))
   (setq eden-conversation-id (plist-get profile :conversation-id))
   (setq eden-system-message (plist-get profile :system-message))
-  (setq eden-system-message-append (plist-get profile :system-message-append)))
+  (setq eden-system-message-append (plist-get profile :system-message-append))
+  (setq eden-req-params-extra (plist-get profile :req-params-extra)))
 
 (defun eden-profile-previous ()
   "Turn previous profile into the current one.
@@ -2182,7 +2206,7 @@ Eden global variable."
   (cl-destructuring-bind
       ;; All profile keys must be listed here even if we don't use them.
       (&key dir api model system-message system-message-append
-            include-reasoning conversation-id)
+            include-reasoning conversation-id req-params-extra)
       profile
     (let* ((uuid (eden-uuid))
            (_ (eden-request-dir `(:dir ,dir :uuid ,uuid))) ;; signal error if not ok)
@@ -2222,6 +2246,7 @@ Eden global variable."
         (plist-put req-params :max_tokens 4096)
         (when include-reasoning
           (plist-put req-params :thinking '(:type "enabled" :budget_tokens 2048))))
+      (setq req-params (eden-plist-merge req-params req-params-extra))
       ;; Done
       `(:req-params ,req-params
         :api ,api

@@ -2889,6 +2889,33 @@ baz-assistant-content
                :prompt "foo prompt")))
     (should (string= (plist-get req :conversation-id) "foo-conversation-id")))
 
+  ;; :req-params-extra
+  ;; This parameters override the defaults
+  ;;
+  ;; With OpenAI Responses API
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :profile `(:dir ,dir
+                          :api (:service "openai"
+                                :endpoint "https://api.openai.com/v1/responses")
+                          :model "gpt-5.4"
+                          :req-params-extra (:reasoning (:effort "medium")
+                                             :max_output_tokens 25000))
+               :prompt "foo prompt")))
+    (should
+     (equal (eden-get-in req [:req-params :reasoning]) '(:effort "medium")))
+    (should (equal (eden-get-in req [:req-params :max_output_tokens]) 25000)))
+  ;; With Anthropic API (we check that this override default values)
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req (eden-build-request
+               :profile `(:dir ,dir
+                          :api (:service "anthropic"
+                                :endpoint "https://api.anthropic.com/v1/messages")
+                          :model "claude-opus-4-7"
+                          :req-params-extra (:max_tokens 8192))
+               :prompt "foo prompt")))
+    (should (equal (eden-get-in req [:req-params :max_tokens]) 8192)))
+
   ;; :info
   ;;
   ;; We include :conversation-id key in the output request.
