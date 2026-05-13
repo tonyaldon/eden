@@ -80,7 +80,7 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
                (list (format "`:uuid' key missing or not a string: %S" req))))
     (concat (file-name-as-directory (expand-file-name dir)) uuid "/")))
 
-(defun eden-request-file (file-type req)
+(defun eden-request-file (req file-type)
   "Return full path of file of FILE-TYPE of REQ request.
 
 Signal an error if FILE-TYPE is not one of the following symbols:
@@ -90,9 +90,9 @@ Signal an error if FILE-TYPE is not one of the following symbols:
 
 For instance
 
-    (eden-request-file \\='request \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    (eden-request-file \\='(:dir \"/tmp/eden/\" :uuid \"foo\") \\='request)
     ;; \"/tmp/eden/foo/request.json\"
-    (eden-request-file \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    (eden-request-file \\='(:dir \"/tmp/eden/\" :uuid \"foo\" \\='prompt))
     ;; \"/tmp/eden/foo/prompt.org\""
   (let* ((filenames '((error          . "error.json")
                       (response       . "response.json")
@@ -110,7 +110,7 @@ For instance
       (error "`file-type' argument must be one of %s, not `%s'"
              (mapcar #'car filenames) file-type))))
 
-(defun eden-request-read (file-type req)
+(defun eden-request-read (req file-type)
   "Return file content of FILE-TYPE of REQ request as string or object.
 
 If file extension is \".json\", return an object (that may be
@@ -135,7 +135,7 @@ For instance if the file \"request.json\" of the request
 
 we have the following:
 
-    (eden-request-read \\='request \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    (eden-request-read \\='(:dir \"/tmp/eden/\" :uuid \"foo\") \\='request)
     ;; (:stream :false
     ;;  :model \"gpt-4o-mini\"
     ;;  :messages [(:role \"user\" :content \"foo bar baz\")])
@@ -143,13 +143,13 @@ we have the following:
 And for a non JSON file like the file \"prompt.org\" (assuming the
 user prompt was \"foo bar baz\") we get something like this:
 
-    (eden-request-read \\='prompt \\='(:dir \"/tmp/eden/\" :uuid \"foo\"))
+    (eden-request-read \\='(:dir \"/tmp/eden/\" :uuid \"foo\") \\='prompt)
     ;; \"foo bar baz\""
-  (let* ((file (eden-request-file file-type req)))
+  (let* ((file (eden-request-file req file-type)))
     (if (not (file-exists-p file))
         (error "Missing `%s' file" file)
       (with-temp-buffer
-        (insert-file-contents (eden-request-file file-type req))
+        (insert-file-contents (eden-request-file req file-type))
         (if (string= (file-name-extension file) "json")
             (eden-json-read)
           (buffer-substring-no-properties (point-min) (point-max)))))))
@@ -268,21 +268,21 @@ Signal an error in the following cases:
     (cond
      ((not (file-exists-p (eden-request-dir req)))
       (error "Request `%s' doesn't exist" req-dir))
-     ((file-exists-p (eden-request-file 'error req))
+     ((file-exists-p (eden-request-file req 'error))
       (error "Request `%s' has failed in a prior attempt.  See why in `%s' file"
-             req-dir (eden-request-file 'error req)))
-     ((not (file-exists-p (eden-request-file 'api req)))
-      (error "Missing `%s' file" (eden-request-file 'api req)))
-     ((not (file-exists-p (eden-request-file 'prompt req)))
-      (error "Missing `%s' file" (eden-request-file 'prompt req)))
-     ((not (file-exists-p (eden-request-file 'request req)))
-      (error "Missing `%s' file" (eden-request-file 'request req)))
-     ((not (file-exists-p (eden-request-file 'response req)))
-      (error "Missing `%s' file" (eden-request-file 'response req)))
-     ((not (file-exists-p (eden-request-file 'response-org req)))
-      (error "Missing `%s' file" (eden-request-file 'response-org req)))
-     ((not (file-exists-p (eden-request-file 'exchanges req)))
-      (error "Missing `%s' file" (eden-request-file 'exchanges req)))
+             req-dir (eden-request-file req 'error)))
+     ((not (file-exists-p (eden-request-file req 'api)))
+      (error "Missing `%s' file" (eden-request-file req 'api)))
+     ((not (file-exists-p (eden-request-file req 'prompt)))
+      (error "Missing `%s' file" (eden-request-file req 'prompt)))
+     ((not (file-exists-p (eden-request-file req 'request)))
+      (error "Missing `%s' file" (eden-request-file req 'request)))
+     ((not (file-exists-p (eden-request-file req 'response)))
+      (error "Missing `%s' file" (eden-request-file req 'response)))
+     ((not (file-exists-p (eden-request-file req 'response-org)))
+      (error "Missing `%s' file" (eden-request-file req 'response-org)))
+     ((not (file-exists-p (eden-request-file req 'exchanges)))
+      (error "Missing `%s' file" (eden-request-file req 'exchanges)))
      ((null (directory-files req-dir nil "timestamp-.*"))
       (error "Missing timestamp file in `%s' request" req-dir))
      (t t))))
@@ -332,14 +332,14 @@ gives use the following conversation:
                 (:role \"user\" :content \"baz user\")
                 (:role \"assistant\" :content \"baz assistant\\n\")])]"
   (eden-request-check req)
-  (let* ((api (eden-request-read 'api req))
-         (request (eden-request-read 'request req))
+  (let* ((api (eden-request-read req 'api))
+         (request (eden-request-read req 'request))
          ;; Exchanges up to req excluded without :context which
          ;; will be attached to the current exchange.
          (prev-exchanges
           (mapcar (lambda (e) (eden-plist-delete e :context))
-                  (eden-request-read 'exchanges req)))
-         (resp (eden-request-read 'response req))
+                  (eden-request-read req 'exchanges)))
+         (resp (eden-request-read req 'response))
          (output
           (if (eden-api-is-responses-p api)
               nil ;; TODO (:output)
@@ -352,12 +352,12 @@ gives use the following conversation:
               (if (string= (plist-get (aref msgs 0) :role) "system")
                   (seq-subseq msgs 1)
                 msgs))))
-         (reasoning (ignore-errors (eden-request-read 'reasoning req)))
+         (reasoning (ignore-errors (eden-request-read req 'reasoning)))
          (exchange
           (delq nil
                 `(:uuid ,(plist-get req :uuid)
-                  :prompt ,(eden-request-read 'prompt req)
-                  :response ,(eden-request-read 'response-org req)
+                  :prompt ,(eden-request-read req 'prompt)
+                  :response ,(eden-request-read req 'response-org)
                   ,@(when reasoning `(:reasoning ,reasoning))
                   :context ,(seq-concatenate 'vector input output)))))
     (apply 'vector (append prev-exchanges (list exchange)))))
@@ -376,7 +376,7 @@ the following:
     ;; [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"]"
   (when (ignore-errors (eden-request-check req))
     (let* ((uuids (mapcar (lambda (exchange) (plist-get exchange :uuid))
-                          (eden-request-read 'exchanges req)))
+                          (eden-request-read req 'exchanges)))
            (last-uuid (list (plist-get req :uuid))))
       (apply 'vector (append uuids last-uuid)))))
 
@@ -436,7 +436,7 @@ See `eden-req-at-point-show-citations'."
      (lambda (acc exchange)
        (let* ((uuid-exchange (plist-get exchange :uuid))
               (req-exchange `(:dir ,dir :uuid ,uuid-exchange)))
-         (let* ((resp (eden-request-read 'response req-exchange))
+         (let* ((resp (eden-request-read req-exchange 'response))
                 (citations (or (plist-get resp :citations) ;; perplexity
                                ;; openai web search
                                (mapcar (lambda (elt)
@@ -481,7 +481,7 @@ See `eden-request-timestamp'."
   (when-let ((timestamp (eden-request-timestamp req)))
     (format-time-string "[%Y-%m-%d %a]" (seconds-to-time (floor timestamp)))))
 
-(defun eden-request-write (file-type req content)
+(defun eden-request-write (req file-type content)
   "Write CONTENT string in file of FILE-TYPE in REQ's directory.
 
 All accepted symbols for FILE-TYPE, except for the `timestamp'
@@ -495,7 +495,7 @@ to disk.  See `eden-request-timestamp' for more details on that file."
         (file-path (if (eq file-type 'timestamp)
                        (format "%stimestamp-%s"
                                (eden-request-dir req) (time-to-seconds))
-                     (eden-request-file file-type req))))
+                     (eden-request-file req file-type))))
     (make-directory (eden-request-dir req) 'parents)
     (with-temp-buffer
       (insert content)
@@ -564,12 +564,12 @@ the moment we evaluate that expression):
         (prompt (plist-get req :prompt))
         (system-message (or (plist-get req :system-message) ""))
         (exchanges (eden-json-encode (plist-get req :exchanges))))
-    (eden-request-write 'timestamp req "")
-    (eden-request-write 'request req request)
-    (eden-request-write 'api req api)
-    (eden-request-write 'prompt req prompt)
-    (eden-request-write 'system-message req system-message)
-    (eden-request-write 'exchanges req exchanges)))
+    (eden-request-write req 'timestamp "")
+    (eden-request-write req 'request request)
+    (eden-request-write req 'api api)
+    (eden-request-write req 'prompt prompt)
+    (eden-request-write req 'system-message system-message)
+    (eden-request-write req 'exchanges exchanges)))
 
 (defun eden-api-is-responses-p (api)
   "..."
@@ -630,7 +630,7 @@ lines but also
   (let* ((endpoint (eden-get-in req [:api :endpoint]))
          (service (eden-get-in req [:api :service]))
          (api-key-symbol (eden-api-key-symbol service))
-         (request-file (eden-request-file 'request req))
+         (request-file (eden-request-file req 'request))
          (command-fmt (if (string= service "anthropic")
                           (concat "curl -s -X POST %s "
                                   "-H 'x-api-key: %s' "
@@ -649,21 +649,21 @@ lines but also
       (set api-key-symbol (auth-source-pick-first-password :host service)))
     (when (null (eval api-key-symbol))
       (signal 'eden-error-api-key
-               (format
-                (concat "Do you have a line in `~/.authinfo.gpg' file declaring "
-                        "the API key of service `%s' like this: "
-                        "machine %s password <api-key>")
-                service service)))
+              (format
+               (concat "Do you have a line in `~/.authinfo.gpg' file declaring "
+                       "the API key of service `%s' like this: "
+                       "machine %s password <api-key>")
+               service service)))
     (list
      (format command-fmt endpoint (eval api-key-symbol) request-file)
      (format command-fmt endpoint "<api-key>" request-file))))
 
-(defun eden-write-command (command-no-api-key req)
+(defun eden-write-command (req command-no-api-key)
   "Write COMMAND-NO-API-KEY in file of type `command' in REQ's directory.
 
 See `eden-request-file' and `eden-request-command'."
   (message "%s" command-no-api-key)
-  (eden-request-write 'command req command-no-api-key))
+  (eden-request-write req 'command command-no-api-key))
 
 (defun eden-markdown-to-org (markdown-str)
   "Return MARKDOWN-STR markdown string converted into `org-mode' string."
@@ -729,7 +729,7 @@ It's maybe clearer with an example:
                                nil nil nil 1)))))
       (buffer-substring-no-properties (point-min) (point-max)))))
 
-(defun eden-write-response (resp-str resp req)
+(defun eden-write-response (req resp-str resp)
   "Write response files of REQ request.
 
 RESP-STR is used for the content of `response' file type.
@@ -746,7 +746,7 @@ RESP-STR.
 
 See `eden-request-file', `eden-markdown-to-org' and
 `eden-org-replace-perplexity-citations'."
-  (eden-request-write 'response req resp-str)
+  (eden-request-write req 'response resp-str)
   (let* ((assistant-content (eden-request-assistant-content resp))
          ;; Because Perplexity do it differently and I use Perplexity
          (assistant-content-filtered
@@ -760,19 +760,19 @@ See `eden-request-file', `eden-markdown-to-org' and
           (if (and citations (vectorp citations))
               (eden-org-replace-perplexity-citations response-org citations)
             response-org)))
-    (eden-request-write 'response-org req response-org))
+    (eden-request-write req 'response-org response-org))
   (when-let* ((assistant-reasoning (eden-request-assistant-reasoning resp))
               (reasoning (eden-markdown-to-org assistant-reasoning)))
-    (eden-request-write 'reasoning req reasoning)))
+    (eden-request-write req 'reasoning reasoning)))
 
-(defun eden-write-error (err req)
+(defun eden-write-error (req err)
   "Write ERR error in REQ's directory.
 
 ERR is non string object that we encode to JSON format
 and saved as error file type in REQ's directory.
 
 See `eden-request-file'."
-  (eden-request-write 'error req (eden-json-encode err)))
+  (eden-request-write req 'error (eden-json-encode err)))
 
 (defvar eden-errors
   '((eden-error-req . "Bad request")
@@ -790,9 +790,10 @@ See `eden-error-log-and-signal'.")
 (dolist (err eden-errors)
   (define-error (car err) (cdr err)))
 
-(cl-defun eden-error-log-and-signal (type req process
-                                          &key error event process-stdout
-                                          callback-error)
+;; It's behavior is unit tested when we test `eden-sentinel'.
+(cl-defun eden-error-log-and-signal (req type process
+                                         &key error event process-stdout
+                                         callback-error)
   "Signal error of TYPE type that happened when sending REQ request.
 
 Before signaling the error:
@@ -851,7 +852,7 @@ error data looks like this:
         (error
          (setq type 'eden-error-callback-error)
          (setq err (funcall error-function type req -error nil nil err)))))
-    (eden-write-error err req)
+    (eden-write-error req err)
     (signal type err)))
 
 (defmacro eden-sentinel (req callback callback-error)
@@ -913,7 +914,7 @@ just before signaling the error.  It takes 2 arguments:
        (cond
         ((not (buffer-name (process-buffer process)))
          (eden-error-log-and-signal
-          'eden-error-process-buffer ,req process
+          ,req 'eden-error-process-buffer process
           :callback-error ,callback-error))
         ((string= event "finished\n")
          (let ((resp (condition-case err
@@ -921,26 +922,26 @@ just before signaling the error.  It takes 2 arguments:
                            (goto-char (point-min))
                            (eden-json-read))
                        (error (eden-error-log-and-signal
-                               'eden-error-json-read ,req process
+                               ,req 'eden-error-json-read process
                                :error err
                                :process-stdout (funcall stdout process)
                                :callback-error ,callback-error)))))
            (if-let ((err (plist-get resp :error)))
                (eden-error-log-and-signal
-                'eden-error-api ,req process
+                ,req 'eden-error-api process
                 :error err
                 :callback-error ,callback-error)
              (condition-case err
                  (progn
-                   (eden-write-response (funcall stdout process) resp ,req)
+                   (eden-write-response ,req (funcall stdout process) resp)
                    (kill-buffer (process-buffer process))
                    (funcall ,callback ,req resp))
                (error (eden-error-log-and-signal
-                       'eden-error-callback ,req process
+                       ,req 'eden-error-callback process
                        :error err
                        :callback-error ,callback-error))))))
         (t (eden-error-log-and-signal
-            'eden-error-process ,req process
+            ,req 'eden-error-process process
             :process-stdout (funcall stdout process)
             :event event
             :callback-error ,callback-error))))))
@@ -1067,7 +1068,7 @@ Perplexity API and a system message:
      :uuid \"uuid-baz\")"
   (seq-let (command command-no-api-key) (eden-request-command req)
     (eden-write-request req)
-    (eden-write-command command-no-api-key req)
+    (eden-write-command req command-no-api-key)
     (make-process
      :name "eden"
      :buffer (generate-new-buffer-name "eden")
@@ -1466,7 +1467,7 @@ The look up for the prompt is done in DIR.  See `eden-prompt-history-state'."
   (pcase (aref prompt-history 1)
     ('nil nil)
     ((and p (pred consp)) (plist-get p :prompt))
-    (uuid (eden-request-read 'prompt `(:dir ,dir :uuid ,uuid)))))
+    (uuid (eden-request-read `(:dir ,dir :uuid ,uuid) 'prompt))))
 
 (defun eden-prompt-history-previous (prompt-history &optional prompt discard-current)
   "Update in-place the PROMPT-HISTORY backward.
@@ -1519,7 +1520,7 @@ See `eden-prompt-history-state'."
   (when-let* ((current (aref prompt-history 1))
               ((stringp current)) ;; it's the UUID of a request
               (req `(:dir ,dir :uuid ,current)))
-    (not (ignore-errors (eden-request-read 'prompt req)))))
+    (not (ignore-errors (eden-request-read req 'prompt)))))
 
 ;; This function is not unit tested.  When making changes to
 ;; it or any prompt history function, test it by starting a fresh
@@ -2705,7 +2706,7 @@ See `eden-req-at-point-uuid' and `eden-system-message'."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
-    (let ((system-message (eden-request-read 'system-message req)))
+    (let ((system-message (eden-request-read req 'system-message)))
       (if (string-empty-p system-message)
           (message "No system message for `%s' request." (eden-request-dir req))
         (let ((buff (get-buffer-create (eden-buffer-name "system message"))))
@@ -2744,13 +2745,13 @@ See `eden-req-at-point-uuid' and `eden-request-assistant-reasoning'."
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid)))
     (eden-request-check req)
-    (if (file-exists-p (eden-request-file 'reasoning req))
+    (if (file-exists-p (eden-request-file req 'reasoning))
         (let ((buff (get-buffer-create
                      (eden-buffer-name "reasoning of request at point"))))
           (with-current-buffer buff
             (erase-buffer)
             (org-mode)
-            (insert-file-contents (eden-request-file 'reasoning req)))
+            (insert-file-contents (eden-request-file req 'reasoning)))
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))
       (message "No reasoning for `%s' request" (eden-request-dir req)))))

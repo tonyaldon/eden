@@ -149,15 +149,15 @@
     (message "%s" (eden-request-dir req))
 
     ;; json files
-    (eden-request-write 'request req (eden-json-encode req-params))
-    (should (equal (eden-request-read 'request req) req-params))
+    (eden-request-write req 'request (eden-json-encode req-params))
+    (should (equal (eden-request-read req 'request) req-params))
 
     ;; non json files
-    (eden-request-write 'prompt req "user prompt\n")
-    (should (equal (eden-request-read 'prompt req) "user prompt\n"))
+    (eden-request-write req 'prompt "user prompt\n")
+    (should (equal (eden-request-read req 'prompt) "user prompt\n"))
 
     ;; response.json doesn't exist
-    (should-error (eden-request-read 'response req))))
+    (should-error (eden-request-read req 'response))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-assistant-content-test")))
 (ert-deftest eden-request-assistant-content-test ()
@@ -209,7 +209,7 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-error (eden-request-check req)))
 
   ;; Signal error when the request is incomplete
@@ -221,12 +221,12 @@
   ;; everything ok
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'api req "")
-    (eden-request-write 'prompt req "")
-    (eden-request-write 'request req "")
-    (eden-request-write 'exchanges req "")
-    (eden-request-write 'response req "")
-    (eden-request-write 'response-org req "")
+    (eden-request-write req 'api "")
+    (eden-request-write req 'prompt "")
+    (eden-request-write req 'request "")
+    (eden-request-write req 'exchanges "")
+    (eden-request-write req 'response "")
+    (eden-request-write req 'response-org "")
     (with-temp-buffer
       (write-file (concat (eden-request-dir req) "timestamp-1234")))
     (should (eden-request-check req))))
@@ -242,7 +242,7 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-error (eden-request-conversation req)))
 
   ;; Signal error when the request in incomplete
@@ -264,7 +264,7 @@
                                       :refusal nil))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation `(:dir ,dir :uuid "uuid-foo"))
@@ -290,7 +290,7 @@
                                       :refusal nil))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation req)
@@ -328,7 +328,7 @@
          (resp-str (eden-json-encode resp)))
     (message "%s" (eden-request-dir req))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation `(:dir ,dir :uuid "uuid-baz"))
@@ -387,7 +387,7 @@
                                       :reasoning_content "baz reasoning\n"))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation `(:dir ,dir :uuid "uuid-baz"))
@@ -427,7 +427,7 @@
   ;; nil when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-not (eden-request-conversation-path req)))
 
   ;; nil when the request in incomplete
@@ -455,7 +455,7 @@
                             :logprobs nil :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation-path `(:dir ,dir :uuid "uuid-foo"))
@@ -496,7 +496,7 @@
          (resp-str (eden-json-encode resp))
          (dir (plist-get req :dir)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-conversation-path `(:dir ,dir :uuid "uuid-baz"))
@@ -513,7 +513,7 @@
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-error (eden-request-citations req)))
 
   ;; Signal error when the request in incomplete
@@ -545,7 +545,7 @@
                             :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
-    (eden-write-response resp-str resp req)
+    (eden-write-response req resp-str resp)
     (should
      (equal
       (eden-request-citations `(:dir ,dir :uuid "uuid-foo"))
@@ -691,13 +691,13 @@
                                 :finish_reason "stop")]))
          (baz-resp-str (eden-json-encode baz-resp)))
     (eden-write-request foo-req)
-    (eden-write-response foo-resp-str foo-resp foo-req)
+    (eden-write-response foo-req foo-resp-str foo-resp)
     (eden-write-request foo-foo-req)
-    (eden-write-response foo-foo-resp-str foo-foo-resp foo-foo-req)
+    (eden-write-response foo-foo-req foo-foo-resp-str foo-foo-resp)
     (eden-write-request bar-req)
-    (eden-write-response bar-resp-str bar-resp bar-req)
+    (eden-write-response bar-req bar-resp-str bar-resp)
     (eden-write-request baz-req)
-    (eden-write-response baz-resp-str baz-resp baz-req)
+    (eden-write-response baz-req baz-resp-str baz-resp)
     (should
      (equal
       (eden-request-citations `(:dir ,dir :uuid "uuid-baz"))
@@ -718,7 +718,7 @@
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
     (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
-      (eden-request-write 'timestamp req "")
+      (eden-request-write req 'timestamp "")
       (sleep-for 0.1)
       (should
        (equal (eden-request-timestamp req) 1733921715.2331347)))))
@@ -731,7 +731,7 @@
   (cl-letf (((symbol-function 'time-to-seconds)
              (lambda () 1733921715.2331347)))
     (let ((req '(:dir "/tmp/eden/" :uuid "uuid-foo")))
-      (eden-request-write 'timestamp req "")
+      (eden-request-write req 'timestamp "")
       (sleep-for 0.1)
       (should
        (equal (eden-request-date req) "[2024-12-11 Wed]")))))
@@ -747,14 +747,14 @@
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-write-request req)
-    (should (equal (eden-request-read 'request req)
+    (should (equal (eden-request-read req 'request)
                    (plist-get req :req-params)))
-    (should (equal (eden-request-read 'api req)
+    (should (equal (eden-request-read req 'api)
                    (plist-get req :api)))
-    (should (equal (eden-request-read 'prompt req)
+    (should (equal (eden-request-read req 'prompt)
                    (plist-get req :prompt)))
-    (should (equal (eden-request-read 'system-message req) ""))
-    (should-not (eden-request-read 'exchanges req))
+    (should (equal (eden-request-read req 'system-message) ""))
+    (should-not (eden-request-read req 'exchanges))
     (should
      (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
         1)))
@@ -783,15 +783,15 @@
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-write-request req)
-    (should (equal (eden-request-read 'request req)
+    (should (equal (eden-request-read req 'request)
                    (plist-get req :req-params)))
-    (should (equal (eden-request-read 'api req)
+    (should (equal (eden-request-read req 'api)
                    (plist-get req :api)))
-    (should (equal (eden-request-read 'prompt req)
+    (should (equal (eden-request-read req 'prompt)
                    (plist-get req :prompt)))
-    (should (equal (eden-request-read 'system-message req)
+    (should (equal (eden-request-read req 'system-message)
                    (plist-get req :system-message)))
-    (should (equal (eden-request-read 'exchanges req)
+    (should (equal (eden-request-read req 'exchanges)
                    (plist-get req :exchanges)))
     (should
      (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
@@ -809,7 +809,7 @@
          (command-fmt (concat "curl -s -X POST https://someservice-endpoint "
                               "-H 'Authorization: Bearer %s' "
                               "-H 'Content-Type: application/json' -d @%s"))
-         (request-file (eden-request-file 'request req)))
+         (request-file (eden-request-file req 'request)))
     (should
      (equal (eden-request-command req)
             (list
@@ -826,7 +826,7 @@
                               "-H 'x-api-key: %s' "
                               "-H 'anthropic-version: 2023-06-01' "
                               "-H 'Content-Type: application/json' -d @%s"))
-         (request-file (eden-request-file 'request req)))
+         (request-file (eden-request-file req 'request)))
     (should
      (equal (eden-request-command req)
             (list
@@ -902,9 +902,9 @@ arr[0]
                             :message (:role "assistant" :content "### foo assistant\n" :refusal nil)
                             :logprobs nil :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
-    (eden-write-response resp-str resp req)
-    (should (equal (eden-request-read 'response req) resp))
-    (should (equal (eden-request-read 'response-org req) "*** foo assistant\n")))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n")))
   ;; response from perplexity.ai with citations array
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -920,9 +920,9 @@ arr[0]
                                       :content "### foo assistant\n\nfoo citation[1]\n\nbar baz citations[2][3]\n")
                             :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
-    (eden-write-response resp-str resp req)
-    (should (equal (eden-request-read 'response req) resp))
-    (should (equal (eden-request-read 'response-org req)
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org)
                    "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n")))
   ;; response from perplexity.ai with reasoning content
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
@@ -936,10 +936,10 @@ arr[0]
                                       :content "<think>### foo reasoning\n</think>\n### foo assistant\n")
                             :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
-    (eden-write-response resp-str resp req)
-    (should (equal (eden-request-read 'response req) resp))
-    (should (equal (eden-request-read 'response-org req) "*** foo assistant\n"))
-    (should (equal (eden-request-read 'reasoning req) "*** foo reasoning\n")))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n")))
   ;; response from deepseek.com with reasoning content
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -954,10 +954,10 @@ arr[0]
                             :logprobs nil
                             :finish_reason "stop")]))
          (resp-str (eden-json-encode resp)))
-    (eden-write-response resp-str resp req)
-    (should (equal (eden-request-read 'response req) resp))
-    (should (equal (eden-request-read 'response-org req) "*** foo assistant\n"))
-    (should (equal (eden-request-read 'reasoning req) "*** foo reasoning\n"))))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-sentinel-test")))
 (ert-deftest eden-sentinel-test ()
@@ -985,11 +985,11 @@ arr[0]
        (sleep-for 0.2))
      :type 'eden-error-process-buffer)
     (should-not (get-buffer buff-name))
-    (message "%s" (eden-request-file 'error -req))
+    (message "%s" (eden-request-file -req 'error))
     (should
      (equal
       (with-temp-buffer
-        (insert-file-contents (eden-request-file 'error -req))
+        (insert-file-contents (eden-request-file -req 'error))
         (eden-json-read))
       `(:type "eden-error-process-buffer"
         :message "The process buffer got killed while processing the request"
@@ -1014,7 +1014,7 @@ arr[0]
      :type 'eden-error-process)
     (should-not (get-buffer buff-name))
     (should
-     (equal (eden-request-read 'error -req)
+     (equal (eden-request-read -req 'error)
             `(:type "eden-error-process"
               :message "The process did not finished correctly"
               :directory ,(eden-request-dir -req)
@@ -1038,7 +1038,7 @@ arr[0]
      :type 'eden-error-process)
     (should-not (get-buffer buff-name))
     (should
-     (equal (eden-request-read 'error -req)
+     (equal (eden-request-read -req 'error)
             `(:type "eden-error-process"
               :message "The process did not finished correctly"
               :directory ,(eden-request-dir -req)
@@ -1059,7 +1059,7 @@ arr[0]
      :type 'eden-error-json-read)
     (should-not (get-buffer buff-name))
     (should
-     (equal (eden-request-read 'error -req)
+     (equal (eden-request-read -req 'error)
             `(:type "eden-error-json-read"
               :message "Error while parsing JSON in process buffer"
               :directory ,(eden-request-dir -req)
@@ -1090,7 +1090,7 @@ arr[0]
     (should-not (get-buffer buff-name))
     (should
      (equal
-      (eden-request-read 'error -req)
+      (eden-request-read -req 'error)
       `(:type "eden-error-api"
         :message "API error"
         :directory ,(eden-request-dir -req)
@@ -1117,7 +1117,7 @@ arr[0]
     (should-not (get-buffer buff-name))
     (should
      (equal
-      (eden-request-read 'error -req)
+      (eden-request-read -req 'error)
       `(:type "eden-error-callback"
         :message "Error while calling callback function in sentinel"
         :directory ,(eden-request-dir -req)
@@ -1144,7 +1144,7 @@ arr[0]
          1))
        (sleep-for 0.2))
      :type 'eden-error-callback-error)
-    (let* ((error.json (eden-request-read 'error -req))
+    (let* ((error.json (eden-request-read -req 'error))
            (original-error (plist-get error.json :original-error)))
       (should (string= (plist-get original-error :type)
                        "eden-error-process"))
@@ -1177,7 +1177,7 @@ arr[0]
      :type 'eden-error-process)
     (should
      (string=
-      (plist-get (eden-request-read 'error -req) :type)
+      (plist-get (eden-request-read -req 'error) :type)
       "eden-error-process"))
     (should
      (equal in-callback-error
@@ -1206,7 +1206,7 @@ arr[0]
       (eden-test-echo-resp resp-str buff-name (eden-sentinel -req -callback nil))
       (sleep-for 0.2))
     (should-not (get-buffer buff-name))
-    (should (equal (eden-request-read 'response -req) resp))
+    (should (equal (eden-request-read -req 'response) resp))
     (should (equal in-callback
                    `(:req ,-req :resp ,resp :info (:foo (:bar "baz")))))))
 
@@ -1436,9 +1436,9 @@ foo bar baz
              eden-request-history
              eden-prompt-history-state)
         (message "new-dir: %S" new-dir)
-        (eden-request-write 'timestamp req-foo "")
-        (eden-request-write 'timestamp req-bar "")
-        (eden-request-write 'timestamp req-baz "")
+        (eden-request-write req-foo 'timestamp "")
+        (eden-request-write req-bar 'timestamp "")
+        (eden-request-write req-baz 'timestamp "")
 
         (eden-dir-set new-dir)
         (should (equal eden-dir new-dir))
@@ -1462,10 +1462,10 @@ foo bar baz
          (req-1 `(:dir ,dir :uuid "uuid-1"))
          (req-2 `(:dir ,dir :uuid "uuid-2"))
          (req-3 `(:dir ,dir :uuid "uuid-3")))
-    (eden-request-write 'timestamp req-0 "")
-    (eden-request-write 'timestamp req-1 "")
-    (eden-request-write 'timestamp req-2 "")
-    (eden-request-write 'timestamp req-3 "")
+    (eden-request-write req-0 'timestamp "")
+    (eden-request-write req-1 'timestamp "")
+    (eden-request-write req-2 'timestamp "")
+    (eden-request-write req-3 'timestamp "")
     (should
      (equal (eden-request-history-build dir)
             '("uuid-3" "uuid-2" "uuid-1" "uuid-0")))))
@@ -1478,9 +1478,9 @@ foo bar baz
          (req-0 `(:dir ,dir :uuid "uuid-0"))
          (req-1 `(:dir ,dir :uuid "uuid-1"))
          (req-2 `(:dir ,dir :uuid "uuid-2")))
-    (eden-request-write 'timestamp req-0 "")
-    (eden-request-write 'timestamp req-1 "")
-    (eden-request-write 'timestamp req-2 "")
+    (eden-request-write req-0 'timestamp "")
+    (eden-request-write req-1 'timestamp "")
+    (eden-request-write req-2 'timestamp "")
 
     (eden-history-update :dir dir)
 
@@ -1521,7 +1521,7 @@ foo bar baz
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req `(:dir ,dir :uuid "foo-uuid"))
          (prompt-history [nil "foo-uuid" nil]))
-    (eden-request-write 'prompt req "foo prompt\n")
+    (eden-request-write req 'prompt "foo prompt\n")
     (should (string= (eden-prompt-current dir prompt-history)
                      "foo prompt\n"))))
 
@@ -1626,7 +1626,7 @@ foo bar baz
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (prompt-history [nil "bar-uuid" nil])
          (req-bar `(:dir ,dir :uuid "bar-uuid")))
-    (eden-request-write 'prompt req-bar "bar prompt\n")
+    (eden-request-write req-bar 'prompt "bar prompt\n")
     (should-not (eden-prompt-discard-current-p dir prompt-history))))
 
 ;;;; Conversations
@@ -1708,7 +1708,7 @@ foo bar baz
   (let* ((eden-conversations)
          (dir (concat (make-temp-file "eden-" t) "/"))
          (req `(:dir ,dir :uuid "foo-req-uuid")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-error (eden-conversation-add dir "foo title" "foo-req-uuid")))
 
   ;; error - when req associated with req-uuid is in incomplete
@@ -1732,7 +1732,7 @@ foo bar baz
          (resp '(:choices [(:message (:role "assistant" :content "assistant"))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request foo-req)
-    (eden-write-response resp-str resp foo-req)
+    (eden-write-response foo-req resp-str resp)
 
     (let ((n 0))
       (cl-letf (((symbol-function 'eden-uuid)
@@ -1868,7 +1868,7 @@ foo bar baz
             ("conversation-id-continue-from" .
              (:title "continue-from title" :dir ,dir :last-req-uuid "uuid-baz")))))
     (eden-write-request last-req)
-    (eden-write-response last-resp-str last-resp last-req)
+    (eden-write-response last-req last-resp-str last-resp)
     (should-not (eden-conversation-exchanges "conversation-id-new"))
     (should
      (equal
@@ -1972,7 +1972,7 @@ foo bar baz
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (eden-request-write 'error req "")
+    (eden-request-write req 'error "")
     (should-error (eden-conversation-insert req "title")))
 
   ;; Signal error when the request in incomplete
@@ -1989,7 +1989,7 @@ foo bar baz
                :uuid "req-foo-uuid"))
         (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
     (eden-write-request req)
-    (eden-write-response (eden-json-encode resp) resp req)
+    (eden-write-response req (eden-json-encode resp) resp)
     (should-error (eden-conversation-insert req nil)))
 
   ;; conversation with no previous exchanges
@@ -2005,7 +2005,7 @@ foo bar baz
             (resp '(:choices [(:message (:role "assistant"
                                          :content "foo bar baz assistant response"))])))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
@@ -2046,7 +2046,7 @@ foo bar baz assistant response
                                          :content "foo bar baz assistant response"
                                          :reasoning_content "foo bar baz assistant reasoning"))])))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
@@ -2092,7 +2092,7 @@ foo bar baz assistant response
                                          :content "foo bar baz assistant response"
                                          :reasoning_content "foo bar baz assistant reasoning"))])))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
@@ -2124,7 +2124,7 @@ foo bar baz assistant response
                                          :content "### assistant title-1 \n#### foo\n\n bar baz\n\n### title-2\n#### foo\n\n bar baz"))]))
             (title "Title of the request"))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req title))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the request
@@ -2186,7 +2186,7 @@ bar baz
                                          :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (message "%s" (plist-get req :dir))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Conversation
@@ -2304,7 +2304,7 @@ bar-assistant-content
 
 ")
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req nil 'append))
       (buffer-substring-no-properties (point-min) (point-max)))
     "** Title of the conversation
@@ -2389,7 +2389,7 @@ baz-assistant-content
              (resp '(:choices [(:message (:role "assistant"
                                           :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (eden-write-request req)
-        (eden-write-response (eden-json-encode resp) resp req)
+        (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert
          req "Only last request of the conversation" nil 'only-last-req))
       (buffer-substring-no-properties (point-min) (point-max)))
@@ -2803,7 +2803,7 @@ baz-assistant-content
          (_ (eden-write-request req-foo))
          (resp-foo '(:choices
                      [(:message (:role "assistant" :content "foo response\n"))]))
-         (_ (eden-write-response (eden-json-encode resp-foo) resp-foo req-foo))
+         (_ (eden-write-response req-foo (eden-json-encode resp-foo) resp-foo))
          (req-bar (eden-build-request
                    :profile `(:dir ,dir :api ,api :model ,model)
                    :prompt "bar prompt\n"
@@ -2813,7 +2813,7 @@ baz-assistant-content
          (_ (eden-write-request req-bar))
          (resp-bar '(:choices
                      [(:message (:role "assistant" :content "bar response\n"))]))
-         (_ (eden-write-response (eden-json-encode resp-bar) resp-bar req-bar))
+         (_ (eden-write-response req-bar (eden-json-encode resp-bar) resp-bar))
          (exchanges (vector
                      `(:uuid ,req-foo-uuid
                        :prompt "foo prompt\n"
@@ -3062,7 +3062,7 @@ baz-assistant-content
                            (:role "assistant"
                             :content ,(format "req-%s assistant" (1+ idx))))]))
                  (resp-str (eden-json-encode resp)))
-            (eden-write-response resp-str resp req)))))
+            (eden-write-response req resp-str resp)))))
 
     ;; Test `eden-paths-since'
     (should (equal (eden-paths-since dir (nth 0 timestamps))
