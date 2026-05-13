@@ -16,6 +16,7 @@
 (require 'json)
 (require 'ox-md)
 (require 'transient)
+(require 'cl-macs)
 
 (defalias 'eden-get-in 'map-nested-elt)
 
@@ -2173,59 +2174,67 @@ conversation, INFO argument must be structured as:
         (eden-history-update :new-req-uuid (plist-get req :uuid))
         (eden-mode-line-waiting 'maybe-start)))))
 
-(cl-defun eden-build-request (&key prompt system-message
-                                   prev-req-uuid
-                                   system-message-append
-                                   model
-                                   api dir
-                                   include-reasoning)
-  "Return a request as defined in `eden-request-send'."
-  (let* ((uuid (eden-uuid))
-         (_ (eden-request-dir `(:dir ,dir :uuid ,uuid))) ;; signal error if not ok)
-         (-prompt (if (or (null prompt) (string-blank-p prompt)) "" prompt))
-         (-system-message
-          (cond
-           ((and (null system-message) (null system-message-append)) nil)
-           ((null system-message-append) system-message)
-           ((null system-message) system-message-append)
-           (t (format "%s\n\n%s" system-message system-message-append))))
-         (exchanges
-          (when prev-req-uuid
-            (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
-              (condition-case err
-                  (eden-request-conversation prev-req)
-                (error
-                 (signal 'eden-error-req
-                         (list (format "Cannot build request with this prev request:\n%S\nError: %s"
-                                       prev-req
-                                       (error-message-string err)))))))
-            (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
-         (-messages
-          `(,(when -system-message
-               `(:role "system"
-                 :content ,(eden-org-to-markdown -system-message)))
-            ,@(when (not (null exchanges))
-                (let ((last-exchange (aref exchanges (1- (length exchanges)))))
-                  (plist-get last-exchange :context)))
-            ,(when (not (string-empty-p -prompt))
-               `(:role "user" :content ,(eden-org-to-markdown -prompt)))))
-         (req-messages (apply 'vector (remq nil -messages)))
-         (request `(:stream :false
-                    :model ,model
-                    :messages ,req-messages)))
-    ;; Anthropic API
-    (when (string= (plist-get api :service) "anthropic")
-      (plist-put request :max_tokens 4096)
-      (when include-reasoning
-        (plist-put request :thinking '(:type "enabled" :budget_tokens 2048))))
-    ;; Done
-    `(:req ,request
-      :api ,api
-      :prompt ,-prompt
-      :system-message ,-system-message
-      :exchanges ,exchanges
-      :dir ,dir
-      :uuid ,uuid)))
+(cl-defun eden-build-request (&key profile prompt prev-req-uuid)
+  "Return a request as defined in 'eden-request-send'.
+
+PROFILE is a plist as defined in 'eden-profile-current'.
+
+When PROMPT is nil, it isn't included in the request parameters.
+
+When PREV-REQ-UUID is provided, the request build is chained to this
+previous request, and all previous context is included.  See
+'eden-request-conversation'."
+  (cl-destructuring-bind
+      ;; All profile keys must be listed here even if we don't use them.
+      (&key dir api model system-message system-message-append
+            include-reasoning conversation-id)
+      profile
+    (let* ((uuid (eden-uuid))
+           (_ (eden-request-dir `(:dir ,dir :uuid ,uuid))) ;; signal error if not ok)
+           (-prompt (if (or (null prompt) (string-blank-p prompt)) "" prompt))
+           (-system-message
+            (cond
+             ((and (null system-message) (null system-message-append)) nil)
+             ((null system-message-append) system-message)
+             ((null system-message) system-message-append)
+             (t (format "%s\n\n%s" system-message system-message-append))))
+           (exchanges
+            (when prev-req-uuid
+              (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
+                (condition-case err
+                    (eden-request-conversation prev-req)
+                  (error
+                   (signal 'eden-error-req
+                           (list (format "Cannot build request with this prev request:\n%S\nError: %s"
+                                         prev-req
+                                         (error-message-string err)))))))
+              (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
+           (-messages
+            `(,(when -system-message
+                 `(:role "system"
+                   :content ,(eden-org-to-markdown -system-message)))
+              ,@(when (not (null exchanges))
+                  (let ((last-exchange (aref exchanges (1- (length exchanges)))))
+                    (plist-get last-exchange :context)))
+              ,(when (not (string-empty-p -prompt))
+                 `(:role "user" :content ,(eden-org-to-markdown -prompt)))))
+           (req-messages (apply 'vector (remq nil -messages)))
+           (request `(:stream :false
+                      :model ,model
+                      :messages ,req-messages)))
+      ;; Anthropic API
+      (when (string= (plist-get api :service) "anthropic")
+        (plist-put request :max_tokens 4096)
+        (when include-reasoning
+          (plist-put request :thinking '(:type "enabled" :budget_tokens 2048))))
+      ;; Done
+      `(:req ,request
+        :api ,api
+        :prompt ,-prompt
+        :system-message ,-system-message
+        :exchanges ,exchanges
+        :dir ,dir
+        :uuid ,uuid))))
 
 (defun eden-callback (req _resp info)
   "Default callback function used in `eden-send'."
@@ -2281,13 +2290,8 @@ See `eden-send-request'."
   (interactive)
   (eden-send-request
    :req (eden-build-request
+         :profile (eden-profile-current)
          :prompt (eden-prompt-current-buffer)
-         :system-message eden-system-message
-         :system-message-append eden-system-message-append
-         :model eden-model
-         :api eden-api
-         :dir eden-dir
-         :include-reasoning eden-include-reasoning
          :prev-req-uuid (eden-conversation-last-req-uuid eden-conversation-id))
    :info `(:conversation-id ,eden-conversation-id
            :created ,(float-time))

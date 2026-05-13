@@ -2752,29 +2752,33 @@ baz-assistant-content
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-build-request-test")))
 (ert-deftest eden-build-request-test ()
   ;; Errors
-  (should-error (eden-build-request :dir nil) :type 'eden-error-req)
+  (should-error (eden-build-request :profile '(:dir nil))
+                :type 'eden-error-req)
 
   ;; :prompt
   ;;
   ;; If blank string, we don't pass it as input/messages in the API request
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req-prompt-blank (eden-build-request
-                            :dir dir
-                            :api '(:service "openai"
-                                   :endpoint "https://api.openai.com/v1/chat/completions")
-                            :prompt " \n \t "))
-         (req-prompt-nil (eden-build-request
-                          :dir dir
-                          :api '(:service "openai"
-                                 :endpoint "https://api.openai.com/v1/chat/completions")
-                          :prompt nil))
-         (req-prompt-not-blank (eden-build-request
-                                :dir dir
-                                :api '(:service "openai"
-                                       :endpoint "https://api.openai.com/v1/chat/completions")
-                                ;; :prompt is expected to use org-mode syntax
-                                ;; and is converted to markdown in request body
-                                :prompt "* foo prompt")))
+         (req-prompt-blank
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions"))
+           :prompt " \n \t "))
+         (req-prompt-nil
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions"))
+           :prompt nil))
+         (req-prompt-not-blank
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions"))
+           ;; :prompt is expected to use org-mode syntax
+           ;; and is converted to markdown in request body
+           :prompt "* foo prompt")))
     (should (string-empty-p (plist-get req-prompt-blank :prompt)))
     (should (equal (eden-get-in req-prompt-blank [:req :messages]) []))
     (should (string-empty-p (plist-get req-prompt-nil :prompt)))
@@ -2792,9 +2796,9 @@ baz-assistant-content
              (lambda nil "foo-uuid")))
     (let* ((dir (concat (make-temp-file "eden-" t) "/"))
            (req (eden-build-request
-                 :dir dir
-                 :api '(:service "openai"
-                        :endpoint "https://api.openai.com/v1/chat/completions")
+                 :profile `(:dir ,dir
+                            :api (:service "openai"
+                                  :endpoint "https://api.openai.com/v1/chat/completions"))
                  :prompt "foo prompt")))
       (should (string= (plist-get req :uuid) "foo-uuid"))))
 
@@ -2803,19 +2807,17 @@ baz-assistant-content
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (api '(:service "openai"
                 :endpoint "https://api.openai.com/v1/chat/completions"))
-         (req (eden-build-request
-               :dir dir
-               :api api
-               :prompt "foo prompt")))
+         (req (eden-build-request :profile `(:dir ,dir :api ,api)
+                                  :prompt "foo prompt")))
     (should (equal (plist-get req :api) api)))
 
   ;; :model and stream false
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req (eden-build-request
-               :dir dir
-               :api '(:service "openai"
-                      :endpoint "https://api.openai.com/v1/chat/completions")
-               :model "gpt-5.4"
+               :profile `(:dir ,dir
+                          :api (:service "openai"
+                                :endpoint "https://api.openai.com/v1/chat/completions")
+                          :model "gpt-5.4")
                :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :stream]) :false))
     (should (equal (eden-get-in req [:req :model]) "gpt-5.4")))
@@ -2825,34 +2827,38 @@ baz-assistant-content
   ;; :system-message and :system-message-append are expected to use
   ;; org-mode syntax and are converted to markdown in request body
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req-no-system-msg-no-append (eden-build-request
-                                       :dir dir
-                                       :api '(:service "openai"
-                                              :endpoint "https://api.openai.com/v1/chat/completions")
-                                       :model "gpt-5.4"
-                                       :prompt "foo prompt"))
-         (req-no-system-with-append (eden-build-request
-                                     :dir dir
-                                     :api '(:service "openai"
-                                            :endpoint "https://api.openai.com/v1/chat/completions")
-                                     :model "gpt-5.4"
-                                     :system-message-append "* foo system append"
-                                     :prompt "foo prompt"))
-         (req-with-system-msg-no-append (eden-build-request
-                                         :dir dir
-                                         :api '(:service "openai"
-                                                :endpoint "https://api.openai.com/v1/chat/completions")
-                                         :model "gpt-5.4"
-                                         :system-message "* foo system"
-                                         :prompt "foo prompt"))
-         (req-with-system-msg-with-append (eden-build-request
-                                           :dir dir
-                                           :api '(:service "openai"
-                                                  :endpoint "https://api.openai.com/v1/chat/completions")
-                                           :model "gpt-5.4"
-                                           :system-message "* foo system"
-                                           :system-message-append "* foo system append"
-                                           :prompt "foo prompt")))
+         (req-no-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions")
+                      :model "gpt-5.4")
+           :prompt "foo prompt"))
+         (req-no-system-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions")
+                      :model "gpt-5.4"
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt"))
+         (req-with-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions")
+                      :model "gpt-5.4"
+                      :system-message "* foo system")
+           :prompt "foo prompt"))
+         (req-with-system-msg-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/chat/completions")
+                      :model "gpt-5.4"
+                      :system-message "* foo system"
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt")))
     (should-not (plist-get req-no-system-msg-no-append :system-message))
     (should (equal (eden-get-in req-no-system-msg-no-append [:req :messages])
                    [(:role "user" :content "foo prompt")]))
@@ -2875,18 +2881,15 @@ baz-assistant-content
   ;; :prev-req-uuid
   ;;
   ;; Error when :prev-req-uuid refer to bad/missing request
-  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (api '(:service "openai"
-                :endpoint "https://api.openai.com/v1/chat/completions"))
-         (model "gpt-5.4"))
+  (let* ((dir (concat (make-temp-file "eden-" t) "/")))
     (should-error
      (eden-build-request
-      :dir dir
-      :api '(:service "openai"
-             :endpoint "https://api.openai.com/v1/chat/completions")
-      :model "gpt-5.4"
-      :prompt "foo prompt"
-      :prev-req-uuid "request-missing-so-cannot-be-used")
+      :profile `(:dir ,dir
+                 :api (:service "openai"
+                       :endpoint "https://api.openai.com/v1/chat/completions")
+                 :model "gpt-5.4")
+      :prev-req-uuid "request-missing-so-cannot-be-used"
+      :prompt "foo prompt")
      :type 'eden-error-req))
   ;; Note that (eden-org-to-markdown "foo\n") ;; "foo" (last newline trimmed)
   ;; and that org content are save to file with last newline at
@@ -2896,9 +2899,7 @@ baz-assistant-content
                 :endpoint "https://api.openai.com/v1/chat/completions"))
          (model "gpt-5.4")
          (req-foo (eden-build-request
-                   :dir dir
-                   :api api
-                   :model model
+                   :profile `(:dir ,dir :api ,api :model ,model)
                    :prompt "foo prompt\n"))
          (req-foo-uuid (plist-get req-foo :uuid))
          ;; We must save this request with a response in `dir'
@@ -2909,9 +2910,7 @@ baz-assistant-content
                      [(:message (:role "assistant" :content "foo response\n"))]))
          (_ (eden-write-response (eden-json-encode resp-foo) resp-foo req-foo))
          (req-bar (eden-build-request
-                   :dir dir
-                   :api api
-                   :model model
+                   :profile `(:dir ,dir :api ,api :model ,model)
                    :prompt "bar prompt\n"
                    :prev-req-uuid req-foo-uuid))
          (req-bar-uuid (plist-get req-bar :uuid))
@@ -2931,25 +2930,21 @@ baz-assistant-content
                                  (:role "assistant" :content "foo response\n")
                                  (:role "user" :content "bar prompt")
                                  (:role "assistant" :content "bar response\n")])))
-         (req-with-system-msg-with-prompt (eden-build-request
-                                           :dir dir
-                                           :api '(:service "openai"
-                                                  :endpoint "https://api.openai.com/v1/chat/completions")
-                                           :model model
-                                           :system-message "baz system\n"
-                                           :prompt "baz prompt\n"
-                                           :prev-req-uuid req-bar-uuid))
-         (req-with-system-msg-no-prompt (eden-build-request
-                                         :dir dir
-                                         :api api
-                                         :model model
-                                         :system-message "baz system\n"
-                                         :prev-req-uuid req-bar-uuid))
-         (req-no-system-msg-no-prompt (eden-build-request
-                                       :dir dir
-                                       :api api
-                                       :model model
-                                       :prev-req-uuid req-bar-uuid)))
+         (req-with-system-msg-with-prompt
+          (eden-build-request
+           :profile `(:dir ,dir :api ,api :model model
+                      :system-message "baz system\n")
+           :prompt "baz prompt\n"
+           :prev-req-uuid req-bar-uuid))
+         (req-with-system-msg-no-prompt
+          (eden-build-request
+           :profile `(:dir ,dir :api ,api :model ,model
+                      :system-message "baz system\n")
+           :prev-req-uuid req-bar-uuid))
+         (req-no-system-msg-no-prompt
+          (eden-build-request
+           :profile `(:dir ,dir :api ,api :model ,model)
+           :prev-req-uuid req-bar-uuid)))
     (should (equal (plist-get req-with-system-msg-with-prompt :exchanges)
                    exchanges))
     (should (equal (eden-get-in req-with-system-msg-with-prompt
@@ -2983,12 +2978,12 @@ baz-assistant-content
   ;; Anthopic API specific
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req (eden-build-request
-               :dir dir
-               :api '(:service "anthropic"
-                      :endpoint "https://api.anthropic.com/v1/messages")
-               :model "claude-opus-4-7"
-               :prompt "foo prompt"
-               :include-reasoning t)))
+               :profile `(:dir ,dir
+                          :api (:service "anthropic"
+                                :endpoint "https://api.anthropic.com/v1/messages")
+                          :model "claude-opus-4-7"
+                          :include-reasoning t)
+               :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :thinking])
                    '(:type "enabled" :budget_tokens 2048))))
 
@@ -2997,12 +2992,11 @@ baz-assistant-content
   ;; :max_tokens sets by default in request body
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req (eden-build-request
-               :dir dir
-               :api '(:service "anthropic"
-                      :endpoint "https://api.anthropic.com/v1/messages")
-               :model "claude-opus-4-7"
-               :prompt "foo prompt"
-               :include-reasoning t)))
+               :profile `(:dir ,dir
+                          :api (:service "anthropic"
+                                :endpoint "https://api.anthropic.com/v1/messages")
+                          :model "claude-opus-4-7")
+               :prompt "foo prompt")))
     (should (equal (eden-get-in req [:req :max_tokens]) 4096))))
 
 ;;;; Conversation branches (paths)
