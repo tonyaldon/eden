@@ -2041,16 +2041,16 @@ foo bar baz
            ("conversation-id-bar" .
             (:title "bar title" :dir "/tmp/eden/" :last-req-uuid "bar-req-uuid")))))
     ;; Do not modify `eden-conversations'
-    (eden-conversation-update '(:conversation-id "not-in--eden-conversations")
-                              '(:uuid "fake-req-uuid"))
-    (eden-conversation-update '(:conversation-id "conversation-id-foo") nil)
-    (eden-conversation-update nil '(:uuid "new-foo-req-uuid"))
+    (eden-conversation-update '(:conversation-id "not-in--eden-conversations"
+                                :uuid "fake-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-foo"))
+    (eden-conversation-update '(:uuid "new-foo-req-uuid"))
 
     ;; Modify `eden-conversations'
-    (eden-conversation-update '(:conversation-id "conversation-id-foo")
-                              '(:uuid "new-foo-req-uuid"))
-    (eden-conversation-update '(:conversation-id "conversation-id-bar")
-                              '(:uuid "new-bar-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-foo"
+                                :uuid "new-foo-req-uuid"))
+    (eden-conversation-update '(:conversation-id "conversation-id-bar"
+                                :uuid "new-bar-req-uuid"))
 
     (should
      (equal
@@ -2555,13 +2555,14 @@ baz-assistant-content
                   :type 'eden-error-process)))
 
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-pending-conversation-p-test")))
 (ert-deftest eden-pending-conversation-p-test ()
-  ;; Values of :req and :proc keys are normally not string, but
-  ;; as we don't use them `eden-pending-requests', it's ok.
-  (let ((eden-pending-requests '((:conversation-id "conv-foo"
-                                  :req "req-foo"
+  ;; :req and :proc are different in practice but here
+  ;; to test `eden-pending-conversation-p' we just need
+  ;; :conversation-id to be in :req.
+  (let ((eden-pending-requests '((:req (:conversation-id "conv-foo")
                                   :proc "proc-foo")
-                                 (:req "req-bar"
+                                 (:req "req-bar-not-part-of-a-conversation"
                                   :proc "proc-bar"))))
     (should (eden-pending-conversation-p "conv-foo"))
     (should-not (eden-pending-conversation-p "conv-baz")))
@@ -2604,7 +2605,7 @@ baz-assistant-content
                      ;; Eden state.  This is the only requirement imposed
                      ;; on the callback function passed to `eden-send-request'.
                      (eden-pending-remove req)
-                     (eden-conversation-update info req)
+                     (eden-conversation-update req)
                      (eden-mode-line-waiting 'maybe-stop)))
          (timer-list)            ;; variable tested
          (global-mode-string)    ;; variable tested
@@ -2628,9 +2629,9 @@ baz-assistant-content
        :req `(:req (:messages [(:role "user" :content "foo")])
               :prompt "foo"
               :dir ,dir
-              :uuid "req-foo-uuid")
-       :callback callback
-       :info '(:conversation-id "conversation-id-foo")))
+              :uuid "req-foo-uuid"
+              :conversation-id "conversation-id-foo")
+       :callback callback))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-foo-foo" 3)))
       ;; This request won't be sent because `req-foo', next request
@@ -2639,18 +2640,18 @@ baz-assistant-content
        :req `(:req (:messages [(:role "user" :content "foo-foo")])
               :prompt "foo-foo"
               :dir ,dir
-              :uuid "req-foo-foo-uuid")
-       :callback callback
-       :info '(:conversation-id "conversation-id-foo")))
+              :uuid "req-foo-foo-uuid"
+              :conversation-id "conversation-id-foo")
+       :callback callback))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-bar" 1)))
       (eden-send-request
        :req `(:req (:messages [(:role "user" :content "bar")])
               :prompt "bar"
               :dir ,dir
-              :uuid "req-bar-uuid")
-       :callback callback
-       :info '(:conversation-id "conversation-id-bar")))
+              :uuid "req-bar-uuid"
+              :conversation-id "conversation-id-bar")
+       :callback callback))
     (cl-letf (((symbol-function 'eden-request-command)
                (funcall print-to-stdout-after-delay "resp-baz" 2)))
       (eden-send-request
@@ -2658,8 +2659,7 @@ baz-assistant-content
               :prompt "baz"
               :dir ,dir
               :uuid "req-baz-uuid")
-       :callback callback
-       :info nil))
+       :callback callback))
 
     ;; To manually test waiting widget in the mode line while we're
     ;; waiting for responses do the following:

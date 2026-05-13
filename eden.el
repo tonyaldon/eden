@@ -1779,11 +1779,11 @@ See `eden-conversation-id' and `eden-conversation-rename'."
             (replace-match new-title t t)))
         (rename-buffer new-buff-name)))))
 
-(defun eden-conversation-update (info req)
+(defun eden-conversation-update (req)
   "Set last request of the conversation specified in INFO to REQ.
 
 This modifies `eden-conversations'.  Specifically, set last request UUID
-of conversation INFO's `:conversation-id' to REQ's `:uuid' key.
+of conversation REQ's `:conversation-id' to REQ's `:uuid' key.
 
 If one of these keys is missing, do nothing.
 
@@ -1795,14 +1795,14 @@ For instance:
            \\='((\"conversation-id-foo\" . (:title \"foo title\"
                                        :dir \"/tmp/eden/\"
                                        :last-req-uuid nil)))))
-      (eden-conversation-update \\='(:conversation-id \"conversation-id-foo\")
-                                \\='(:uuid \"new-foo-req-uuid\"))
+      (eden-conversation-update \\='(:conversation-id \"conversation-id-foo\"
+                                  :uuid \"new-foo-req-uuid\"))
       eden-conversations)
     ;; ((\"conversation-id-foo\" .
     ;;   (:title \"foo title\"
     ;;    :dir \"/tmp/eden/\"
     ;;    :last-req-uuid \"new-foo-req-uuid\")))"
-  (when-let* ((conversation-id (plist-get info :conversation-id))
+  (when-let* ((conversation-id (plist-get req :conversation-id))
               (req-uuid (plist-get req :uuid))
               (cell (assoc conversation-id eden-conversations)))
     (setcdr cell (plist-put (copy-sequence (cdr cell))
@@ -2101,12 +2101,12 @@ Accepted values for ACTION includes:
   "Return t if conversation with CONVERSATION-ID is pending.
 
 A conversation is considered pending if an entry in `eden-pending-requests'
-exists with `:conversation-id' key matching CONVERSATION-ID.
+exists with a request being part of CONVERSATION-ID conversation.
 
 See `eden-conversations'."
   (seq-some
    (lambda (r)
-     (when-let ((id (plist-get r :conversation-id)))
+     (when-let ((id (eden-get-in r [:req :conversation-id])))
        (string= conversation-id id)))
    eden-pending-requests))
 
@@ -2146,7 +2146,7 @@ buffer \"*eden[requests]*\":
           (eden-conversation-insert req \"Request\")
           (save-buffer)))
       (eden-pending-remove req)
-      (eden-conversation-update info req)
+      (eden-conversation-update req)
       (eden-mode-line-waiting \\='maybe-stop)
       (message \"Eden received a response\"))
 
@@ -2158,17 +2158,16 @@ For instance, if \"conversation-id-foo\" is the ID for an ongoing
 conversation, INFO argument must be structured as:
 
     (:conversation-id \"conversation-id-foo\" ...)"
-  (let ((conversation-id (plist-get info :conversation-id)))
+  (let ((conversation-id (plist-get req :conversation-id)))
     (if (eden-pending-conversation-p conversation-id)
         (progn
           (message "Cannot send two concurrent requests in the same conversation.")
           (let ((inhibit-message t))
-            (message "req: %S\nconversation: %s" req conversation-id)))
+            (message "conversation: %s\nreq: %S" conversation-id req)))
       (let ((callback-error (lambda (req _err _info)
                               (eden-pending-remove req)
                               (eden-mode-line-waiting 'maybe-stop))))
         (push (list :req req
-                    :conversation-id conversation-id
                     :proc (eden-request-send req callback callback-error info))
               eden-pending-requests)
         (eden-history-update :new-req-uuid (plist-get req :uuid))
@@ -2242,7 +2241,7 @@ Eden global variable."
 
 (defun eden-callback (req _resp info)
   "Default callback function used in `eden-send'."
-  (let* ((conversation-id (plist-get info :conversation-id))
+  (let* ((conversation-id (plist-get req :conversation-id))
          (title (or (eden-conversation-title conversation-id)
                     "Request"))
          (buff-name
@@ -2272,7 +2271,7 @@ Eden global variable."
           (recenter-top-bottom 0))
         (when winner-mode (winner-save-old-configurations))))
     (eden-pending-remove req)
-    (eden-conversation-update info req)
+    (eden-conversation-update req)
     (eden-mode-line-waiting 'maybe-stop)
     (message "Eden received a response from %s after %.3fs.  See `%s' buffer."
              (plist-get eden-api :service)
@@ -2297,8 +2296,7 @@ See `eden-send-request'."
          :profile (eden-profile-current)
          :prompt (eden-prompt-current-buffer)
          :prev-req-uuid (eden-conversation-last-req-uuid eden-conversation-id))
-   :info `(:conversation-id ,eden-conversation-id
-           :created ,(float-time))
+   :info `(:created ,(float-time))
    :callback 'eden-callback)
   ;; When we select a profile with `eden-profile-next' or
   ;; `eden-profile-previous', the profile, if not recently accessed,
