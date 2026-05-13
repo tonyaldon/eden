@@ -799,34 +799,14 @@
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-write-request req)
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'request req))
-        (eden-json-read))
-      (plist-get req :req-params)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'api req))
-        (eden-json-read))
-      (plist-get req :api)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'prompt req))
-        (buffer-substring-no-properties (point-min) (point-max)))
-      (plist-get req :prompt)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'system-message req))
-        (buffer-substring-no-properties (point-min) (point-max)))
-      ""))
-    (should-not
-     (with-temp-buffer
-       (insert-file-contents (eden-request-file 'exchanges req))
-       (eden-json-read)))
+    (should (equal (eden-request-read 'request req)
+                   (plist-get req :req-params)))
+    (should (equal (eden-request-read 'api req)
+                   (plist-get req :api)))
+    (should (equal (eden-request-read 'prompt req)
+                   (plist-get req :prompt)))
+    (should (equal (eden-request-read 'system-message req) ""))
+    (should-not (eden-request-read 'exchanges req))
     (should
      (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
         1)))
@@ -855,36 +835,16 @@
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-write-request req)
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'request req))
-        (eden-json-read))
-      (plist-get req :req-params)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'api req))
-        (eden-json-read))
-      (plist-get req :api)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'prompt req))
-        (buffer-substring-no-properties (point-min) (point-max)))
-      (plist-get req :prompt)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'system-message req))
-        (buffer-substring-no-properties (point-min) (point-max)))
-      (plist-get req :system-message)))
-    (should
-     (equal
-      (with-temp-buffer
-        (insert-file-contents (eden-request-file 'exchanges req))
-        (eden-json-read))
-      (plist-get req :exchanges)))
+    (should (equal (eden-request-read 'request req)
+                   (plist-get req :req-params)))
+    (should (equal (eden-request-read 'api req)
+                   (plist-get req :api)))
+    (should (equal (eden-request-read 'prompt req)
+                   (plist-get req :prompt)))
+    (should (equal (eden-request-read 'system-message req)
+                   (plist-get req :system-message)))
+    (should (equal (eden-request-read 'exchanges req)
+                   (plist-get req :exchanges)))
     (should
      (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
         1))))
