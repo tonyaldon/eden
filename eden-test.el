@@ -159,94 +159,42 @@
     ;; response.json doesn't exist
     (should-error (eden-request-read 'response req))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-assistant-content-test")))
 (ert-deftest eden-request-assistant-content-test ()
   ;; OpenAI API
-  (let ((resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                :object "chat.completion"
-                :created 1733030031
-                :model "gpt-4o-mini-2024-07-18"
-                :choices [(:index 0
-                           :message (:role "assistant"
-                                     :content "foo assistant"
-                                     :refusal nil)
-                           :logprobs nil
-                           :finish_reason "stop")]
-                :usage (:prompt_tokens 12
-                        :completion_tokens 148
-                        :total_tokens 160
-                        :prompt_tokens_details (:cached_tokens 0 :audio_tokens 0)
-                        :completion_tokens_details (:reasoning_tokens 0
-                                                    :audio_tokens 0
-                                                    :accepted_prediction_tokens 0
-                                                    :rejected_prediction_tokens 0))
-                :system_fingerprint "fp_0705bf87c0")))
+  (let ((resp '(:choices [(:message (:role "assistant"
+                                     :content "foo assistant"))])))
     (should
      (string= (eden-request-assistant-content resp) "foo assistant")))
   ;; Anthropic API (no reasoning)
-  (let ((resp '(:id "msg_011Cm7DW1Gz27innVYwhuWi9"
-                :type "message"
-                :role "assistant"
-                :model "claude-3-5-haiku-20241022"
-                :content [(:type "text" :text "foo assistant")]
-                :stop_reason "end_turn"
-                :stop_sequence nil
-                :usage (:input_tokens 11
-                        :cache_creation_input_tokens 0
-                        :cache_read_input_tokens 0
-                        :output_tokens 149
-                        :service_tier "standard"))))
+  (let ((resp '(:content [(:type "text" :text "foo assistant")])))
     (should
      (string= (eden-request-assistant-content resp) "foo assistant")))
   ;; Anthropic API (with reasoning)
-  (let ((resp '(:id "msg_011Cm7DW1Gz27innVYwhuWi9"
-                :type "message"
-                :role "assistant"
-                :model "claude-3-7-sonnet-20250219"
-                :content [(:type "thinking" :thinking "foo thinking" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
-                          (:type "text" :text "foo assistant")]
-                :stop_reason "end_turn"
-                :stop_sequence nil
-                :usage (:input_tokens 11
-                        :cache_creation_input_tokens 0
-                        :cache_read_input_tokens 0
-                        :output_tokens 149
-                        :service_tier "standard"))))
+  (let ((resp '(:content [(:type "thinking" :thinking "foo thinking" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
+                          (:type "text" :text "foo assistant")])))
     (should
      (string= (eden-request-assistant-content resp) "foo assistant"))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-assistant-reasoning-test")))
 (ert-deftest eden-request-assistant-reasoning-test ()
-  (let ((resp '(:id "5b5178d0-9cca-4a8b-86f9-6971ce2c1788"
-                :object "chat.completion"
-                :created 1738222989
-                :model "deepseek-reasoner"
-                :choices [(:index 0
-                           :message (:role "assistant"
+  ;; Deepseek API
+  (let ((resp '(:model "deepseek-reasoner"
+                :choices [(:message (:role "assistant"
                                      :content "foo assistant"
-                                     :reasoning_content "foo reasoning")
-                           :logprobs nil
-                           :finish_reason "stop")])))
+                                     :reasoning_content "foo reasoning"))])))
     (should
      (string= (eden-request-assistant-reasoning resp) "foo reasoning")))
-  ;; Because Perplexity does it differently
-  (let ((resp '(:id "35413197-0bfe-4ee3-a27b-61e6f8e0335e"
-                :object "chat.completion"
-                :created 1747915264
-                :model "r1-1776"
-                :choices [(:index 0
-                           :message (:role "assistant"
-                                     :content "<think>foo\nbar reasoning</think>foo assistant")
-                           :finish_reason "stop")])))
+  ;; Perplexity API
+  (let ((resp '(:model "r1-1776"
+                :choices [(:message (:role "assistant"
+                                     :content "<think>foo\nbar reasoning</think>foo assistant"))])))
     (should
      (string= (eden-request-assistant-reasoning resp) "foo\nbar reasoning")))
-  ;; Because Anthropic does it differently
-  (let ((resp '(:id "msg_01Lk1BzP7iZg5JSkQmSZWRhq"
-                :type "message"
-                :role "assistant"
-                :model "claude-3-7-sonnet-20250219"
-                :content
+  ;; Anthropic API
+  (let ((resp '(:content
                 [(:type "thinking" :thinking "foo reasoning" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
-                 (:type "text" :text "foo assistant")]
-                :stop_reason "end_turn")))
+                 (:type "text" :text "foo assistant")])))
     (should
      (string= (eden-request-assistant-reasoning resp) "foo reasoning"))))
 
