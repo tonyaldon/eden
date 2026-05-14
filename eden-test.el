@@ -553,11 +553,11 @@
 
   ;; conversation with multiple requests mixing Perplexity and OpenAI APIs
   ;;
-  ;; :exchanges we use here are not exactly what they are
-  ;; in reality, when built with `eden-conversation-exchanges'
-  ;; and `eden-request-conversation'.  But they conserve the important
-  ;; properties and shape.  We do this because, if not the code here is
-  ;; un-maintainable, especially the :context property in :exchanges
+  ;; :exchanges we use here are not exactly what they are in reality,
+  ;; when built with `eden-request-conversation'.  But they conserve
+  ;; the important properties and shape.  We do this because, if not
+  ;; the code here is un-maintainable, especially the :context
+  ;; property in :exchanges.
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          ;; Perplexity request with citations in response
          (foo-req `(:req-params (:stream :false
@@ -1833,61 +1833,6 @@ foo bar baz
      (string=
       (eden-conversation-buffer-name "conversation-id-foo")
       (eden-buffer-name "foo title")))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-exchanges-test")))
-(ert-deftest eden-conversation-exchanges-test ()
-  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (last-req `(:api (:service "openai"
-                           :endpoint "https://api.openai.com/v1/chat/completions")
-                     :dir ,dir
-                     :uuid "uuid-baz"
-                     :req-params (:messages [(:role "system" :content "baz system\n")
-                                             (:role "user" :content "foo user")
-                                             (:role "assistant" :content "foo assistant\n")
-                                             (:role "user" :content "bar user")
-                                             (:role "assistant" :content "bar assistant\n")
-                                             (:role "user" :content "baz user")])
-                     :prompt "baz prompt\n"
-                     :system-message "baz system message\n"
-                     :exchanges [(:uuid "uuid-foo"
-                                  :prompt "foo prompt\n"
-                                  :response "foo assistant\n")
-                                 (:uuid "uuid-bar"
-                                  :prompt "bar prompt\n"
-                                  :response "bar assistant\n"
-                                  :context [(:role "user" :content "foo user")
-                                            (:role "assistant" :content "foo assistant\n")
-                                            (:role "user" :content "bar user")
-                                            (:role "assistant" :content "bar assistant\n")])]))
-         (last-req-uuid (plist-get last-req :uuid))
-         (last-resp '(:choices [(:message (:role "assistant" :content "baz assistant\n"))]))
-         (last-resp-str (eden-json-encode last-resp))
-         (eden-conversations
-          `(("conversation-id-new" .
-             (:title "new title" :dir ,dir :last-req-uuid nil))
-            ("conversation-id-continue-from" .
-             (:title "continue-from title" :dir ,dir :last-req-uuid "uuid-baz")))))
-    (eden-write-request last-req)
-    (eden-write-response last-req last-resp-str last-resp)
-    (should-not (eden-conversation-exchanges "conversation-id-new"))
-    (should
-     (equal
-      (eden-conversation-exchanges "conversation-id-continue-from")
-      [(:uuid "uuid-foo"
-        :prompt "foo prompt\n"
-        :response "foo assistant\n")
-       (:uuid "uuid-bar"
-        :prompt "bar prompt\n"
-        :response "bar assistant\n")
-       (:uuid "uuid-baz"
-        :prompt "baz prompt\n"
-        :response "baz assistant\n"
-        :context [(:role "user" :content "foo user")
-                  (:role "assistant" :content "foo assistant\n")
-                  (:role "user" :content "bar user")
-                  (:role "assistant" :content "bar assistant\n")
-                  (:role "user" :content "baz user")
-                  (:role "assistant" :content "baz assistant\n")])]))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-rename-test")))
 (ert-deftest eden-conversation-rename-test ()

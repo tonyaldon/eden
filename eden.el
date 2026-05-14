@@ -1028,8 +1028,7 @@ REQ request is a plist with the following keys:
                     format.
 - :exchanges      - (optional) If REQ is the last exchange in a conversation,
                     this key must be a vector of the previous exchanges.  See
-                    `eden-request-conversation' and `eden-conversation-exchanges'.
-                    Here's an example:
+                    `eden-request-conversation'.  Here's an example:
 
                     [(:uuid \"uuid-foo\"
                       :prompt \"foo prompt\"
@@ -1710,15 +1709,6 @@ If no conversation found, return nil."
   "Return buffer name for conversation with CONVERSATION-ID."
   (when-let ((title (eden-conversation-title conversation-id)))
     (eden-buffer-name title)))
-
-(defun eden-conversation-exchanges (conversation-id)
-  "Return exchanges of the conversation with CONVERSATION-ID.
-
-Return nil if the conversation is new or doesn't exist.
-
-See `eden-conversations' and `eden-request-conversation'."
-  (when-let ((last-req (eden-conversation-last-req conversation-id)))
-    (eden-request-conversation last-req)))
 
 (defun eden-conversation-rename (conversation-id new-title)
   "Rename conversation with CONVERSATION-ID to NEW-TITLE in `eden-conversations'.
