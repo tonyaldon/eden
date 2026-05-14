@@ -2214,8 +2214,7 @@ Eden global variable."
                    (signal 'eden-error-req
                            (list (format "Cannot build request with this prev request:\n%S\nError: %s"
                                          prev-req
-                                         (error-message-string err)))))))
-              (eden-request-conversation `(:dir ,dir :uuid ,prev-req-uuid))))
+                                         (error-message-string err)))))))))
            (-messages
             `(,(when -system-message
                  `(:role "system"
