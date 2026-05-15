@@ -2719,45 +2719,6 @@ See `eden-req-at-point-uuid' and `eden-system-message'."
           (select-window
            (display-buffer buff '(display-buffer-reuse-window))))))))
 
-(defun eden-req-at-point-show-citations ()
-  "Show Perplexity citations of the request at point.
-
-See `eden-req-at-point-uuid' and `eden-request-citations'."
-  (interactive)
-  (when-let* ((req-uuid (eden-req-at-point-uuid))
-              (req `(:dir ,eden-dir :uuid ,req-uuid)))
-    (if-let ((citations (eden-request-citations req)))
-        (let ((buff (get-buffer-create
-                     (eden-buffer-name "citations"))))
-          (with-current-buffer buff
-            (erase-buffer)
-            (org-mode)
-            (save-excursion
-              (dolist (citation citations)
-                (insert (format "- %s\n" citation)))))
-          (select-window
-           (display-buffer buff '(display-buffer-reuse-window))))
-      (message "No citations for `%s' conversation" (eden-request-dir req)))))
-
-(defun eden-req-at-point-show-reasoning ()
-  "Show reasoning of the request at point.
-
-See `eden-req-at-point-uuid' and `eden-request-assistant-reasoning'."
-  (interactive)
-  (when-let* ((req-uuid (eden-req-at-point-uuid))
-              (req `(:dir ,eden-dir :uuid ,req-uuid)))
-    (eden-request-check req)
-    (if (file-exists-p (eden-request-file req 'reasoning))
-        (let ((buff (get-buffer-create
-                     (eden-buffer-name "reasoning of request at point"))))
-          (with-current-buffer buff
-            (erase-buffer)
-            (org-mode)
-            (insert-file-contents (eden-request-file req 'reasoning)))
-          (select-window
-           (display-buffer buff '(display-buffer-reuse-window))))
-      (message "No reasoning for `%s' request" (eden-request-dir req)))))
-
 (defun eden-req-at-point-goto ()
   "Go to the directory of the request at point.
 
@@ -2774,16 +2735,12 @@ See `eden-req-at-point-uuid' and `eden-request-dir'."
 - `eden-req-at-point-show-requests'
 - `eden-req-at-point-show-branches'
 - `eden-req-at-point-show-system-message'
-- `eden-req-at-point-show-citations'
-- `eden-req-at-point-show-reasoning'
 - `eden-req-at-point-goto'"
   [["Conversation/Request at point"
     ("c" "Continue conversation from request at point" eden-req-at-point-continue-conversation)
     ("r" "Show requests of conversation at point" eden-req-at-point-show-requests)
     ("b" "Show branches of request at point" eden-req-at-point-show-branches)
     ("s" "Show system message of request at point" eden-req-at-point-show-system-message)
-    ("C" "Show citations of conversation at point" eden-req-at-point-show-citations)
-    ("R" "Show reasoning of request at point" eden-req-at-point-show-reasoning)
     ("g" "Go to directory of request at point" eden-req-at-point-goto)
     ]]
   (interactive)
