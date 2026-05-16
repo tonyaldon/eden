@@ -159,45 +159,6 @@
     ;; response.json doesn't exist
     (should-error (eden-request-read req 'response))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-assistant-content-test")))
-(ert-deftest eden-request-assistant-content-test ()
-  ;; OpenAI API
-  (let ((resp '(:choices [(:message (:role "assistant"
-                                     :content "foo assistant"))])))
-    (should
-     (string= (eden-request-assistant-content resp) "foo assistant")))
-  ;; Anthropic API (no reasoning)
-  (let ((resp '(:content [(:type "text" :text "foo assistant")])))
-    (should
-     (string= (eden-request-assistant-content resp) "foo assistant")))
-  ;; Anthropic API (with reasoning)
-  (let ((resp '(:content [(:type "thinking" :thinking "foo thinking" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
-                          (:type "text" :text "foo assistant")])))
-    (should
-     (string= (eden-request-assistant-content resp) "foo assistant"))))
-
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-assistant-reasoning-test")))
-(ert-deftest eden-request-assistant-reasoning-test ()
-  ;; Deepseek API
-  (let ((resp '(:model "deepseek-reasoner"
-                :choices [(:message (:role "assistant"
-                                     :content "foo assistant"
-                                     :reasoning_content "foo reasoning"))])))
-    (should
-     (string= (eden-request-assistant-reasoning resp) "foo reasoning")))
-  ;; Perplexity API
-  (let ((resp '(:model "r1-1776"
-                :choices [(:message (:role "assistant"
-                                     :content "<think>foo\nbar reasoning</think>foo assistant"))])))
-    (should
-     (string= (eden-request-assistant-reasoning resp) "foo\nbar reasoning")))
-  ;; Anthropic API
-  (let ((resp '(:content
-                [(:type "thinking" :thinking "foo reasoning" :signature "ErUBCkYIAxgCIkBsDgzxZPcAxTt6v8ZQGY4W+UZcPGDT/OBoV3MGcmF0Nyc05y5ZsWzsI8qhQAaLn/LT8UUP5jVtNnlpKOngUt04EgzkHx5Y+f6BcWE0MnYaDKTBoKEWUwDtyv3ksSIwRM8Yhp6o0VC9MQIzIUU0BxZKPg21gHUmLYhNtApTg6melJaahQQ2xz+h4QgD3HiTKh1y3ecKq4V0djcmYyxJ3WzUqBq/NHco5X1qHTPtzRgC")
-                 (:type "text" :text "foo assistant")])))
-    (should
-     (string= (eden-request-assistant-reasoning resp) "foo reasoning"))))
-
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-check-test")))
 (ert-deftest eden-request-check-test ()
   ;; Signal error if the request doesn't exist in `:dir'
@@ -224,86 +185,40 @@
     (eden-request-write req 'api "")
     (eden-request-write req 'prompt "")
     (eden-request-write req 'request "")
-    (eden-request-write req 'exchanges "")
     (eden-request-write req 'response "")
     (eden-request-write req 'response-org "")
+    (eden-request-write req 'input "")
+    (eden-request-write req 'output "")
+    (eden-request-write req 'prev-turns "")
     (with-temp-buffer
       (write-file (concat (eden-request-dir req) "timestamp-1234")))
     (should (eden-request-check req))))
 
-(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-test")))
-(ert-deftest eden-request-conversation-test ()
-
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-context-test")))
+(ert-deftest eden-request-context-test ()
   ;; Signal error if the request doesn't exist in `:dir'
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
-    (should-error (eden-request-conversation req)))
+    (should-error (eden-request-context req)))
 
   ;; Signal error when an error.json file exists in req directory
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-request-write req 'error "")
-    (should-error (eden-request-conversation req)))
+    (should-error (eden-request-context req)))
 
   ;; Signal error when the request in incomplete
   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-request-conversation req)))
+    (should-error (eden-request-context req)))
 
-  ;; conversation with no previous messages
-  (let* ((req `(:api (:service "openai"
+  ;; Conversation with a system message and previous messages
+  ;; Make sure we don't include the system message
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:api (:service "openai"
                       :endpoint "https://api.openai.com/v1/chat/completions")
-                :dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo"
-                :req-params (:messages [(:role "user" :content "foo user")])
-                :prompt "foo prompt\n"))
-         (dir (plist-get req :dir))
-         (resp '(:choices [(:message (:role "assistant"
-                                      :content "foo assistant\n"
-                                      :refusal nil))]))
-         (resp-str (eden-json-encode resp)))
-    (eden-write-request req)
-    (eden-write-response req resp-str resp)
-    (should
-     (equal
-      (eden-request-conversation `(:dir ,dir :uuid "uuid-foo"))
-      [(:uuid "uuid-foo"
-        :prompt "foo prompt\n"
-        :response "foo assistant\n"
-        :context [(:role "user" :content "foo user")
-                  (:role "assistant" :content "foo assistant\n" :refusal nil)])])))
-
-  ;; Conversation with a system message and no previous messages.
-  ;; Make sure we don't include the system message in :context.
-  (let* ((req `(:api (:service "openai"
-                      :endpoint "https://api.openai.com/v1/chat/completions")
-                :dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo"
-                :req-params (:messages [(:role "system" :content "foo system\n")
-                                        (:role "user" :content "foo user")])
-                :prompt "foo prompt\n"
-                :system-message "foo system message\n"))
-         (dir (plist-get req :dir))
-         (resp '(:choices [(:message (:role "assistant"
-                                      :content "foo assistant\n"
-                                      :refusal nil))]))
-         (resp-str (eden-json-encode resp)))
-    (eden-write-request req)
-    (eden-write-response req resp-str resp)
-    (should
-     (equal
-      (eden-request-conversation req)
-      [(:uuid "uuid-foo"
-        :prompt "foo prompt\n"
-        :response "foo assistant\n"
-        :context [(:role "user" :content "foo user")
-                  (:role "assistant" :content "foo assistant\n" :refusal nil)])])))
-
-  ;; conversation with previous messages
-  (let* ((req `(:api (:service "openai"
-                      :endpoint "https://api.openai.com/v1/chat/completions")
-                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,dir
                 :uuid "uuid-baz"
                 :req-params (:messages [(:role "system" :content "baz system\n")
                                         (:role "user" :content "foo user")
@@ -313,108 +228,157 @@
                                         (:role "user" :content "baz user")])
                 :prompt "baz prompt\n"
                 :system-message "baz system message\n"
-                :exchanges [(:uuid "uuid-foo"
-                             :prompt "foo prompt\n"
-                             :response "foo assistant\n")
-                            (:uuid "uuid-bar"
-                             :prompt "bar prompt\n"
-                             :response "bar assistant\n"
-                             :context [(:role "user" :content "foo user")
-                                       (:role "assistant" :content "foo assistant\n")
-                                       (:role "user" :content "bar user")
-                                       (:role "assistant" :content "bar assistant\n")])]))
-         (dir (plist-get req :dir))
+                :prev-turns [(:uuid "uuid-foo"
+                              :prompt "foo prompt\n"
+                              :response "foo assistant\n")
+                             (:uuid "uuid-bar"
+                              :prompt "bar prompt\n"
+                              :response "bar assistant\n")]))
          (resp '(:choices [(:message (:role "assistant" :content "baz assistant\n"))]))
          (resp-str (eden-json-encode resp)))
-    (message "%s" (eden-request-dir req))
     (eden-write-request req)
     (eden-write-response req resp-str resp)
     (should
      (equal
-      (eden-request-conversation `(:dir ,dir :uuid "uuid-baz"))
-      [(:uuid "uuid-foo"
-        :prompt "foo prompt\n"
-        :response "foo assistant\n")
-       (:uuid "uuid-bar"
-        :prompt "bar prompt\n"
-        :response "bar assistant\n")
-       (:uuid "uuid-baz"
-        :prompt "baz prompt\n"
-        :response "baz assistant\n"
-        :context [(:role "user" :content "foo user")
-                  (:role "assistant" :content "foo assistant\n")
-                  (:role "user" :content "bar user")
-                  (:role "assistant" :content "bar assistant\n")
-                  (:role "user" :content "baz user")
-                  (:role "assistant" :content "baz assistant\n")])])))
+      (eden-request-context `(:dir ,dir :uuid "uuid-baz"))
+      [(:role "user" :content "foo user")
+       (:role "assistant" :content "foo assistant\n")
+       (:role "user" :content "bar user")
+       (:role "assistant" :content "bar assistant\n")
+       (:role "user" :content "baz user")
+       (:role "assistant" :content "baz assistant\n")]))))
 
-  ;; With Deepseek reasoning content
-  (let* ((req `(:api (:service "deepseek"
-                      :endpoint "https://api.deepseek.com")
-                :prompt "baz prompt\n"
-                :dir ,(concat (make-temp-file "eden-" t) "/")
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-turns-test")))
+(ert-deftest eden-request-turns-test ()
+
+  ;; Signal error if the request doesn't exist in `:dir'
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (should-error (eden-request-turns req)))
+
+  ;; Signal error when an error.json file exists in req directory
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (eden-request-write req 'error "")
+    (should-error (eden-request-turns req)))
+
+  ;; Signal error when the request in incomplete
+  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (make-directory (eden-request-dir req) 'parent)
+    (should-error (eden-request-turns req)))
+
+  ;; One turn, no reasoning, no citations
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,dir
+                :uuid "uuid-foo"
+                :prompt "foo prompt"
+                :req-params (:input [(:role "user" :content "foo prompt")])))
+         (resp '(:output [(:type "message"
+                           :role "assistant"
+                           :content [(:type "output_text"
+                                      :text "foo response\n")])]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-request req)
+    (eden-write-response req resp-str resp)
+    (should
+     (equal (eden-request-turns `(:dir ,dir :uuid "uuid-foo"))
+            [(:uuid "uuid-foo"
+              :prompt "foo prompt\n"
+              :response "foo response\n")])))
+
+  ;; One turn, with reasoning, no citations
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,dir
+                :uuid "uuid-foo"
+                :prompt "foo prompt"
+                :req-params (:input [(:role "user" :content "foo prompt")])))
+         (resp '(:output [(:type "reasoning"
+                           :id "rs_foo_id"
+                           :summary [(:type "summary_text"
+                                      :text "foo reasoning\n")])
+                          (:type "message"
+                           :role "assistant"
+                           :content [(:type "output_text"
+                                      :text "foo response\n")])]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-request req)
+    (eden-write-response req resp-str resp)
+    (should
+     (equal (eden-request-turns `(:dir ,dir :uuid "uuid-foo"))
+            [(:uuid "uuid-foo"
+              :prompt "foo prompt\n"
+              :response "foo response\n"
+              :reasoning "foo reasoning\n")])))
+
+  ;; One turn, no reasoning, with citations
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,dir
+                :uuid "uuid-foo"
+                :prompt "foo prompt"
+                :req-params (:input [(:role "user" :content "foo prompt")])))
+         (resp '(:output [(:type "web_search_call" :id "ws_foo_id" :status "completed")
+                          (:type "message"
+                           :role "assistant"
+                           :content [(:type "output_text"
+                                      :text "foo response\n"
+                                      :annotations
+                                      [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                                       (:type "url_citation" :url_citation (:url "https://bar.com"))
+                                       (:type "url_citation" :url_citation (:url "https://baz.com"))])])]))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-request req)
+    (eden-write-response req resp-str resp)
+    (should
+     (equal (eden-request-turns `(:dir ,dir :uuid "uuid-foo"))
+            [(:uuid "uuid-foo"
+              :prompt "foo prompt\n"
+              :response "foo response\n"
+              :citations "- https://foo.com\n- https://bar.com\n- https://baz.com\n")])))
+
+  ;; Multiple turns, no reasoning, no citations
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,dir
                 :uuid "uuid-baz"
-                :req-params (:messages [(:role "system" :content "baz system\n")
-                                        (:role "user" :content "foo user")
-                                        (:role "assistant"
-                                         :content "foo assistant\n"
-                                         :reasoning_content "foo reasoning\n")
-                                        (:role "user" :content "bar user")
-                                        (:role "assistant"
-                                         :content "bar assistant\n"
-                                         :reasoning_content "bar reasoning\n")
-                                        (:role "user" :content "baz user")])
-                :system-message "baz system message\n"
-                :exchanges [(:uuid "uuid-foo"
-                             :prompt "foo prompt\n"
-                             :response "foo assistant\n"
-                             :reasoning "foo reasoning\n")
-                            (:uuid "uuid-bar"
-                             :prompt "bar prompt\n"
-                             :response "bar assistant\n"
-                             :reasoning "bar reasoning\n"
-                             :context [(:role "user" :content "foo user")
-                                       (:role "assistant"
-                                        :content "foo assistant\n"
-                                        :reasoning_content "foo reasoning\n")
-                                       (:role "user" :content "bar user")
-                                       (:role "assistant"
-                                        :content "bar assistant\n"
-                                        :reasoning_content "bar reasoning\n")])]))
-         (dir (plist-get req :dir))
-         (resp '(:choices [(:message (:role "assistant"
-                                      :content "baz assistant\n"
-                                      :reasoning_content "baz reasoning\n"))]))
+                :req-params (:input [(:role "user" :content "foo prompt")
+                                     (:role "assistant" :content "foo response\n")
+                                     (:role "user" :content "bar prompt")
+                                     (:role "assistant" :content "bar response\n")
+                                     (:role "user" :content "baz prompt")])
+                :prompt "baz prompt\n"
+                :prev-turns [(:uuid "uuid-foo"
+                              :prompt "foo prompt\n"
+                              :response "foo response\n")
+                             (:uuid "uuid-bar"
+                              :prompt "bar prompt\n"
+                              :response "bar response\n")]))
+         (resp '(:output [(:type "message"
+                           :role "assistant"
+                           :content [(:type "output_text"
+                                      :text "baz response\n")])]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
     (eden-write-response req resp-str resp)
     (should
      (equal
-      (eden-request-conversation `(:dir ,dir :uuid "uuid-baz"))
+      (eden-request-turns `(:dir ,dir :uuid "uuid-baz"))
       [(:uuid "uuid-foo"
         :prompt "foo prompt\n"
-        :response "foo assistant\n"
-        :reasoning "foo reasoning\n")
+        :response "foo response\n")
        (:uuid "uuid-bar"
         :prompt "bar prompt\n"
-        :response "bar assistant\n"
-        :reasoning "bar reasoning\n")
+        :response "bar response\n")
        (:uuid "uuid-baz"
         :prompt "baz prompt\n"
-        :response "baz assistant\n"
-        :reasoning "baz reasoning\n"
-        :context [(:role "user" :content "foo user")
-                  (:role "assistant"
-                   :content "foo assistant\n"
-                   :reasoning_content "foo reasoning\n")
-                  (:role "user" :content "bar user")
-                  (:role "assistant"
-                   :content "bar assistant\n"
-                   :reasoning_content "bar reasoning\n")
-                  (:role "user" :content "baz user")
-                  (:role "assistant"
-                   :content "baz assistant\n"
-                   :reasoning_content "baz reasoning\n")])]))))
+        :response "baz response\n")]))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-request-conversation-path-test")))
 (ert-deftest eden-request-conversation-path-test ()
@@ -437,22 +401,17 @@
     (should-not (eden-request-conversation-path req)))
 
   ;; conversation with no previous messages
-  (let* ((req `(:req-params (:stream :false
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:req-params (:stream :false
                              :model "gpt-4o-mini"
                              :messages [(:role "user" :content "foo user")])
                 :api (:service "openai"
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
-                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :dir ,dir
                 :uuid "uuid-foo"))
          (dir (plist-get req :dir))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "foo assistant" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
+         (resp '(:choices [(:message (:role "assistant" :content "foo assistant"))]))
          (resp-str (eden-json-encode resp)))
     (eden-write-request req)
     (eden-write-response req resp-str resp)
@@ -462,7 +421,8 @@
       ["uuid-foo"])))
 
   ;; conversation with previous messages
-  (let* ((req `(:req-params (:stream :false
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req `(:req-params (:stream :false
                              :model "gpt-4o-mini"
                              :messages [(:role "system" :content "baz system")
                                         (:role "user" :content "foo prompt")
@@ -474,27 +434,16 @@
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "baz user prompt\n"
                 :system-message "baz system message\n"
-                :exchanges [(:uuid "uuid-foo"
-                             :prompt "foo prompt"
-                             :response "foo response")
-                            (:uuid "uuid-bar"
-                             :prompt "bar prompt"
-                             :response "bar response"
-                             :context [(:role "user" :content "foo prompt")
-                                       (:role "assistant" :content "foo response\n")
-                                       (:role "user" :content "bar prompt")
-                                       (:role "assistant" :content "bar response\n")])]
-                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :prev-turns [(:uuid "uuid-foo"
+                              :prompt "foo prompt"
+                              :response "foo response")
+                             (:uuid "uuid-bar"
+                              :prompt "bar prompt"
+                              :response "bar response")]
+                :dir ,dir
                 :uuid "uuid-baz"))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "baz assistant" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
-         (resp-str (eden-json-encode resp))
-         (dir (plist-get req :dir)))
+         (resp '(:choices [(:message (:role "assistant" :content "baz assistant"))]))
+         (resp-str (eden-json-encode resp)))
     (eden-write-request req)
     (eden-write-response req resp-str resp)
     (should
@@ -531,6 +480,7 @@
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-write-request-test")))
 (ert-deftest eden-write-request-test ()
+  ;; req without :system-message and without :prev-turns
   (let* ((req `(:req-params (:stream :false
                              :model "gpt-4o-mini"
                              :messages [(:role "user" :content "user prompt\n")])
@@ -547,10 +497,15 @@
     (should (equal (eden-request-read req 'prompt)
                    (plist-get req :prompt)))
     (should (equal (eden-request-read req 'system-message) ""))
-    (should-not (eden-request-read req 'exchanges))
+    (should-not (eden-request-read req 'prev-turns))
     (should
-     (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
-        1)))
+     (file-exists-p
+      (car (directory-files (eden-request-dir req) 'full "timestamp-"))))
+    ;; llm-api-dispatch
+    (should (equal (eden-request-read req 'input)
+                   [(:role "user" :content "user prompt\n")])))
+
+  ;; req with :system-message and :prev-turns
   (let* ((req `(:req-params (:stream :false
                              :model "gpt-4o-mini"
                              :messages [(:role "system" :content "baz system\n")
@@ -563,32 +518,60 @@
                       :endpoint "https://api.openai.com/v1/chat/completions")
                 :prompt "foo prompt\n"
                 :system-message "foo system\n"
-                :exchanges [(:uuid "uuid-foo"
-                             :prompt "foo prompt"
-                             :response "foo response")
-                            (:uuid "uuid-bar"
-                             :prompt "bar prompt"
-                             :response "bar response"
-                             :context [(:role "user" :content "foo prompt")
-                                       (:role "assistant" :content "foo response")
-                                       (:role "user" :content "bar prompt")
-                                       (:role "assistant" :content "bar response")])]
+                :prev-turns [(:uuid "uuid-foo"
+                              :prompt "foo prompt"
+                              :response "foo response")
+                             (:uuid "uuid-bar"
+                              :prompt "bar prompt"
+                              :response "bar response")]
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo")))
     (eden-write-request req)
-    (should (equal (eden-request-read req 'request)
-                   (plist-get req :req-params)))
-    (should (equal (eden-request-read req 'api)
-                   (plist-get req :api)))
-    (should (equal (eden-request-read req 'prompt)
-                   (plist-get req :prompt)))
-    (should (equal (eden-request-read req 'system-message)
-                   (plist-get req :system-message)))
-    (should (equal (eden-request-read req 'exchanges)
-                   (plist-get req :exchanges)))
-    (should
-     (= (length (directory-files (eden-request-dir req) nil "timestamp-"))
-        1))))
+    (should (equal (eden-request-read req 'system-message) "foo system\n"))
+    (should (equal (eden-request-read req 'prev-turns)
+                   [(:uuid "uuid-foo"
+                     :prompt "foo prompt"
+                     :response "foo response")
+                    (:uuid "uuid-bar"
+                     :prompt "bar prompt"
+                     :response "bar response")]))
+    ;; llm-api-dispatch
+    (should (equal (eden-request-read req 'input)
+                   ;; no system prompt
+                   [(:role "user" :content "foo user")
+                    (:role "assistant" :content "foo response")
+                    (:role "user" :content "bar prompt")
+                    (:role "assistant" :content "bar response")
+                    (:role "user" :content "baz prompt\n")])))
+
+  ;; Anthropic API
+  (let* ((req `(:req-params (:stream :false
+                             :model "claude-opus-4-7"
+                             :messages [(:role "user" :content "user prompt\n")])
+                :api (:service "anthropic"
+                      :endpoint "https://api.anthropic.com/v1/messages")
+                :prompt "user prompt\n"
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (eden-write-request req)
+    ;; llm-api-dispatch
+    (should (equal (eden-request-read req 'input)
+                   [(:role "user" :content "user prompt\n")])))
+
+
+  ;; OpenAI Responses API
+  (let* ((req `(:req-params (:stream :false
+                             :model "gpt-5.4"
+                             :input [(:role "user" :content "user prompt\n")])
+                :api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :prompt "user prompt\n"
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo")))
+    (eden-write-request req)
+    ;; llm-api-dispatch
+    (should (equal (eden-request-read req 'input)
+                   [(:role "user" :content "user prompt\n")]))))
 
 (defvar eden-api-key-someservice-name)
 
@@ -684,73 +667,218 @@ arr[0]
 #+END_SRC
 "))))
 
+(global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-write-response-test")))
 (ert-deftest eden-write-response-test ()
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+  ;; llm-api-dispatch
+
+  ;; It is possible to receive responses with not text message, for
+  ;; instance when we get only function_call types of items in :ouptut.
+  ;; In that case we store [No text] in response.org file.
+  ;; We check this only for the OpenAI Responses API (but the code
+  ;; should work for all API)
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (resp '(:id "chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8"
-                 :object "chat.completion"
-                 :created 1733030031
-                 :model "gpt-4o-mini-2024-07-18"
-                 :choices [(:index 0
-                            :message (:role "assistant" :content "### foo assistant\n" :refusal nil)
-                            :logprobs nil :finish_reason "stop")]))
+         (output [(:id "fc_foo_id"
+                   :call_id "call_foo"
+                   :type "function_call"
+                   :name "foo_fn"
+                   :arguments "{\"bar\":\"baz\"}")])
+         (resp `(:output ,output))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response-org) "[No text]\n"))
+    (should (equal (eden-request-read req 'output) output)))
+
+  ;; OpenAI Responses API no citations, no reasoning
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (output [(:type "message"
+                   :role "assistant"
+                   :content [(:type "output_text"
+                              :text "### foo assistant\n")])])
+         (resp `(:output ,output))
          (resp-str (eden-json-encode resp)))
     (eden-write-response req resp-str resp)
     (should (equal (eden-request-read req 'response) resp))
-    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n")))
-  ;; response from perplexity.ai with citations array
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'output) output))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; OpenAI Responses API with citations, no reasoning
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (resp '(:id "022348c0-2af6-435f-8c60-01ef5b3b39dd"
-                 :object "chat.completion"
-                 :created 1735366499
-                 :model "sonar"
-                 :citations ["https://foo.com"
-                             "https://bar.com"
-                             "https://baz.com"]
-                 :choices [(:index 0
-                            :message (:role "assistant"
-                                      :content "### foo assistant\n\nfoo citation[1]\n\nbar baz citations[2][3]\n")
-                            :finish_reason "stop")]))
+         (output [(:type "web_search_call" :id "ws_foo_id" :status "completed")
+                  (:type "message"
+                   :role "assistant"
+                   :content [(:type "output_text"
+                              :text "### foo assistant\n"
+                              :annotations
+                              [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                               (:type "url_citation" :url_citation (:url "https://bar.com"))
+                               (:type "url_citation" :url_citation (:url "https://baz.com"))])])])
+         (resp `(:output ,output))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'output) output))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should (equal (eden-request-read req 'citations)
+                   "- https://foo.com\n- https://bar.com\n- https://baz.com\n")))
+
+  ;; OpenAI Responses API with with reasoning summary, no citations
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/responses")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (output [(:type "reasoning"
+                   :id "rs_foo_id"
+                   :summary [(:type "summary_text"
+                              :text "### foo reasoning\n")])
+                  (:type "message"
+                   :role "assistant"
+                   :content [(:type "output_text"
+                              :text "### foo assistant\n")])])
+         (resp `(:output ,output))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))
+    (should (equal (eden-request-read req 'output) output))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; Anthropic response with reasoning, no citations
+  (let* ((req `(:api (:service "anthropic"
+                      :endpoint "https://api.anthropic.com/v1/messages")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (output [(:type "thinking" :thinking "### foo reasoning\n")
+                  (:type "text" :text "### foo assistant\n")])
+         (resp `(:content ,output))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))
+    (should (equal (eden-request-read req 'output) output))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; Anthropic response no reasoning, no citations
+  (let* ((req `(:api (:service "anthropic"
+                      :endpoint "https://api.anthropic.com/v1/messages")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (output [(:type "text" :text "### foo assistant\n")])
+         (resp `(:content ,output))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'output) output))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; OpenAI Chat completion no citations
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/chat/completions")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (msg '(:role "assistant" :content "### foo assistant\n"))
+         (resp `(:choices ,(vector `(:message ,msg))))
+         (resp-str (eden-json-encode resp)))
+    (message "resp: %S" resp)
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
+    (should (equal (eden-request-read req 'output) (vector msg)))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; OpenAI Chat completion with citations
+  (let* ((req `(:api (:service "openai"
+                      :endpoint "https://api.openai.com/v1/chat/completions")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (msg '(:role "assistant"
+                :content "### foo response (https://foo.com, https://bar.com, https://baz.com)\n"
+                :annotations
+                [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                 (:type "url_citation" :url_citation (:url "https://bar.com"))
+                 (:type "url_citation" :url_citation (:url "https://baz.com"))]))
+         (resp `(:choices ,(vector `(:message ,msg))))
          (resp-str (eden-json-encode resp)))
     (eden-write-response req resp-str resp)
     (should (equal (eden-request-read req 'response) resp))
     (should (equal (eden-request-read req 'response-org)
-                   "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n")))
-  ;; response from perplexity.ai with reasoning content
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                   "*** foo response (https://foo.com, https://bar.com, https://baz.com)\n"))
+    (should (equal (eden-request-read req 'output) (vector msg)))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should (equal (eden-request-read req 'citations)
+                   "- https://foo.com\n- https://bar.com\n- https://baz.com\n")))
+
+  ;; response from perplexity.ai with citations, no reasoning
+  (let* ((req `(:api (:service "perplexity"
+                      :endpoint "https://api.perplexity.ai/chat/completions")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (resp '(:id "35413197-0bfe-4ee3-a27b-61e6f8e0335e"
-                 :object "chat.completion"
-                 :created 1747915264
-                 :model "r1-1776"
-                 :choices [(:index 0
-                            :message (:role "assistant"
-                                      :content "<think>### foo reasoning\n</think>\n### foo assistant\n")
-                            :finish_reason "stop")]))
+         (msg '(:role "assistant"
+                :content "### foo assistant\n\nfoo citation[1]\n\nbar baz citations[2][3]\n"))
+         (resp `(:citations ["https://foo.com"
+                             "https://bar.com"
+                             "https://baz.com"]
+                 :choices ,(vector `(:message ,msg))))
+         (resp-str (eden-json-encode resp)))
+    (eden-write-response req resp-str resp)
+    (should (equal (eden-request-read req 'response) resp))
+    (should (equal (eden-request-read req 'response-org)
+                   "*** foo assistant\n\nfoo citation[[[https://foo.com][1]]]\n\nbar baz citations[[[https://bar.com][2]]][[[https://baz.com][3]]]\n"))
+    (should (equal (eden-request-read req 'output) (vector msg)))
+    (should-not (file-exists-p (eden-request-file req 'reasoning)))
+    (should (equal (eden-request-read req 'citations)
+                   "- https://foo.com\n- https://bar.com\n- https://baz.com\n")))
+
+  ;; response from perplexity.ai with reasoning, no citations
+  (let* ((req `(:api (:service "perplexity"
+                      :endpoint "https://api.perplexity.ai/chat/completions")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "uuid-foo"))
+         (msg '(:role "assistant"
+                :content "<think>### foo reasoning\n</think>\n### foo assistant\n"))
+         (resp `(:model "r1-1776"
+                 :choices ,(vector `(:message ,msg))))
          (resp-str (eden-json-encode resp)))
     (eden-write-response req resp-str resp)
     (should (equal (eden-request-read req 'response) resp))
     (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
-    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n")))
-  ;; response from deepseek.com with reasoning content
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+    (should (equal (eden-request-read req 'output) (vector msg)))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))
+    (should-not (file-exists-p (eden-request-file req 'citations))))
+
+  ;; response from deepseek.com with reasoning content, no citations
+  (let* ((req `(:api (:service "deepseek"
+                      :endpoint "https://api.deepseek.com")
+                :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
-         (resp '(:id "5b5178d0-9cca-4a8b-86f9-6971ce2c1788"
-                 :object "chat.completion"
-                 :created 1738222989
-                 :model "deepseek-reasoner"
-                 :choices [(:index 0
-                            :message (:role "assistant"
-                                      :content "### foo assistant\n"
-                                      :reasoning_content "### foo reasoning\n")
-                            :logprobs nil
-                            :finish_reason "stop")]))
+         (msg '(:role "assistant"
+                :content "### foo assistant\n"
+                :reasoning_content "### foo reasoning\n"))
+         (resp `(:model "deepseek-reasoner"
+                 :choices ,(vector `(:message ,msg))))
          (resp-str (eden-json-encode resp)))
     (eden-write-response req resp-str resp)
     (should (equal (eden-request-read req 'response) resp))
     (should (equal (eden-request-read req 'response-org) "*** foo assistant\n"))
-    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))))
+    (should (equal (eden-request-read req 'output) (vector msg)))
+    (should (equal (eden-request-read req 'reasoning) "*** foo reasoning\n"))
+    (should-not (file-exists-p (eden-request-file req 'citations)))))
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-sentinel-test")))
 (ert-deftest eden-sentinel-test ()
@@ -1701,47 +1829,98 @@ foo bar baz
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-conversation-insert-test")))
 (ert-deftest eden-conversation-insert-test ()
+  ;; In the :req-params of the requests below:
+  ;;
+  ;; - We don't put message in markdown
+  ;; - We don't put the whole context for multiple turns conversation
+  ;;
+  ;; This doesn't affect what we're testing here, what really matters is:
+  ;;
+  ;; - :prompt key (in the request)
+  ;; - :prev-turns key (in the request)
+  ;; - text (in the responses)
+
   ;; Signal error if the request doesn't exist in `:dir'
-  (should-error
+  (comment
+   (should-error
+    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                  :uuid "uuid-foo")))
+      (eden-conversation-insert req "title")))
+
+   ;; Signal error when an error.json file exists in req directory
    (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
                  :uuid "uuid-foo")))
-     (eden-conversation-insert req "title")))
+     (eden-request-write req 'error "")
+     (should-error (eden-conversation-insert req "title")))
 
-  ;; Signal error when an error.json file exists in req directory
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo")))
-    (eden-request-write req 'error "")
-    (should-error (eden-conversation-insert req "title")))
-
-  ;; Signal error when the request in incomplete
-  (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
-                :uuid "uuid-foo")))
-    (make-directory (eden-request-dir req) 'parent)
-    (should-error (eden-conversation-insert req "title")))
+   ;; Signal error when the request in incomplete
+   (let* ((req `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                 :uuid "uuid-foo")))
+     (make-directory (eden-request-dir req) 'parent)
+     (should-error (eden-conversation-insert req "title")))
 
 
-  ;; Signal error when both `title' and `append' argument are nil
-  (let ((req `(:req-params (:messages [(:role "user" :content "foo")])
-               :prompt "foo"
-               :dir ,(concat (make-temp-file "eden-" t) "/")
-               :uuid "req-foo-uuid"))
-        (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
-    (eden-write-request req)
-    (eden-write-response req (eden-json-encode resp) resp)
-    (should-error (eden-conversation-insert req nil)))
+   ;; Signal error when both `title' and `append' argument are nil
+   (let ((req `(:req-params (:messages [(:role "user" :content "foo")])
+                :prompt "foo"
+                :dir ,(concat (make-temp-file "eden-" t) "/")
+                :uuid "req-foo-uuid"))
+         (resp '(:choices [(:message (:role "assistant" :content "foo response"))])))
+     (eden-write-request req)
+     (eden-write-response req (eden-json-encode resp) resp)
+     (should-error (eden-conversation-insert req nil)))
 
-  ;; conversation with no previous exchanges
+   ;; One turn
+   (should
+    (string=
+     (with-temp-buffer
+       (org-mode)
+       (let ((eden-org-property-req "EDEN_REQ")
+             (req `(:req-params (:messages [(:role "user" :content "foo bar baz")])
+                    :prompt "foo bar baz"
+                    :dir ,(concat (make-temp-file "eden-" t) "/")
+                    :uuid "uuid"))
+             (resp '(:choices [(:message (:role "assistant"
+                                          :content "foo bar baz assistant response"))])))
+         (eden-write-request req)
+         (eden-write-response req (eden-json-encode resp) resp)
+         (eden-conversation-insert req "Conversation"))
+       (buffer-substring-no-properties (point-min) (point-max)))
+     "** Conversation
+:PROPERTIES:
+:EDEN_REQ: uuid
+:END:
+*** Prompt
+
+foo bar baz
+
+*** Response
+
+foo bar baz assistant response
+
+")))
+
+  ;; One turn with citations
   (should
    (string=
     (with-temp-buffer
       (org-mode)
       (let ((eden-org-property-req "EDEN_REQ")
-            (req `(:req-params (:messages [(:role "user" :content "foo bar baz")])
-                   :prompt "foo bar baz"
+            (req `(:api (:service "openai"
+                         :endpoint "https://api.openai.com/v1/responses")
                    :dir ,(concat (make-temp-file "eden-" t) "/")
-                   :uuid "uuid"))
-            (resp '(:choices [(:message (:role "assistant"
-                                         :content "foo bar baz assistant response"))])))
+                   :uuid "uuid"
+                   :prompt "foo bar baz"
+                   :req-params (:input [(:role "user" :content "foo bar baz")])))
+            (resp '(:output [(:type "web_search_call" :id "ws_foo_id" :status "completed")
+                             (:type "message"
+                              :role "assistant"
+                              :content [(:type "output_text"
+                                         :text "foo bar baz assistant response\n"
+                                         :annotations
+                                         [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                                          (:type "url_citation" :url_citation (:url "https://bar.com"))
+                                          (:type "url_citation" :url_citation (:url "https://baz.com"))])])])))
         (eden-write-request req)
         (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
@@ -1758,11 +1937,16 @@ foo bar baz
 
 foo bar baz assistant response
 
+**** Citations
+
+- https://foo.com
+- https://bar.com
+- https://baz.com
+
 "))
 
-  ;; conversation:
-  ;; - with no previous exchanges
-  ;; - with reasoning
+  ;; - Open turn
+  ;; - With reasoning
   ;;   - we use Deepseek reasoning model to generate the response
   ;;   - the reasoning is inserted in the buffer
   ;;     because we set `eden-include-reasoning' to t
@@ -1805,9 +1989,8 @@ foo bar baz assistant response
 
 "))
 
-  ;; conversation:
-  ;; - with no previous exchanges
-  ;; - with reasoning
+  ;; - One turn
+  ;; - With reasoning
   ;;   - we use Deepseek reasoning model to generate the response
   ;;   - we don't inserted the reasoning in the buffer
   ;;     by setting `eden-include-reasoning' to nil
@@ -1847,8 +2030,7 @@ foo bar baz assistant response
 
 "))
 
-  ;; conversation with no previous exchanges to which we add a title
-  ;; in the top level heading
+  ;; One turn, setting title
   (should
    (string=
     (with-temp-buffer
@@ -1897,7 +2079,7 @@ bar baz
 
 "))
 
-  ;; conversation with previous exchanges
+  ;; Multiple turns
   (should
    (string=
     (with-temp-buffer
@@ -1910,19 +2092,14 @@ bar baz
                :uuid "uuid-baz"
                :api (:service "openai"
                      :endpoint "https://api.openai.com/v1/chat/completions")
-               :exchanges [(:uuid "uuid-foo"
-                            :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                            :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                           (:uuid "uuid-bar"
-                            :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                            :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                            :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                      (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                      (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                      (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
+               :prev-turns [(:uuid "uuid-foo"
+                             :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                             :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                            (:uuid "uuid-bar"
+                             :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                             :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
             (resp '(:choices [(:message (:role "assistant"
                                          :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
-        (message "%s" (plist-get req :dir))
         (eden-write-request req)
         (eden-write-response req (eden-json-encode resp) resp)
         (eden-conversation-insert req "Conversation"))
@@ -1976,8 +2153,7 @@ baz-assistant-content
 
 "))
 
-
-  ;; Append last request to an existing conversation.
+  ;; Multiple turns, append last request to an existing conversation.
   (should
    (string=
     (with-temp-buffer
@@ -1989,21 +2165,16 @@ baz-assistant-content
                    :uuid "uuid-baz"
                    :api (:service "openai"
                          :endpoint "https://api.openai.com/v1/chat/completions")
-                   ;; We keep :exchanges thought modifying it doesn't affect
+                   ;; We keep :prev-turns thought modifying it doesn't affect
                    ;; `eden-conversation-insert' as we are only appending
                    ;; the last request (i.e. this request) not the previous
                    ;; exchanges
-                   :exchanges [(:uuid "uuid-foo"
-                                :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                               (:uuid "uuid-bar"
-                                :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                                :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                          (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                          (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                          (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]
-                   ))
+                   :prev-turns [(:uuid "uuid-foo"
+                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                (:uuid "uuid-bar"
+                                 :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
             (resp '(:choices [(:message (:role "assistant"
                                          :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (insert "** Title of the conversation
@@ -2096,7 +2267,7 @@ baz-assistant-content
 
 "))
 
-  ;; Insert only insert the last request of the conversation
+  ;; Multiple turns.  Only insert the last request of the conversation
   ;; by passing 'only-last-req argument to `eden-conversation-insert'
   (should
    (string=
@@ -2110,20 +2281,16 @@ baz-assistant-content
                     :uuid "uuid"
                     :api (:service "openai"
                           :endpoint "https://api.openai.com/v1/chat/completions")
-                    ;; We keep :exchanges thought modifying it doesn't affect
-                    ;; `eden-conversation-insert' as we are only inserting
+                    ;; We keep :prev-turns thought modifying it doesn't affect
+                    ;; `eden-conversation-insert' as we are only appending
                     ;; the last request (i.e. this request) not the previous
                     ;; exchanges
-                    :exchanges [(:uuid "uuid-foo"
-                                 :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
-                                 :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                (:uuid "uuid-bar"
-                                 :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
-                                 :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content"
-                                 :context [(:role "user" :content "* foo-heading-1\n** foo-heading-2\n\nfoo-content")
-                                           (:role "assistant" :content "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
-                                           (:role "user" :content "* bar-heading-1\n** bar-heading-2\n\nbar-content")
-                                           (:role "assistant" :content "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")])]))
+                    :prev-turns [(:uuid "uuid-foo"
+                                  :prompt "* foo-heading-1\n** foo-heading-2\n\nfoo-content"
+                                  :response "*** foo-assistant-heading-3\n**** foo-assistant-heading-4\n\nfoo-assistant-content")
+                                 (:uuid "uuid-bar"
+                                  :prompt "* bar-heading-1\n** bar-heading-2\n\nbar-content"
+                                  :response "*** bar-assistant-heading-3\n**** bar-assistant-heading-4\n\nbar-assistant-content")]))
              (resp '(:choices [(:message (:role "assistant"
                                           :content "### baz-assistant-heading-3\n\n#### baz-assistant-heading-4\n\nbaz-assistant-content"))])))
         (eden-write-request req)
@@ -2384,42 +2551,83 @@ baz-assistant-content
 
 (global-set-key (kbd "C-<f1>") (lambda () (interactive) (ert "eden-build-request-test")))
 (ert-deftest eden-build-request-test ()
+  ;; llm-api-dispatch
+
+  ;; FIXME
+  ;; - must :prompt nil and :input nil => error
+
   ;; Errors
   (should-error (eden-build-request :profile '(:dir nil))
                 :type 'eden-error-req)
 
   ;; :prompt
   ;;
-  ;; If blank string, we don't pass it as input/messages in the API request
+  ;; Signal an error when :prompt is is nil (or blank string) and
+  ;; :prev-req-uuid is nil.  Allowing this would result in sending
+  ;; a request with no messages to the LLM API which (at least in
+  ;; OpenAI API) return an error.
+  (should-error
+   (eden-build-request :profile `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                                  :api (:service "openai"
+                                        :endpoint "https://api.openai.com/v1/chat/completions"))
+                       :prompt " \n \t "
+                       :prev-req-uuid nil))
+  (should-error
+   (eden-build-request :profile `(:dir ,(concat (make-temp-file "eden-" t) "/")
+                                  :api (:service "openai"
+                                        :endpoint "https://api.openai.com/v1/chat/completions"))
+                       :prompt nil
+                       :prev-req-uuid nil))
+
+  ;; :prompt
+  ;;
+  ;; - if :prompt is blank string (or nil) and
+  ;; - the context of the previous ;; request :prev-req-uuid is non nil
+  ;; => we don't pass :prompt as input/messages in the API request
+  ;;
+  ;; This can happens for the case where we send back tool results
+  ;; to the LLM API without any user prompt.
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (api '(:service "openai"
+                :endpoint "https://api.openai.com/v1/chat/completions"))
+         (model "gpt-5.4")
+         (req-foo (eden-build-request
+                   :profile `(:dir ,dir :api ,api :model ,model)
+                   :prompt "foo prompt\n"))
+         (req-foo-uuid (plist-get req-foo :uuid))
+         ;; We must save this request with a response in `dir'
+         ;; before referencing it as previous request for the
+         ;; new request `req-bar'
+         (_ (eden-write-request req-foo))
+         (resp-foo '(:choices
+                     [(:message (:role "assistant" :content "foo response\n"))]))
+         (_ (eden-write-response req-foo (eden-json-encode resp-foo) resp-foo))
          (req-prompt-blank
-          (eden-build-request
-           :profile `(:dir ,dir
-                      :api (:service "openai"
-                            :endpoint "https://api.openai.com/v1/chat/completions"))
-           :prompt " \n \t "))
+          (eden-build-request :profile `(:dir ,dir :api ,api)
+                              :prompt " \n \t "
+                              :prev-req-uuid req-foo-uuid))
          (req-prompt-nil
-          (eden-build-request
-           :profile `(:dir ,dir
-                      :api (:service "openai"
-                            :endpoint "https://api.openai.com/v1/chat/completions"))
-           :prompt nil))
+          (eden-build-request :profile `(:dir ,dir :api ,api)
+                              :prompt nil
+                              :prev-req-uuid req-foo-uuid))
          (req-prompt-not-blank
           (eden-build-request
-           :profile `(:dir ,dir
-                      :api (:service "openai"
-                            :endpoint "https://api.openai.com/v1/chat/completions"))
+           :profile `(:dir ,dir :api ,api)
            ;; :prompt is expected to use org-mode syntax
            ;; and is converted to markdown in request body
-           :prompt "* foo prompt")))
+           :prompt "* bar prompt")))
     (should (string-empty-p (plist-get req-prompt-blank :prompt)))
-    (should (equal (eden-get-in req-prompt-blank [:req-params :messages]) []))
+    (should (equal (eden-get-in req-prompt-blank [:req-params :messages])
+                   [(:role "user" :content "foo prompt")
+                    (:role "assistant" :content "foo response\n")]))
     (should (string-empty-p (plist-get req-prompt-nil :prompt)))
-    (should (equal (eden-get-in req-prompt-nil [:req-params :messages]) []))
+    (should (equal (eden-get-in req-prompt-nil [:req-params :messages])
+                   [(:role "user" :content "foo prompt")
+                    (:role "assistant" :content "foo response\n")]))
     (should (string= (plist-get req-prompt-not-blank :prompt)
-                     "* foo prompt"))
+                     "* bar prompt"))
     (should (equal (eden-get-in req-prompt-not-blank [:req-params :messages])
-                   [(:role "user" :content "# foo prompt")])))
+                   [(:role "user" :content "# bar prompt")])))
 
 
   ;; :uuid
@@ -2464,8 +2672,11 @@ baz-assistant-content
                               :model "gpt-5.4"
                               :system-message "not-a-cons-cell")
                    :prompt "foo prompt")))
-  ;; :system-message and :system-message-append are expected to use
-  ;; org-mode syntax and are converted to markdown in request body
+
+  ;; :system-message and :system-message-append
+  ;;
+  ;; OpenAI chat completion
+  ;; messages are converted Org -> Markdown
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req-no-system-msg-no-append
           (eden-build-request
@@ -2518,6 +2729,138 @@ baz-assistant-content
                    [(:role "system" :content "# foo system\n\n\n# foo system append")
                     (:role "user" :content "foo prompt")])))
 
+  ;; :system-message and :system-message-append
+  ;;
+  ;; OpenAI Responses API
+  ;; messages are converted Org -> Markdown
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-no-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/responses")
+                      :model "gpt-5.4")
+           :prompt "foo prompt"))
+         (req-no-system-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/responses")
+                      :model "gpt-5.4"
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt"))
+         (req-with-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/responses")
+                      :model "gpt-5.4"
+                      :system-message ("foo system title" . "* foo system"))
+           :prompt "foo prompt"))
+         (req-with-system-msg-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "openai"
+                            :endpoint "https://api.openai.com/v1/responses")
+                      :model "gpt-5.4"
+                      :system-message ("foo system title" . "* foo system")
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt")))
+    (should-not (plist-get req-no-system-msg-no-append :system-message))
+    (should (equal (eden-get-in req-no-system-msg-no-append
+                                [:req-params :input])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-no-system-with-append :system-message)
+                     "* foo system append"))
+    (should (equal (eden-get-in req-no-system-with-append
+                                [:req-params :instructions])
+                   "# foo system append"))
+    (should (equal (eden-get-in req-no-system-with-append
+                                [:req-params :input])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-no-append :system-message)
+                     "* foo system"))
+    (should (equal (eden-get-in req-with-system-msg-no-append
+                                [:req-params :instructions])
+                   "# foo system"))
+    (should (equal (eden-get-in req-with-system-msg-no-append
+                                [:req-params :input])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-with-append :system-message)
+                     "* foo system\n\n* foo system append"))
+    (should (equal (eden-get-in req-with-system-msg-with-append
+                                [:req-params :instructions])
+                   "# foo system\n\n\n# foo system append"))
+    (should (equal (eden-get-in req-with-system-msg-with-append
+                                [:req-params :input])
+                   [(:role "user" :content "foo prompt")])))
+
+  ;; :system-message and :system-message-append
+  ;;
+  ;; Anthropic
+  ;; messages are converted Org -> Markdown
+  (let* ((dir (concat (make-temp-file "eden-" t) "/"))
+         (req-no-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "anthropic"
+                            :endpoint "https://api.anthropic.com/v1/messages")
+                      :model "claude-opus-4-7")
+           :prompt "foo prompt"))
+         (req-no-system-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "anthropic"
+                            :endpoint "https://api.anthropic.com/v1/messages")
+                      :model "claude-opus-4-7"
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt"))
+         (req-with-system-msg-no-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "anthropic"
+                            :endpoint "https://api.anthropic.com/v1/messages")
+                      :model "claude-opus-4-7"
+                      :system-message ("foo system title" . "* foo system"))
+           :prompt "foo prompt"))
+         (req-with-system-msg-with-append
+          (eden-build-request
+           :profile `(:dir ,dir
+                      :api (:service "anthropic"
+                            :endpoint "https://api.anthropic.com/v1/messages")
+                      :model "claude-opus-4-7"
+                      :system-message ("foo system title" . "* foo system")
+                      :system-message-append "* foo system append")
+           :prompt "foo prompt")))
+    (should-not (plist-get req-no-system-msg-no-append :system-message))
+    (should (equal (eden-get-in req-no-system-msg-no-append
+                                [:req-params :messages])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-no-system-with-append :system-message)
+                     "* foo system append"))
+    (should (equal (eden-get-in req-no-system-with-append
+                                [:req-params :system])
+                   "# foo system append"))
+    (should (equal (eden-get-in req-no-system-with-append
+                                [:req-params :messages])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-no-append :system-message)
+                     "* foo system"))
+    (should (equal (eden-get-in req-with-system-msg-no-append
+                                [:req-params :system])
+                   "# foo system"))
+    (should (equal (eden-get-in req-with-system-msg-no-append
+                                [:req-params :messages])
+                   [(:role "user" :content "foo prompt")]))
+    (should (string= (plist-get req-with-system-msg-with-append :system-message)
+                     "* foo system\n\n* foo system append"))
+    (should (equal (eden-get-in req-with-system-msg-with-append
+                                [:req-params :system])
+                   "# foo system\n\n\n# foo system append"))
+    (should (equal (eden-get-in req-with-system-msg-with-append
+                                [:req-params :messages])
+                   [(:role "user" :content "foo prompt")])))
+
   ;; :prev-req-uuid
   ;;
   ;; Error when :prev-req-uuid refer to bad/missing request
@@ -2531,6 +2874,10 @@ baz-assistant-content
       :prev-req-uuid "request-missing-so-cannot-be-used"
       :prompt "foo prompt")
      :type 'eden-error-req))
+  ;; :prev-req-uuid
+  ;;
+  ;; OpenAI Chat completion
+  ;;
   ;; Note that (eden-org-to-markdown "foo\n") ;; "foo" (last newline trimmed)
   ;; and that org content are save to file with last newline at
   ;; the end (maybe due to some Emacs config - I'm not sure)
@@ -2559,17 +2906,6 @@ baz-assistant-content
          (resp-bar '(:choices
                      [(:message (:role "assistant" :content "bar response\n"))]))
          (_ (eden-write-response req-bar (eden-json-encode resp-bar) resp-bar))
-         (exchanges (vector
-                     `(:uuid ,req-foo-uuid
-                       :prompt "foo prompt\n"
-                       :response "foo response\n")
-                     `(:uuid ,req-bar-uuid
-                       :prompt "bar prompt\n"
-                       :response "bar response\n"
-                       :context [(:role "user" :content "foo prompt")
-                                 (:role "assistant" :content "foo response\n")
-                                 (:role "user" :content "bar prompt")
-                                 (:role "assistant" :content "bar response\n")])))
          (req-with-system-msg-with-prompt
           (eden-build-request
            :profile `(:dir ,dir :api ,api :model model
@@ -2584,9 +2920,16 @@ baz-assistant-content
          (req-no-system-msg-no-prompt
           (eden-build-request
            :profile `(:dir ,dir :api ,api :model ,model)
-           :prev-req-uuid req-bar-uuid)))
-    (should (equal (plist-get req-with-system-msg-with-prompt :exchanges)
-                   exchanges))
+           :prev-req-uuid req-bar-uuid))
+         (prev-turns (vector
+                      `(:uuid ,req-foo-uuid
+                        :prompt "foo prompt\n"
+                        :response "foo response\n")
+                      `(:uuid ,req-bar-uuid
+                        :prompt "bar prompt\n"
+                        :response "bar response\n"))))
+    (should (equal (plist-get req-with-system-msg-with-prompt :prev-turns)
+                   prev-turns))
     (should (equal (eden-get-in req-with-system-msg-with-prompt
                                 [:req-params :messages])
                    [(:role "system" :content "baz system")
@@ -2595,8 +2938,8 @@ baz-assistant-content
                     (:role "user" :content "bar prompt")
                     (:role "assistant" :content "bar response\n")
                     (:role "user" :content "baz prompt")]))
-    (should (equal (plist-get req-with-system-msg-no-prompt :exchanges)
-                   exchanges))
+    (should (equal (plist-get req-with-system-msg-no-prompt :prev-turns)
+                   prev-turns))
     (should (equal (eden-get-in req-with-system-msg-no-prompt
                                 [:req-params :messages])
                    [(:role "system" :content "baz system")
@@ -2604,8 +2947,8 @@ baz-assistant-content
                     (:role "assistant" :content "foo response\n")
                     (:role "user" :content "bar prompt")
                     (:role "assistant" :content "bar response\n")]))
-    (should (equal (plist-get req-no-system-msg-no-prompt :exchanges)
-                   exchanges))
+    (should (equal (plist-get req-no-system-msg-no-prompt :prev-turns)
+                   prev-turns))
     (should (equal (eden-get-in req-no-system-msg-no-prompt
                                 [:req-params :messages])
                    [(:role "user" :content "foo prompt")
@@ -2673,7 +3016,6 @@ baz-assistant-content
                :prompt "foo prompt"
                :info '(:foo (:bar "baz")))))
     (should (equal (plist-get req :info) '(:foo (:bar "baz")))))
-
   ;; :include-reasoning
   ;;
   ;; Anthopic API specific
@@ -2762,39 +3104,29 @@ baz-assistant-content
                   :prompt "req-2 prompt"
                   :dir ,dir
                   :uuid "uuid-req-2"
-                  :exchanges [(:uuid "uuid-req-1"
-                               :prompt "req-1 prompt"
-                               :response "req-1 response"
-                               :context [(:role "user" :content "req-1 prompt")
-                                         (:role "assistant" :content "req-1 response")])]))
+                  :prev-turns [(:uuid "uuid-req-1"
+                                :prompt "req-1 prompt"
+                                :response "req-1 response")]))
          (req-3 `(:req-params (:messages [(:role "user" :content "req-3 prompt")])
                   :prompt "req-3 prompt"
                   :dir ,dir
                   :uuid "uuid-req-3"
-                  :exchanges [(:uuid "uuid-req-1"
-                               :prompt "req-1 prompt"
-                               :response "req-1 response")
-                              (:uuid "uuid-req-2"
-                               :prompt "req-2 prompt"
-                               :response "req-2 response"
-                               :context [(:role "user" :content "req-1 prompt")
-                                         (:role "assistant" :content "req-1 response")
-                                         (:role "user" :content "req-2 prompt")
-                                         (:role "assistant" :content "req-2 response")])]))
+                  :prev-turns [(:uuid "uuid-req-1"
+                                :prompt "req-1 prompt"
+                                :response "req-1 response")
+                               (:uuid "uuid-req-2"
+                                :prompt "req-2 prompt"
+                                :response "req-2 response")]))
          (req-4 `(:req-params (:messages [(:role "user" :content "req-4 prompt")])
                   :prompt "req-4 prompt"
                   :dir ,dir
                   :uuid "uuid-req-4"
-                  :exchanges [(:uuid "uuid-req-1"
-                               :prompt "req-1 prompt"
-                               :response "req-1 response")
-                              (:uuid "uuid-req-2"
-                               :prompt "req-2 prompt"
-                               :response "req-2 response"
-                               :context [(:role "user" :content "req-1 prompt")
-                                         (:role "assistant" :content "req-1 response")
-                                         (:role "user" :content "req-2 prompt")
-                                         (:role "assistant" :content "req-2 response")])]))
+                  :prev-turns [(:uuid "uuid-req-1"
+                                :prompt "req-1 prompt"
+                                :response "req-1 response")
+                               (:uuid "uuid-req-2"
+                                :prompt "req-2 prompt"
+                                :response "req-2 response")]))
          (req-5 `(:req-params (:messages [(:role "user" :content "req-5 prompt")])
                   :prompt "req-5 prompt"
                   :dir ,dir
@@ -2803,11 +3135,9 @@ baz-assistant-content
                   :prompt "req-6 prompt"
                   :dir ,dir
                   :uuid "uuid-req-6"
-                  :exchanges [(:uuid "uuid-req-2"
-                               :prompt "req-2 prompt"
-                               :response "req-2 response"
-                               :context [(:role "user" :content "req-2 prompt")
-                                         (:role "assistant" :content "req-2 response")])]))
+                  :prev-turns [(:uuid "uuid-req-2"
+                                :prompt "req-2 prompt"
+                                :response "req-2 response")]))
          (req-7 `(:req-params (:messages [(:role "user" :content "req-7 prompt")])
                   :prompt "req-7 prompt"
                   :dir ,dir

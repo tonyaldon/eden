@@ -11,6 +11,40 @@
 ;;
 ;; Eden is a simple ChatGPT client for Emacs that focuses on conversations.
 ;;
+;;
+;; Code that is LLM API dependent (llm-api-dispatch tag in comment):
+;;
+;; - `eden-write-request'
+;; - `eden-write-response'
+;; - `eden-build-request'
+;;
+;;
+;; LLM APIs docs
+;;
+;; - OpenAI:
+;;
+;;   - https://developers.openai.com/api/docs/guides/migrate-to-responses
+;;   - https://developers.openai.com/api/docs/guides/reasoning
+;;   - https://developers.openai.com/api/reference/resources/responses/methods/create
+;;   - https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create
+;;   - https://developers.openai.com/api/docs/guides/tools-web-search
+;;
+;; - Anthropic
+;;
+;;   - https://platform.claude.com/docs/en/api/python/messages/create
+;;   - https://platform.claude.com/docs/en/build-with-claude/working-with-messages
+;;
+;; - Deepseek
+;;
+;;   - https://api-docs.deepseek.com/guides/thinking_mode
+;;   - https://api-docs.deepseek.com
+;;
+;; - Perplexity
+;;
+;;   - https://docs.perplexity.ai/api-reference/sonar-post
+;;   - https://docs.perplexity.ai/docs/sonar/quickstart
+;;
+
 ;;; Code:
 
 (require 'json)
@@ -101,7 +135,8 @@ Signal an error, if either `:dir' or `:uuid' key is missing in REQ."
 Signal an error if FILE-TYPE is not one of the following symbols:
 
     error, response, response-org, reasoning, request, api,
-    prompt, system-message, exchanges, command.
+    prompt, system-message, input, output, prev-turns, command,
+    citations
 
 For instance
 
@@ -113,11 +148,14 @@ For instance
                       (response       . "response.json")
                       (response-org   . "response.org")
                       (reasoning      . "reasoning.org")
+                      (citations      . "citations.org")
                       (request        . "request.json")
                       (api            . "api.json")
                       (prompt         . "prompt.org")
                       (system-message . "system-message.org")
-                      (exchanges      . "exchanges.json")
+                      (input          . "input.json")
+                      (output         . "output.json")
+                      (prev-turns     . "prev-turns.json")
                       (command        . "command")))
          (filename (alist-get file-type filenames)))
     (if filename
@@ -169,99 +207,6 @@ user prompt was \"foo bar baz\") we get something like this:
             (eden-json-read)
           (buffer-substring-no-properties (point-min) (point-max)))))))
 
-(defun eden-request-assistant-content (resp)
-  "Return the content of RESP response from OpenAI-compatible API.
-
-For instance (with some keys omitted from a real response from
-OpenAI API) we have:
-
-    (let ((resp \\='(:id \"chatcmpl-AZWZDflWKlARNWTUJu7bAorpW5KF8\"
-                  :object \"chat.completion\"
-                  :model \"gpt-4o-mini-2024-07-18\"
-                  :choices [(:index 0
-                             :message (:role \"assistant\"
-                                       :content \"foo assistant\"
-                                       :refusal nil)
-                             :logprobs nil
-                             :finish_reason \"stop\")])))
-      (eden-request-assistant-content resp))
-    ;; \"foo assistant\"
-
-Also works with Anthropic API which responses are like this
-
-    (:id \"msg_011Cm7DW1Gz27innVYwhuWi9\"
-     :type \"message\"
-     :role \"assistant\"
-     :model \"claude-3-5-haiku-20241022\"
-     :content [(:type \"text\"
-                :text \"foo assistant\")]
-     :stop_reason \"end_turn\"
-     :stop_sequence nil
-     :usage (:input_tokens 11
-             :cache_creation_input_tokens 0
-             :cache_read_input_tokens 0
-             :output_tokens 149
-             :service_tier \"standard\"))
-
-or this with reasoning models:
-
-    (:id \"msg_011Cm7DW1Gz27innVYwhuWi9\"
-     :type \"message\"
-     :role \"assistant\"
-     :model \"claude-3-7-sonnet-20250219\"
-     :content [(:type \"thinking\" :thinking \"foo thinking\" :signature \"...\")
-               (:type \"text\" :text \"foo assistant\")]
-     :stop_reason \"end_turn\"
-     :stop_sequence nil
-     :usage (:input_tokens 11
-             :cache_creation_input_tokens 0
-             :cache_read_input_tokens 0
-             :output_tokens 149
-             :service_tier \"standard\"))"
-  (or (eden-get-in resp [:choices 0 :message :content])
-      ;; For Anthropic API
-      (catch 'found
-        (dolist (elt (append (plist-get resp :content) nil))
-          (when (equal (plist-get elt :type) "text")
-            (throw 'found (plist-get elt :text))))
-        nil)))
-
-(defun eden-request-assistant-reasoning (resp)
-  "Return the reasoning content of RESP response from Deepseek-compatible API.
-
-A Deepseek-compatible API is an OpenAI-compatible API in which
-`:reasoning_content' key has been added at the same level of `:content'
-key for reasoning models like \"deepseek-reasoner\".
-
-For instance (with some keys omitted from a real response from
-Deepseek API) we have:
-
-    (let ((resp \\='(:id \"5b5178d0-9cca-4a8b-86f9-6971ce2c1788\"
-                  :object \"chat.completion\"
-                  :created 1738222989
-                  :model \"deepseek-reasoner\"
-                  :choices [(:index 0
-                             :message (:role \"assistant\"
-                                       :content \"foo assistant\"
-                                       :reasoning_content \"foo reasoning\")
-                             :logprobs nil
-                             :finish_reason \"stop\")])))
-      (eden-request-assistant-reasoning resp))
-    ;; \"foo reasoning\"
-
-We also support Perplexity and Anthropic even if they do it a bit differently."
-  (or (eden-get-in resp [:choices 0 :message :reasoning_content])
-      ;; Because Perplexity do it differently and I use Perplexity
-      (when-let ((msg (eden-get-in resp [:choices 0 :message :content])))
-        (when (string-match "\\`<think>\\(\\(.\\|\n\\)*?\\)</think>" msg)
-          (match-string 1 msg)))
-      ;; Because Anthropic do it differently
-      (catch 'found
-        (dolist (elt (append (plist-get resp :content) nil))
-          (when (equal (plist-get elt :type) "thinking")
-            (throw 'found (plist-get elt :thinking))))
-        nil)))
-
 (defun eden-request-check (req)
   "Return t if REQ did complete.
 
@@ -277,7 +222,9 @@ Signal an error in the following cases:
   - request.json
   - response.json
   - response.org
-  - exchanges.json
+  - input.json
+  - output.json
+  - prev-turns.json
   - timestamp-<timestamp> where <timestamp> is a timestamp."
   (let ((req-dir (eden-request-dir req)))
     (cond
@@ -296,86 +243,72 @@ Signal an error in the following cases:
       (error "Missing `%s' file" (eden-request-file req 'response)))
      ((not (file-exists-p (eden-request-file req 'response-org)))
       (error "Missing `%s' file" (eden-request-file req 'response-org)))
-     ((not (file-exists-p (eden-request-file req 'exchanges)))
-      (error "Missing `%s' file" (eden-request-file req 'exchanges)))
+     ((not (file-exists-p (eden-request-file req 'input)))
+      (error "Missing `%s' file" (eden-request-file req 'input)))
+     ((not (file-exists-p (eden-request-file req 'output)))
+      (error "Missing `%s' file" (eden-request-file req 'output)))
+     ((not (file-exists-p (eden-request-file req 'prev-turns)))
+      (error "Missing `%s' file" (eden-request-file req 'prev-turns)))
      ((null (directory-files req-dir nil "timestamp-.*"))
       (error "Missing timestamp file in `%s' request" req-dir))
      (t t))))
 
-(defun eden-request-conversation (req)
-  "Return all exchanges of the conversation whose last request is REQ.
+(defun eden-request-context (req)
+  "Return REQ context to be used as input to a next request in a conversation."
+  (eden-request-check req)
+  (let ((input (eden-request-read req 'input))
+        (output (eden-request-read req 'output)))
+    (vconcat input output)))
+
+(defun eden-request-turns (req)
+  "Return conversation's turns of REQ, REQ included.
 
 REQ is meant to be passed with only the keys `:dir' and `:uuid'.
 
-The return value is a vector of plists (exchanges) containing the
-following keys:
+The return value is a vector of plists (turns) with the keys:
 
-- :uuid                 - UUID of the request for that exchange
-- :prompt               - prompt of that exchange (`org-mode' string)
-- :response             - content message of the response of that exchange
-                          received from OpenAI-compatible API converted to Org
-                          (`org-mode' string)
-- :reasoning            - (optional) reasoning content of the response of that exchange
-                          received from Deepseek-compatible API converted to Org
-                          (`org-mode' string)
-- :context              - (optional) TODO
+- :uuid                 - UUID of the request
+- :prompt               - prompt (Org string)
+- :response             - text response (Org string)
+- :reasoning            - (optional) reasoning (Org string)
+- :citations            - (optional) citations (Org string)
 
 Signal an error if REQ doesn't pass `eden-request-check' check.
 
 For instance, assuming \"uuid-baz\" is the UUID of the last request
-of a conversation whose previous exchanges are the requests whose
-UUIDs are \"uuid-foo\" and \"uuid-bar\" in that order, the following
-function call
+with previous turns \"uuid-foo\" and \"uuid-bar\", we get the following
+turns:
 
-    (eden-request-conversation \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
-
-gives use the following conversation:
-
-    [(:uuid \"uuid-foo\"
-      :prompt \"foo prompt\\n\"
-      :response \"foo assistant\\n\")
-     (:uuid \"uuid-bar\"
-      :prompt \"bar prompt\\n\"
-      :response \"bar assistant\\n\")
-     (:uuid \"uuid-baz\"
-      :prompt \"baz prompt\\n\"
-      :response \"baz assistant\\n\"
-      :context [(:role \"user\" :content \"foo user\")
-                (:role \"assistant\" :content \"foo assistant\\n\")
-                (:role \"user\" :content \"bar user\")
-                (:role \"assistant\" :content \"bar assistant\\n\")
-                (:role \"user\" :content \"baz user\")
-                (:role \"assistant\" :content \"baz assistant\\n\")])]"
+    (eden-request-turns \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
+    ;; [(:uuid \"uuid-foo\"
+    ;;   :prompt \"foo prompt\"
+    ;;   :response \"foo response\")
+    ;;  (:uuid \"uuid-bar\"
+    ;;   :prompt \"bar prompt\"
+    ;;   :response \"bar response\")
+    ;;  (:uuid \"uuid-baz\"
+    ;;   :prompt \"baz prompt\"
+    ;;   :response \"baz response\")]"
   (eden-request-check req)
   (let* ((api (eden-request-read req 'api))
          (request (eden-request-read req 'request))
-         ;; Exchanges up to req excluded without :context which
-         ;; will be attached to the current exchange.
-         (prev-exchanges
-          (mapcar (lambda (e) (eden-plist-delete e :context))
-                  (eden-request-read req 'exchanges)))
+         ;; Exchanges up to req excluded
+         (prev-turns (eden-request-read req 'prev-turns))
          (resp (eden-request-read req 'response))
-         (output
-          (if (eden-api-is-responses-p api)
-              nil ;; TODO (:output)
-            (vector (eden-get-in resp [:choices 0 :message]))))
-         (input
-          (if (eden-api-is-responses-p api)
-              nil ;; TODO (:output)
-            (let ((msgs (plist-get request :messages)))
-              ;; Don't include the system message in the context
-              (if (string= (plist-get (aref msgs 0) :role) "system")
-                  (seq-subseq msgs 1)
-                msgs))))
+         (output (eden-request-read req 'output))
+         (input (eden-request-read req 'input))
          (reasoning (ignore-errors (eden-request-read req 'reasoning)))
-         (exchange
-          (delq nil
-                `(:uuid ,(plist-get req :uuid)
-                  :prompt ,(eden-request-read req 'prompt)
-                  :response ,(eden-request-read req 'response-org)
-                  ,@(when reasoning `(:reasoning ,reasoning))
-                  :context ,(seq-concatenate 'vector input output)))))
-    (apply 'vector (append prev-exchanges (list exchange)))))
+         (citations (ignore-errors (eden-request-read req 'citations)))
+         (last-turn
+          (vector
+           (delq nil
+                 `(:uuid ,(plist-get req :uuid)
+                   :prompt ,(eden-request-read req 'prompt)
+                   :response ,(eden-request-read req 'response-org)
+                   ,@(when reasoning `(:reasoning ,reasoning))
+                   ,@(when citations `(:citations ,citations)))))))
+    (vconcat prev-turns last-turn)))
+
 
 (defun eden-request-conversation-path (req)
   "Return the path of the conversation whose last request is REQ.
@@ -383,17 +316,14 @@ gives use the following conversation:
 Return nil if REQ doesn't pass `eden-request-check' check.
 
 For instance, assuming \"uuid-baz\" is the UUID of the last request
-of a conversation whose previous exchanges are the requests whose
-UUIDs are \"uuid-foo\" and \"uuid-bar\" in that order, we have
-the following:
+of a conversation whose previous turns are \"uuid-foo\" and \"uuid-bar\"
+in that order, we have the following:
 
     (eden-request-conversation-path \\='(:dir \"/tmp/eden/\" :uuid \"uuid-baz\"))
     ;; [\"uuid-foo\" \"uuid-bar\" \"uuid-baz\"]"
   (when (ignore-errors (eden-request-check req))
-    (let* ((uuids (mapcar (lambda (exchange) (plist-get exchange :uuid))
-                          (eden-request-read req 'exchanges)))
-           (last-uuid (list (plist-get req :uuid))))
-      (apply 'vector (append uuids last-uuid)))))
+    (apply 'vector (mapcar (lambda (turn) (plist-get turn :uuid))
+                           (eden-request-turns req)))))
 
 (defun eden-request-timestamp (req)
   "Return the timestamp (a float) of the moment REQ request was sent to OpenAI-compatible API.
@@ -465,10 +395,13 @@ Specifically, 6 files are written to disk:
                             under `:prompt' key,
 - a `system-message' file - an `org-mode' file with content being the value
                             under `:system-message' key,
-- an `exchanges' file     - a JSON file with content being the value
-                            under `:exchanges' key of REQ plist.  It
-                            corresponds to all the exchanges with the
-                            API up to REQ excluded.
+- an `input.json' file    - a JSON file with content being the input
+                            content in `:req-params' to be sent with
+                            the system message removed.
+- an `prev-turns' file    - a JSON file with content being the value
+                            under `:prev-turns' key of REQ plist.  It
+                            corresponds to all the previous turns in
+                            that conversation up this REQ excluded.
 
 Here's an example with a typical request (third of a conversation)
 that we would send to OpenAI API.  Evaluating the following expression
@@ -485,16 +418,12 @@ that we would send to OpenAI API.  Evaluating the following expression
                        :endpoint \"https://api.openai.com/v1/chat/completions\")
                  :prompt \"baz user prompt\"
                  :system-message \"baz system message\"
-                 :exchanges [(:uuid \"uuid-foo\"
-                              :prompt \"foo prompt\"
-                              :response \"foo response\")
-                             (:uuid \"uuid-bar\"
-                              :prompt \"bar prompt\"
-                              :response \"bar response\"
-                              :context [(:role \"user\" :content \"foo prompt\")
-                                        (:role \"assistant\" :content \"foo response\")
-                                        (:role \"user\" :content \"bar prompt\")
-                                        (:role \"assistant\" :content \"bar response\")])]
+                 :prev-turns [(:uuid \"uuid-foo\"
+                               :prompt \"foo prompt\"
+                               :response \"foo response\")
+                              (:uuid \"uuid-bar\"
+                               :prompt \"bar prompt\"
+                               :response \"bar response\")]
                  :dir \"/tmp/eden/\"
                  :uuid \"uuid-baz\")))
       (eden-write-request req))
@@ -503,22 +432,35 @@ produces the following files (with timestamp file depending on
 the moment we evaluate that expression):
 
 - /tmp/eden/uuid-baz/api.json
-- /tmp/eden/uuid-baz/exchanges.json
 - /tmp/eden/uuid-baz/prompt.org
 - /tmp/eden/uuid-baz/request.json
 - /tmp/eden/uuid-baz/system-message.org
+- /tmp/eden/uuid-baz/input.json
+- /tmp/eden/uuid-baz/prev-turns.json
 - /tmp/eden/uuid-baz/timestamp-1736137516.050655"
   (let ((request (eden-json-encode (plist-get req :req-params)))
         (api (eden-json-encode (plist-get req :api)))
         (prompt (plist-get req :prompt))
         (system-message (or (plist-get req :system-message) ""))
-        (exchanges (eden-json-encode (plist-get req :exchanges))))
+        (prev-turns (eden-json-encode (plist-get req :prev-turns)))
+        ;; llm-api-dispatch
+        (input (cond
+                ((eden-api-is-responses-p (plist-get req :api))
+                 (eden-get-in req [:req-params :input]))
+                ((string= (eden-get-in req [:api :service]) "anthropic")
+                 (eden-get-in req [:req-params :messages]))
+                (t (let ((msgs (eden-get-in req [:req-params :messages])))
+                     ;; Don't include the system message
+                     (if (string= (plist-get (aref msgs 0) :role) "system")
+                         (seq-subseq msgs 1)
+                       msgs))))))
     (eden-request-write req 'timestamp "")
     (eden-request-write req 'request request)
     (eden-request-write req 'api api)
     (eden-request-write req 'prompt prompt)
     (eden-request-write req 'system-message system-message)
-    (eden-request-write req 'exchanges exchanges)))
+    (eden-request-write req 'prev-turns prev-turns)
+    (eden-request-write req 'input (eden-json-encode input))))
 
 (defun eden-api-is-responses-p (api)
   "..."
@@ -695,24 +637,102 @@ RESP-STR.
 
 See `eden-request-file', `eden-markdown-to-org' and
 `eden-org-replace-perplexity-citations'."
+  ;; llm-api-dispatch
   (eden-request-write req 'response resp-str)
-  (let* ((assistant-content (eden-request-assistant-content resp))
-         ;; Because Perplexity do it differently and I use Perplexity
-         (assistant-content-filtered
-          (if (string-match "\\`<think>\\(?:.\\|\n\\)*?</think>\\(\\(.\\|\n\\)*\\)"
-                            assistant-content)
-              (match-string 1 assistant-content)
-            assistant-content))
-         (response-org (eden-markdown-to-org assistant-content-filtered))
-         (citations (plist-get resp :citations))
-         (response-org
-          (if (and citations (vectorp citations))
-              (eden-org-replace-perplexity-citations response-org citations)
-            response-org)))
-    (eden-request-write req 'response-org response-org))
-  (when-let* ((assistant-reasoning (eden-request-assistant-reasoning resp))
-              (reasoning (eden-markdown-to-org assistant-reasoning)))
-    (eden-request-write req 'reasoning reasoning)))
+  (seq-let (resp-text output reasoning citations)
+      (let ((openai-citation-fn
+             (lambda (msg)
+               (when-let ((citations
+                           (mapcar (lambda (a)
+                                     (eden-get-in a [:url_citation :url]))
+                                   (plist-get msg :annotations))))
+                 (mapconcat (lambda (url) (format "- %s\n" url)) citations)))))
+        (cond
+         ;; OpenAI Responses
+         ((eden-api-is-responses-p (plist-get req :api))
+          (let* ((output (plist-get resp :output))
+                 (msg (seq-some
+                       (lambda (item)
+                         (when (equal (plist-get item :type) "message")
+                           (eden-get-in item [:content 0])))
+                       output))
+                 (text (plist-get msg :text))
+                 (reasoning (seq-some
+                             (lambda (item)
+                               (when (equal (plist-get item :type) "reasoning")
+                                 (eden-get-in item [:summary 0 :text])))
+                             output))
+                 (citations (funcall openai-citation-fn msg)))
+            (list (when text (eden-markdown-to-org text))
+                  (eden-json-encode output)
+                  (when reasoning (eden-markdown-to-org reasoning))
+                  citations)))
+         ;; Anthropic
+         ((string= (eden-get-in req [:api :service]) "anthropic")
+          (let* ((output (plist-get resp :content))
+                 (text (seq-some
+                        (lambda (item)
+                          (when (equal (plist-get item :type) "text")
+                            (plist-get item :text)))
+                        output))
+                 (reasoning (seq-some
+                             (lambda (item)
+                               (when (equal (plist-get item :type) "thinking")
+                                 (plist-get item :thinking)))
+                             output)))
+            (list (when text (eden-markdown-to-org text))
+                  (eden-json-encode output)
+                  (when reasoning (eden-markdown-to-org reasoning))
+                  nil ;; citations
+                  )))
+         ;; Perplexity
+         ((string= (eden-get-in req [:api :service]) "perplexity")
+          (let* ((think-block-re "\\`<think>\\(\\(.\\|\n\\)*?\\)</think>\\(\\(.\\|\n\\)*\\)")
+                 (msg (eden-get-in resp [:choices 0 :message]))
+                 (output (vector msg))
+                 (content (plist-get msg :content))
+                 (reasoning (when (string-match think-block-re content)
+                              (eden-markdown-to-org (match-string 1 content))))
+                 (text-no-thinking (if (string-match think-block-re content)
+                                       (match-string 3 content)
+                                     content))
+                 (citations-list (plist-get resp :citations))
+                 (text (let ((text-org (eden-markdown-to-org text-no-thinking)))
+                         (if citations-list
+                             (eden-org-replace-perplexity-citations
+                              text-org citations-list)
+                           text-org)))
+                 (citations (when citations-list
+                              (mapconcat (lambda (url) (format "- %s\n" url))
+                                         citations-list))))
+            (list text
+                  (eden-json-encode output)
+                  reasoning
+                  citations)))
+         ;; Deepseek
+         ((string= (eden-get-in req [:api :service]) "deepseek")
+          (let* ((msg (eden-get-in resp [:choices 0 :message]))
+                 (output (vector msg))
+                 (text (plist-get msg :content))
+                 (reasoning (plist-get msg :reasoning_content)))
+            (list (when text (eden-markdown-to-org text))
+                  (eden-json-encode output)
+                  (when reasoning (eden-markdown-to-org reasoning))
+                  nil ;; citations
+                  )))
+         ;; OpenAI Chat completion
+         (t (let* ((msg (eden-get-in resp [:choices 0 :message]))
+                   (output (vector msg))
+                   (citations (funcall openai-citation-fn msg))
+                   (text (plist-get msg :content)))
+              (list (when text (eden-markdown-to-org text))
+                    (eden-json-encode output)
+                    nil ;; reasoning
+                    citations)))))
+    (eden-request-write req 'response-org (or resp-text "[No text]\n"))
+    (eden-request-write req 'output output)
+    (when reasoning (eden-request-write req 'reasoning reasoning))
+    (when citations (eden-request-write req 'citations citations))))
 
 (defun eden-write-error (req err)
   "Write ERR error in REQ's directory.
@@ -960,23 +980,19 @@ REQ request is a plist with the following keys:
                     `eden-request-dir'.
 - :system-message - (optional) The system message of the request in `org-mode'
                     format.
-- :exchanges      - (optional) If REQ is the last exchange in a conversation,
-                    this key must be a vector of the previous exchanges.  See
-                    `eden-request-conversation'.  Here's an example:
+- :prev-turns     - (optional) If REQ is the last turn in a conversation,
+                    this key must be a vector of the previous turns.  See
+                    `eden-request-turns'.  Here's an example:
 
                     [(:uuid \"uuid-foo\"
                       :prompt \"foo prompt\"
                       :response \"foo response\")
                      (:uuid \"uuid-bar\"
                       :prompt \"bar prompt\"
-                      :response \"bar response\"
-                      :context [(:role \"user\" :content \"foo prompt\")
-                                (:role \"assistant\" :content \"foo response\")
-                                (:role \"user\" :content \"bar prompt\")
-                                (:role \"assistant\" :content \"bar response\")])]
+                      :response \"bar response\")]
 
 Here's an example of a REQ request using OpenAI API, with no system
-message and no previous exchanges:
+message and no previous turns:
 
     (:api (:service \"openai\"
            :endpoint \"https://api.openai.com/v1/chat/completions\")
@@ -1002,16 +1018,12 @@ Perplexity API and a system message:
                              (:role \"user\" :content \"baz prompt\")])
      :prompt \"baz user prompt\"
      :system-message \"baz system message\"
-     :exchanges [(:uuid \"uuid-foo\"
-                  :prompt \"foo prompt\"
-                  :response \"foo response\")
-                 (:uuid \"uuid-bar\"
-                  :prompt \"bar prompt\"
-                  :response \"bar response\"
-                  :context [(:role \"user\" :content \"foo prompt\")
-                            (:role \"assistant\" :content \"foo response\")
-                            (:role \"user\" :content \"bar prompt\")
-                            (:role \"assistant\" :content \"bar response\")])]
+     :prev-turns [(:uuid \"uuid-foo\"
+                   :prompt \"foo prompt\"
+                   :response \"foo response\")
+                  (:uuid \"uuid-bar\"
+                   :prompt \"bar prompt\"
+                   :response \"bar response\")]
      :dir \"/tmp/eden/\"
      :uuid \"uuid-baz\")"
   (seq-let (command command-no-api-key) (eden-request-command req)
@@ -1029,7 +1041,7 @@ Perplexity API and a system message:
 
 (defvar eden-api
   '(:service "openai"
-    :endpoint "https://api.openai.com/v1/chat/completions"
+    :endpoint "https://api.openai.com/v1/responses"
     :default-model "gpt-5.1"
     :models ("gpt-5.1"
              "gpt-5"
@@ -1095,7 +1107,7 @@ formatted as:
      :models ("deepseek-chat"
               "deepseek-reasoner"))
     (:service "openai"
-     :endpoint "https://api.openai.com/v1/chat/completions"
+     :endpoint "https://api.openai.com/v1/responses"
      :default-model "gpt-5.1"
      :models ("gpt-5.1"
               "gpt-5"
@@ -1217,7 +1229,7 @@ It only applies to models such as \"deepseek-reasoner\" from Deepseek
 which generate responses based on their internal reasoning process while
 providing access to that reasoning.
 
-See `eden-request-assistant-reasoning' and `eden-conversation-insert'.")
+See `eden-conversation-insert'.")
 
 (defvar eden-prompt-buffer-name "*eden*"
   "Name of the buffer used for user prompt input.")
@@ -1778,14 +1790,13 @@ See `eden-conversation-insert'."
        ":END:\n"))))
 
 (defun eden-conversation-insert (req title &optional append only-last-req)
-  "Format and insert the conversation whose last request is REQ into current buffer.
+  "Format and insert REQ conversation into current buffer.
 
 Set TITLE as the first heading.
 
 If APPEND is non-nil, only append the last exchange of the conversation.
 
-If ONLY-LAST-REQ is non-nil, do not include previous conversation
-messages, only the last one being REQ itself.
+If ONLY-LAST-REQ is non-nil, do not include previous turns, only REQ.
 
 Signal an error if REQ fails `eden-request-check'.
 Signal an error if TITLE and APPEND are both non-nil.
@@ -1815,39 +1826,40 @@ inserts the following in the current buffer
 
     foo bar baz assistant response
 
-See `eden-request-conversation'."
+See `eden-request-turns'."
   (eden-request-check req)
   (when (and (null title) (null append))
     (error "`title' argument can be nil only when `append' argument is non-nil"))
-  (let* ((format-exchange
+  (let* ((org-demote-fn
           (lambda (exchange)
-            (delq nil
-                  (list (eden-org-demote (plist-get exchange :prompt) 4)
-                        (eden-org-demote (plist-get exchange :response) 4)
-                        (when-let ((reasoning (plist-get exchange :reasoning)))
-                          (eden-org-demote reasoning 4))))))
-         (conversation (mapcar format-exchange (eden-request-conversation req)))
-         (conversation
-          (if (or append only-last-req) (last conversation) conversation)))
+            (list (eden-org-demote (plist-get exchange :prompt) 4)
+                  (eden-org-demote (plist-get exchange :response) 4)
+                  (plist-get exchange :citations)
+                  (when-let ((reasoning (plist-get exchange :reasoning)))
+                    (eden-org-demote reasoning 4)))))
+         (turns (let ((turns (mapcar org-demote-fn (eden-request-turns req))))
+                  (if (or append only-last-req)
+                      (last turns)
+                    turns)))
+         (blank-separation-fn
+          (lambda ()
+            (cond
+             ((looking-back "\n\n" nil) nil)
+             ((looking-back "\n" nil) (insert "\n"))
+             (t (insert "\n\n"))))))
     (eden-conversation-insert-or-update-top-heading req title append)
-    (dolist (exchange conversation)
-      (seq-let (prompt response reasoning) exchange
+    (dolist (exchange turns)
+      (seq-let (prompt response citations reasoning) exchange
         (insert "*** Prompt\n\n" prompt)
-        (cond
-         ((looking-back "\n\n" nil) nil)
-         ((looking-back "\n" nil) (insert "\n"))
-         (t (insert "\n\n")))
+        (funcall blank-separation-fn)
         (when (and eden-include-reasoning reasoning)
           (insert "*** Reasoning\n\n" reasoning)
-          (cond
-           ((looking-back "\n\n" nil) nil)
-           ((looking-back "\n" nil) (insert "\n"))
-           (t (insert "\n\n"))))
+          (funcall blank-separation-fn))
         (insert "*** Response\n\n" response)
-        (cond
-         ((looking-back "\n\n" nil) nil)
-         ((looking-back "\n" nil) (insert "\n"))
-         (t (insert "\n\n")))))))
+        (funcall blank-separation-fn)
+        (when citations
+          (insert "**** Citations\n\n" citations)
+          (funcall blank-separation-fn))))))
 
 ;;;; Profiles
 
@@ -2104,7 +2116,7 @@ When PROMPT is nil, it isn't included in the request parameters.
 
 When PREV-REQ-UUID is provided, the request built is chained to this
 previous request, and all previous context is included.  See
-`eden-request-conversation'.
+`eden-request-turns'.
 
 INFO plist is pass as :info value in the return request.  This is useful
 to pass data not in PROFILE that could then be used in the callback called
@@ -2115,11 +2127,24 @@ This function is self-contained.  Its output doesn't depend on any
 Eden global variable."
   (cl-destructuring-bind
       ;; All profile keys must be listed here even if we don't use them.
+      ;; See `eden-profile-current'.
       (&key dir api model system-message system-message-append
             include-reasoning conversation-id req-params-extra)
       profile
     (let* ((uuid (eden-uuid))
            (_ (eden-request-dir `(:dir ,dir :uuid ,uuid))) ;; signal error if not ok)
+           (prev-req
+            (when prev-req-uuid
+              (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
+                (condition-case err
+                    (progn (eden-request-check prev-req) prev-req)
+                  (error
+                   (signal 'eden-error-req
+                            (list (format "Cannot build request with this prev request:\n%S\nError: %s"
+                                          prev-req
+                                          (error-message-string err)))))))))
+           (prev-turns (when prev-req (eden-request-turns prev-req)))
+           (context (when prev-req (eden-request-context prev-req)))
            (-prompt (if (or (null prompt) (string-blank-p prompt)) "" prompt))
            (-system-message
             (cond
@@ -2129,29 +2154,40 @@ Eden global variable."
              ((null system-message-append) (cdr system-message))
              ((null system-message) system-message-append)
              (t (format "%s\n\n%s" (cdr system-message) system-message-append))))
-           (exchanges
-            (when prev-req-uuid
-              (let ((prev-req `(:dir ,dir :uuid ,prev-req-uuid)))
-                (condition-case err
-                    (eden-request-conversation prev-req)
-                  (error
-                   (signal 'eden-error-req
-                           (list (format "Cannot build request with this prev request:\n%S\nError: %s"
-                                         prev-req
-                                         (error-message-string err)))))))))
-           (-messages
-            `(,(when -system-message
-                 `(:role "system"
-                   :content ,(eden-org-to-markdown -system-message)))
-              ,@(when (not (null exchanges))
-                  (let ((last-exchange (aref exchanges (1- (length exchanges)))))
-                    (plist-get last-exchange :context)))
-              ,(when (not (string-empty-p -prompt))
-                 `(:role "user" :content ,(eden-org-to-markdown -prompt)))))
-           (req-messages (apply 'vector (remq nil -messages)))
-           (req-params `(:stream :false
-                         :model ,model
-                         :messages ,req-messages)))
+           (input
+            (let ((user-msg `(:role "user"
+                              :content ,(eden-org-to-markdown -prompt))))
+              (cond
+               ((and (null context) (string-empty-p -prompt))
+                (error "Cannot build a request with no messages.  Either `:prompt' or `:prev-req-uuid' must be non-nil (or not a blank string).\n:prompt -> %S\n:prev-req-uuid -> %S"
+                       prompt prev-req-uuid))
+               ((null context) (vector user-msg))
+               ((string-empty-p -prompt) context)
+               (t (vconcat context (vector user-msg))))))
+           (req-params
+            (let ((req-params `(:stream :false :model ,model)))
+              (cond
+               ;; OpenAI Responses
+               ((eden-api-is-responses-p api)
+                (when -system-message
+                  (plist-put req-params :instructions
+                             (eden-org-to-markdown -system-message)))
+                (plist-put req-params :input input))
+               ;; Anthropic
+               ((string= (plist-get api :service) "anthropic")
+                (when -system-message
+                  (plist-put req-params :system
+                             (eden-org-to-markdown -system-message)))
+                (plist-put req-params :messages input))
+               ;; OpenAI chat completion compatible
+               (t (plist-put req-params :messages
+                             (if (null -system-message)
+                                 input
+                               (vconcat
+                                (vector `(:role "system"
+                                          :content ,(eden-org-to-markdown -system-message)))
+                                input)))))
+              req-params)))
       ;; Anthropic API
       (when (string= (plist-get api :service) "anthropic")
         (plist-put req-params :max_tokens 4096)
@@ -2163,7 +2199,7 @@ Eden global variable."
         :api ,api
         :prompt ,-prompt
         :system-message ,-system-message
-        :exchanges ,exchanges
+        :prev-turns ,prev-turns
         :dir ,dir
         :uuid ,uuid
         :conversation-id ,conversation-id
@@ -2584,21 +2620,14 @@ the request cannot be found in `eden-dir'."
   (eden))
 
 (defun eden-req-at-point-show-requests ()
-  "Show requests of conversation at point.
-
-The conversation at point is the request at point as defined
-in `eden-req-at-point-uuid' but considering all its exchanges.
-
-Essentially, we look at the request at point as the last request
-in a conversation (see `eden-request-conversation')."
+  "Show requests of conversation at point."
   (interactive)
   (when-let* ((req-uuid (eden-req-at-point-uuid))
               (req `(:dir ,eden-dir :uuid ,req-uuid))
-              (requests
-               (mapcar
-                (lambda (exchange)
-                  `(:dir ,eden-dir :uuid ,(plist-get exchange :uuid)))
-                (eden-request-conversation req)))
+              (requests (mapcar
+                         (lambda (turn)
+                           `(:dir ,eden-dir :uuid ,(plist-get turn :uuid)))
+                         (eden-request-turns req)))
               (buff (get-buffer-create
                      (eden-buffer-name "requests of conversation at point"))))
     (with-current-buffer buff
