@@ -445,7 +445,7 @@ the moment we evaluate that expression):
         (prev-turns (eden-json-encode (plist-get req :prev-turns)))
         ;; llm-api-dispatch
         (input (cond
-                ((eden-api-is-responses-p (plist-get req :api))
+                ((string= (eden-get-in req [:api :service]) "openai-responses")
                  (eden-get-in req [:req-params :input]))
                 ((string= (eden-get-in req [:api :service]) "anthropic")
                  (eden-get-in req [:req-params :messages]))
@@ -461,10 +461,6 @@ the moment we evaluate that expression):
     (eden-request-write req 'system-message system-message)
     (eden-request-write req 'prev-turns prev-turns)
     (eden-request-write req 'input (eden-json-encode input))))
-
-(defun eden-api-is-responses-p (api)
-  "..."
-  (string-suffix-p "/responses" (plist-get api :endpoint)))
 
 (defun eden-api-key-symbol (service)
   "Return the symbol we use for holding api key for SERVICE service.
@@ -650,7 +646,7 @@ See `eden-request-file', `eden-markdown-to-org' and
                  (mapconcat (lambda (url) (format "- %s\n" url)) citations)))))
         (cond
          ;; OpenAI Responses
-         ((eden-api-is-responses-p (plist-get req :api))
+         ((string= (eden-get-in req [:api :service]) "openai-responses")
           (let* ((output (plist-get resp :output))
                  (msg (seq-some
                        (lambda (item)
@@ -1043,7 +1039,7 @@ Perplexity API and a system message:
 ;;;; User options
 
 (defvar eden-api
-  '(:service "openai"
+  '(:service "openai-responses"
     :endpoint "https://api.openai.com/v1/responses"
     :default-model "gpt-5.1"
     :models ("gpt-5.1"
@@ -1109,7 +1105,7 @@ formatted as:
      :default-model "deepseek-reasoner"
      :models ("deepseek-chat"
               "deepseek-reasoner"))
-    (:service "openai"
+    (:service "openai-responses"
      :endpoint "https://api.openai.com/v1/responses"
      :default-model "gpt-5.1"
      :models ("gpt-5.1"
@@ -2171,7 +2167,7 @@ Eden global variable."
             (let ((req-params `(:stream :false :model ,model)))
               (cond
                ;; OpenAI Responses
-               ((eden-api-is-responses-p api)
+               ((string= (plist-get api :service) "openai-responses")
                 (when -system-message
                   (plist-put req-params :instructions
                              (eden-org-to-markdown -system-message)))

@@ -270,7 +270,7 @@
 
   ;; One turn, no reasoning, no citations
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:api (:service "openai"
+         (req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,dir
                 :uuid "uuid-foo"
@@ -291,7 +291,7 @@
 
   ;; One turn, with reasoning, no citations
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:api (:service "openai"
+         (req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,dir
                 :uuid "uuid-foo"
@@ -317,7 +317,7 @@
 
   ;; One turn, no reasoning, with citations
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:api (:service "openai"
+         (req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,dir
                 :uuid "uuid-foo"
@@ -344,7 +344,7 @@
 
   ;; Multiple turns, no reasoning, no citations
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
-         (req `(:api (:service "openai"
+         (req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,dir
                 :uuid "uuid-baz"
@@ -563,7 +563,7 @@
   (let* ((req `(:req-params (:stream :false
                              :model "gpt-5.4"
                              :input [(:role "user" :content "user prompt\n")])
-                :api (:service "openai"
+                :api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :prompt "user prompt\n"
                 :dir ,(concat (make-temp-file "eden-" t) "/")
@@ -676,7 +676,7 @@ arr[0]
   ;; In that case we store [No text] in response.org file.
   ;; We check this only for the OpenAI Responses API (but the code
   ;; should work for all API)
-  (let* ((req `(:api (:service "openai"
+  (let* ((req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -692,7 +692,7 @@ arr[0]
     (should (equal (eden-request-read req 'output) output)))
 
   ;; OpenAI Responses API no citations, no reasoning
-  (let* ((req `(:api (:service "openai"
+  (let* ((req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -710,7 +710,7 @@ arr[0]
     (should-not (file-exists-p (eden-request-file req 'citations))))
 
   ;; OpenAI Responses API with citations, no reasoning
-  (let* ((req `(:api (:service "openai"
+  (let* ((req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -738,7 +738,7 @@ arr[0]
                    "- https://foo.com\n- https://bar.com\n- https://baz.com\n")))
 
   ;; OpenAI Responses API with with reasoning summary, no citations
-  (let* ((req `(:api (:service "openai"
+  (let* ((req `(:api (:service "openai-responses"
                       :endpoint "https://api.openai.com/v1/responses")
                 :dir ,(concat (make-temp-file "eden-" t) "/")
                 :uuid "uuid-foo"))
@@ -1916,7 +1916,7 @@ foo bar baz assistant response
     (with-temp-buffer
       (org-mode)
       (let ((eden-org-property-req "EDEN_REQ")
-            (req `(:api (:service "openai"
+            (req `(:api (:service "openai-responses"
                          :endpoint "https://api.openai.com/v1/responses")
                    :dir ,(concat (make-temp-file "eden-" t) "/")
                    :uuid "uuid"
@@ -2563,9 +2563,6 @@ baz-assistant-content
 (ert-deftest eden-build-request-test ()
   ;; llm-api-dispatch
 
-  ;; FIXME
-  ;; - must :prompt nil and :input nil => error
-
   ;; Errors
   (should-error (eden-build-request :profile '(:dir nil))
                 :type 'eden-error-req)
@@ -2747,14 +2744,14 @@ baz-assistant-content
          (req-no-system-msg-no-append
           (eden-build-request
            :profile `(:dir ,dir
-                      :api (:service "openai"
+                      :api (:service "openai-responses"
                             :endpoint "https://api.openai.com/v1/responses")
                       :model "gpt-5.4")
            :prompt "foo prompt"))
          (req-no-system-with-append
           (eden-build-request
            :profile `(:dir ,dir
-                      :api (:service "openai"
+                      :api (:service "openai-responses"
                             :endpoint "https://api.openai.com/v1/responses")
                       :model "gpt-5.4"
                       :system-message-append "* foo system append")
@@ -2762,7 +2759,7 @@ baz-assistant-content
          (req-with-system-msg-no-append
           (eden-build-request
            :profile `(:dir ,dir
-                      :api (:service "openai"
+                      :api (:service "openai-responses"
                             :endpoint "https://api.openai.com/v1/responses")
                       :model "gpt-5.4"
                       :system-message ("foo system title" . "* foo system"))
@@ -2770,7 +2767,7 @@ baz-assistant-content
          (req-with-system-msg-with-append
           (eden-build-request
            :profile `(:dir ,dir
-                      :api (:service "openai"
+                      :api (:service "openai-responses"
                             :endpoint "https://api.openai.com/v1/responses")
                       :model "gpt-5.4"
                       :system-message ("foo system title" . "* foo system")
@@ -2994,7 +2991,7 @@ baz-assistant-content
   (let* ((dir (concat (make-temp-file "eden-" t) "/"))
          (req (eden-build-request
                :profile `(:dir ,dir
-                          :api (:service "openai"
+                          :api (:service "openai-responses"
                                 :endpoint "https://api.openai.com/v1/responses")
                           :model "gpt-5.4"
                           :req-params-extra (:reasoning (:effort "medium")
