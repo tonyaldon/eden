@@ -717,12 +717,16 @@ arr[0]
          (output [(:type "web_search_call" :id "ws_foo_id" :status "completed")
                   (:type "message"
                    :role "assistant"
-                   :content [(:type "output_text"
-                              :text "### foo assistant\n"
-                              :annotations
-                              [(:type "url_citation" :url_citation (:url "https://foo.com"))
-                               (:type "url_citation" :url_citation (:url "https://bar.com"))
-                               (:type "url_citation" :url_citation (:url "https://baz.com"))])])])
+                   :content
+                   [(:type "output_text"
+                     :text "### foo assistant\n"
+                     :annotations
+                     [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                      (:type "url_citation" :url_citation (:url "https://foo.com"))
+                      (:type "url_citation" :url_citation (:url "https://foo.com"))
+                      (:type "url_citation" :url_citation (:url "https://bar.com"))
+                      (:type "url_citation" :url_citation (:url "https://baz.com"))
+                      (:type "url_citation" :url_citation (:url "https://baz.com"))])])])
          (resp `(:output ,output))
          (resp-str (eden-json-encode resp)))
     (eden-write-response req resp-str resp)
@@ -811,7 +815,10 @@ arr[0]
                 :content "### foo response (https://foo.com, https://bar.com, https://baz.com)\n"
                 :annotations
                 [(:type "url_citation" :url_citation (:url "https://foo.com"))
+                 (:type "url_citation" :url_citation (:url "https://foo.com"))
+                 (:type "url_citation" :url_citation (:url "https://foo.com"))
                  (:type "url_citation" :url_citation (:url "https://bar.com"))
+                 (:type "url_citation" :url_citation (:url "https://baz.com"))
                  (:type "url_citation" :url_citation (:url "https://baz.com"))]))
          (resp `(:choices ,(vector `(:message ,msg))))
          (resp-str (eden-json-encode resp)))
@@ -832,7 +839,10 @@ arr[0]
          (msg '(:role "assistant"
                 :content "### foo assistant\n\nfoo citation[1]\n\nbar baz citations[2][3]\n"))
          (resp `(:citations ["https://foo.com"
+                             "https://foo.com"
+                             "https://foo.com"
                              "https://bar.com"
+                             "https://baz.com"
                              "https://baz.com"]
                  :choices ,(vector `(:message ,msg))))
          (resp-str (eden-json-encode resp)))

@@ -643,9 +643,10 @@ See `eden-request-file', `eden-markdown-to-org' and
       (let ((openai-citation-fn
              (lambda (msg)
                (when-let ((citations
-                           (mapcar (lambda (a)
-                                     (eden-get-in a [:url_citation :url]))
-                                   (plist-get msg :annotations))))
+                           (seq-uniq
+                            (mapcar (lambda (a)
+                                      (eden-get-in a [:url_citation :url]))
+                                    (plist-get msg :annotations)))))
                  (mapconcat (lambda (url) (format "- %s\n" url)) citations)))))
         (cond
          ;; OpenAI Responses
@@ -696,15 +697,17 @@ See `eden-request-file', `eden-markdown-to-org' and
                  (text-no-thinking (if (string-match think-block-re content)
                                        (match-string 3 content)
                                      content))
-                 (citations-list (plist-get resp :citations))
+                 (citations-vector
+                  (when-let ((citations-vector (plist-get resp :citations)))
+                    (apply 'vector (seq-uniq (plist-get resp :citations)))))
                  (text (let ((text-org (eden-markdown-to-org text-no-thinking)))
-                         (if citations-list
+                         (if citations-vector
                              (eden-org-replace-perplexity-citations
-                              text-org citations-list)
+                              text-org citations-vector)
                            text-org)))
-                 (citations (when citations-list
+                 (citations (when citations-vector
                               (mapconcat (lambda (url) (format "- %s\n" url))
-                                         citations-list))))
+                                         citations-vector))))
             (list text
                   (eden-json-encode output)
                   reasoning
